@@ -10,8 +10,6 @@ SRC=linux/XMemUtils.cpp \
 		DynamicDll.cpp \
 		utils/RegExp.cpp \
 		folly/Unicode.cpp \
-		OMXSubtitleTagSami.cpp \
-		OMXOverlayCodecText.cpp \
 		BitstreamConverter.cpp \
 		SubtitleRenderer.cpp \
 		linux/RBP.cpp \
