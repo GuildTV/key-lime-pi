@@ -97,55 +97,17 @@ void OMXPlayerSubtitles::Close()
 void OMXPlayerSubtitles::
 Process(const std::string& font_path, float font_size, OMXClock* clock)
 {
-  SubtitleRenderer renderer(1, font_path, font_size, 0.5f, 0.5f, 0xDD, 0x80);
+  //SubtitleRenderer renderer(1);
 
-  Subtitle* next_subtitle{};
-  double current_stop{};
-  bool showing{};
 
-  while (!m_abort.load(std::memory_order_relaxed))
+  while (true)
   {
-    if (m_flush.load(std::memory_order_relaxed))
-    {
-      if (showing)
-      {
-        renderer.unprepare();
-        renderer.hide();
-        showing = false;
-      }
-      next_subtitle = NULL;
-      while (!m_subtitle_queue.isEmpty())
-        m_subtitle_queue.popFront();
-      m_flush.store(false, std::memory_order_relaxed);
-    }
+		printf("frame");
+    
+        //call render function here
+      
 
-    if (!next_subtitle)
-    {
-      next_subtitle = m_subtitle_queue.frontPtr();
-      if (next_subtitle)
-        renderer.prepare(next_subtitle->text_lines);
-    }
-
-    auto const now = clock->OMXMediaTime();
-
-    if (next_subtitle && next_subtitle->start <= now)
-    {
-      renderer.show_next();
-      showing = true;
-
-      current_stop = next_subtitle->stop;
-      next_subtitle = NULL;
-      m_subtitle_queue.popFront();
-      continue;
-    }
-
-    if (showing && current_stop <= now)
-    {
-      renderer.hide();
-      showing = false;
-      continue;
-    }
-
+	//TODO - change time here??
     clock->OMXSleep(RENDER_LOOP_SLEEP);
   }
 }
