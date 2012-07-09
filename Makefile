@@ -8,7 +8,6 @@ INCLUDES+=-I./ -Ilinux -Iffmpeg_compiled/usr/local/include/
 SRC=linux/XMemUtils.cpp \
 		utils/log.cpp \
 		DynamicDll.cpp \
-		utils/PCMRemap.cpp \
 		utils/RegExp.cpp \
 		folly/Unicode.cpp \
 		OMXSubtitleTagSami.cpp \
@@ -19,15 +18,11 @@ SRC=linux/XMemUtils.cpp \
 		OMXThread.cpp \
 		OMXReader.cpp \
 		OMXStreamInfo.cpp \
-		OMXAudioCodecOMX.cpp \
 		OMXCore.cpp \
 		OMXVideo.cpp \
-		OMXAudio.cpp \
 		OMXClock.cpp \
 		File.cpp \
 		OMXPlayerVideo.cpp \
-		OMXPlayerAudio.cpp \
-		OMXPlayerSubtitles.cpp \
 		omxplayer.cpp \
 
 OBJS+=$(filter %.o,$(SRC:.cpp=.o))

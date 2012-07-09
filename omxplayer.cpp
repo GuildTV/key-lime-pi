@@ -45,49 +45,30 @@ extern "C" {
 #include "linux/RBP.h"
 
 #include "OMXVideo.h"
-#include "OMXAudioCodecOMX.h"
-#include "utils/PCMRemap.h"
 #include "OMXClock.h"
-#include "OMXAudio.h"
 #include "OMXReader.h"
 #include "OMXPlayerVideo.h"
-#include "OMXPlayerAudio.h"
-#include "OMXPlayerSubtitles.h"
 #include "DllOMX.h"
 
 #include <string>
 
-enum PCMChannels  *m_pChannelMap        = NULL;
 volatile bool     g_abort               = false;
 bool              m_bMpeg               = false;
-bool               m_passthrough        = false;
 bool              m_Deinterlace         = false;
-bool              m_HWDecode            = false;
 std::string       deviceString          = "omx:local";
-int               m_use_hw_audio        = false;
-std::string       m_font_path           = "/usr/share/fonts/truetype/freefont/FreeSans.ttf";
-float             m_font_size           = 0.055f;
 bool              m_Pause               = false;
 OMXReader         m_omx_reader;
-int               m_audio_index_use     = -1;
 bool              m_buffer_empty        = true;
 bool              m_thread_player       = false;
 OMXClock          *m_av_clock           = NULL;
-COMXStreamInfo    m_hints_audio;
 COMXStreamInfo    m_hints_video;
 OMXPacket         *m_omx_pkt            = NULL;
 bool              m_hdmi_clock_sync     = false;
 bool              m_stop                = false;
-bool              m_show_subtitle       = false;
-int               m_subtitle_index      = 0;
 DllBcmHost        m_BcmHost;
 OMXPlayerVideo    m_player_video;
-OMXPlayerAudio    m_player_audio;
-OMXPlayerSubtitles  m_player_subtitles;
 int               m_tv_show_info        = 0;
 bool              m_has_video           = false;
-bool              m_has_audio           = false;
-bool              m_has_subtitle        = false;
 
 enum{ERROR=-1,SUCCESS,ONEBYTE};
 
@@ -109,22 +90,12 @@ void print_usage()
   printf("Usage: omxplayer [OPTIONS] [FILE]\n");
   printf("Options :\n");
   printf("         -h / --help                    print this help\n");
-  printf("         -a / --alang language          audio language        : e.g. ger\n");
-  printf("         -n / --aidx  index             audio stream index    : e.g. 1\n");
-  printf("         -o / --adev  device            audio out device      : e.g. hdmi/local\n");
   printf("         -i / --info                    dump stream format and exit\n");
   printf("         -s / --stats                   pts and buffer stats\n");
-  printf("         -p / --passthrough             audio passthrough\n");
   printf("         -d / --deinterlace             deinterlacing\n");
-  printf("         -w / --hw                      hw audio decoding\n");
   printf("         -3 / --3d                      switch tv into 3d mode\n");
   printf("         -y / --hdmiclocksync           adjust display refresh rate to match video\n");
-  printf("         -t / --sid index               show subtitle with index\n");
   printf("         -r / --refresh                 adjust framerate/resolution to video\n");
-  printf("         -f / --font     path           font used for subtitles\n");
-  printf("                                        (default: /usr/share/fonts/truetype/freefont/FreeSans.ttf)\n");
-  printf("         -g / --fontsize size           font size as thousands of screen height\n");
-  printf("                                        (default: 55)\n");
 }
 
 void SetSpeed(int iSpeed)
@@ -152,12 +123,6 @@ void FlushStreams(double pts)
 
   if(m_has_video)
     m_player_video.Flush();
-
-  if(m_has_audio)
-    m_player_audio.Flush();
-
-  if(m_has_subtitle)
-    m_player_subtitles.Flush();
 
   if(m_omx_pkt)
   {
@@ -309,18 +274,12 @@ int main(int argc, char *argv[])
   struct option longopts[] = {
     { "info",         no_argument,        NULL,          'i' },
     { "help",         no_argument,        NULL,          'h' },
-    { "aidx",         required_argument,  NULL,          'n' },
-    { "adev",         required_argument,  NULL,          'o' },
     { "stats",        no_argument,        NULL,          's' },
-    { "passthrough",  no_argument,        NULL,          'p' },
     { "deinterlace",  no_argument,        NULL,          'd' },
-    { "hw",           no_argument,        NULL,          'w' },
     { "3d",           no_argument,        NULL,          '3' },
     { "hdmiclocksync", no_argument,       NULL,          'y' },
     { "refresh",      no_argument,        NULL,          'r' },
     { "sid",          required_argument,  NULL,          't' },
-    { "font",         required_argument,  NULL,          'f' },
-    { "fontsize",     required_argument,  NULL,          'g' },
     { 0, 0, 0, 0 }
   };
 
@@ -341,12 +300,6 @@ int main(int argc, char *argv[])
       case 'd':
         m_Deinterlace = true;
         break;
-      case 'w':
-        m_use_hw_audio = true;
-        break;
-      case 'p':
-        m_passthrough = true;
-        break;
       case 's':
         m_stats = true;
         break;
@@ -361,27 +314,6 @@ int main(int argc, char *argv[])
         break;
       case 'i':
         m_dump_format = true;
-        break;
-      case 't':
-        m_subtitle_index = atoi(optarg) - 1;
-        if(m_subtitle_index < 0)
-          m_subtitle_index = 0;
-        m_show_subtitle = true;
-        break;
-      case 'n':
-        m_audio_index_use = atoi(optarg) - 1;
-        if(m_audio_index_use < 0)
-          m_audio_index_use = 0;
-        break;
-      case 'f':
-        m_font_path = optarg;
-        break;
-      case 'g':
-        {
-          const int thousands = atoi(optarg);
-          if (thousands > 0)
-            m_font_size = thousands*0.001f;
-        }
         break;
       case 0:
         break;
@@ -422,20 +354,14 @@ int main(int argc, char *argv[])
 
   m_bMpeg         = m_omx_reader.IsMpegVideo();
   m_has_video     = m_omx_reader.VideoStreamCount();
-  m_has_audio     = m_omx_reader.AudioStreamCount();
-  m_has_subtitle  = m_omx_reader.SubtitleStreamCount();
 
-  if(!m_av_clock->OMXInitialize(m_has_video, m_has_audio))
+  if(!m_av_clock->OMXInitialize(m_has_video, false))
     goto do_exit;
 
   if(m_hdmi_clock_sync && !m_av_clock->HDMIClockSync())
       goto do_exit;
 
-  m_omx_reader.GetHints(OMXSTREAM_AUDIO, m_hints_audio);
   m_omx_reader.GetHints(OMXSTREAM_VIDEO, m_hints_video);
-
-  if(m_audio_index_use != -1)
-    m_omx_reader.SetActiveStream(OMXSTREAM_AUDIO, m_audio_index_use);
           
   if(m_has_video && !m_player_video.Open(m_hints_video, m_av_clock, m_Deinterlace,  m_bMpeg, 
                                          m_hdmi_clock_sync, m_thread_player))
@@ -453,43 +379,9 @@ int main(int argc, char *argv[])
 
   }
 
-  if(m_has_subtitle &&
-     !m_player_subtitles.Open(m_font_path, m_font_size, m_av_clock))
-  {
-    goto do_exit;
-  }
-
-  // This is an upper bound check on the subtitle limits. When we pulled the subtitle
-  // index from the user we check to make sure that the value is larger than zero, but
-  // we couldn't know without scanning the file if it was too high. If this is the case
-  // then we replace the subtitle index with the maximum value possible.
-  if(m_has_subtitle && m_subtitle_index > (m_omx_reader.SubtitleStreamCount() - 1))
-  {
-    m_subtitle_index = m_omx_reader.SubtitleStreamCount() - 1;
-  }
-
-  // Here we actually enable the subtitle streams if we have one available.
-  if (m_has_subtitle && m_subtitle_index <= (m_omx_reader.SubtitleStreamCount() - 1))
-  {
-    m_omx_reader.SetActiveStream(OMXSTREAM_SUBTITLE, m_subtitle_index);
-    m_show_subtitle = true;
-  }
-  else
-  {
-    m_show_subtitle = false;
-  }
-
-  m_omx_reader.GetHints(OMXSTREAM_AUDIO, m_hints_audio);
-
-  if(m_has_audio && !m_player_audio.Open(m_hints_audio, m_av_clock, &m_omx_reader, deviceString, 
-                                         m_passthrough, m_use_hw_audio, m_thread_player))
-    goto do_exit;
-
   m_av_clock->SetSpeed(DVD_PLAYSPEED_NORMAL);
   m_av_clock->OMXStateExecute();
   m_av_clock->OMXStart();
-
-  struct timespec starttime, endtime;
 
   while(!m_stop)
   {
@@ -542,23 +434,6 @@ int main(int argc, char *argv[])
           m_incr = 600.0;
         }
         break;
-      case 'n':
-        if(m_omx_reader.GetSubtitleIndex() > 0)
-        {
-          m_omx_reader.SetActiveStream(OMXSTREAM_SUBTITLE, m_omx_reader.GetSubtitleIndex() - 1);
-          m_player_subtitles.Flush();
-        }
-        break;
-      case 'm':
-        if(m_omx_reader.GetSubtitleIndex() > 0)
-        {
-          m_omx_reader.SetActiveStream(OMXSTREAM_SUBTITLE, m_omx_reader.GetSubtitleIndex() + 1);
-          m_player_subtitles.Flush();
-        }
-        break;
-      case 's':
-        m_show_subtitle = !m_show_subtitle;
-        break;
       case 'q':
         m_stop = true;
         goto do_exit;
@@ -588,14 +463,6 @@ int main(int argc, char *argv[])
           SetSpeed(OMX_PLAYSPEED_NORMAL);
           m_av_clock->OMXResume();
         }
-        break;
-      case '-':
-        m_player_audio.SetCurrentVolume(m_player_audio.GetCurrentVolume() - 50);
-        printf("Current Volume: %.2fdB\n", m_player_audio.GetCurrentVolume() / 100.0f);
-        break;
-      case '+':
-        m_player_audio.SetCurrentVolume(m_player_audio.GetCurrentVolume() + 50);
-        printf("Current Volume: %.2fdB\n", m_player_audio.GetCurrentVolume() / 100.0f);
         break;
       default:
         break;
@@ -635,40 +502,6 @@ int main(int argc, char *argv[])
       m_av_clock->OMXStart();
     }
 
-    /* when the audio buffer runs under 0.1 seconds we buffer up */
-    if(m_has_audio)
-    {
-      if(m_player_audio.GetDelay() < 0.1f && !m_buffer_empty)
-      {
-        if(!m_av_clock->OMXIsPaused())
-        {
-          m_av_clock->OMXPause();
-          //printf("buffering start\n");
-          m_buffer_empty = true;
-          clock_gettime(CLOCK_REALTIME, &starttime);
-        }
-      }
-      if(m_player_audio.GetDelay() > (AUDIO_BUFFER_SECONDS * 0.75f) && m_buffer_empty)
-      {
-        if(m_av_clock->OMXIsPaused())
-        {
-          m_av_clock->OMXResume();
-          //printf("buffering end\n");
-          m_buffer_empty = false;
-        }
-      }
-      if(m_buffer_empty)
-      {
-        clock_gettime(CLOCK_REALTIME, &endtime);
-        if((endtime.tv_sec - starttime.tv_sec) > 1)
-        {
-          m_buffer_empty = false;
-          m_av_clock->OMXResume();
-          //printf("buffering timed out\n");
-        }
-      }
-    }
-
     if(!m_omx_pkt)
       m_omx_pkt = m_omx_reader.Read();
 
@@ -685,31 +518,6 @@ int main(int argc, char *argv[])
         vc_gencmd(response, sizeof response, "render_bar 4 video_fifo %d %d %d %d", 
                 m_player_video.GetDecoderBufferSize()-m_player_video.GetDecoderFreeSpace(),
                 0 , 0, m_player_video.GetDecoderBufferSize());
-        vc_gencmd(response, sizeof response, "render_bar 5 audio_fifo %d %d %d %d", 
-                (int)(100.0*m_player_audio.GetDelay()), 0, 0, 100*AUDIO_BUFFER_SECONDS);
-      }
-    }
-    else if(m_has_audio && m_omx_pkt && m_omx_pkt->codec_type == AVMEDIA_TYPE_AUDIO)
-    {
-      if(m_player_audio.AddPacket(m_omx_pkt))
-        m_omx_pkt = NULL;
-      else
-        OMXClock::OMXSleep(10);
-    }
-    else if(m_omx_pkt && m_omx_reader.IsActive(OMXSTREAM_SUBTITLE, m_omx_pkt->stream_index))
-    {
-      if(m_omx_pkt->size && (m_omx_pkt->hints.codec == CODEC_ID_TEXT || 
-                             m_omx_pkt->hints.codec == CODEC_ID_SSA))
-      {
-        if(m_player_subtitles.AddPacket(m_omx_pkt))
-          m_omx_pkt = NULL;
-        else
-          OMXClock::OMXSleep(10);
-      }
-      else
-      {
-        m_omx_reader.FreePacket(m_omx_pkt);
-        m_omx_pkt = NULL;
       }
     }
     else
@@ -721,19 +529,11 @@ int main(int argc, char *argv[])
       }
     }
 
-    /* player got in an error state */
-    if(m_player_audio.Error())
-    {
-      printf("audio player error. emergency exit!!!\n");
-      goto do_exit;
-    }
-
     if(m_stats)
     {
-      printf("V : %8.02f %8d %8d A : %8.02f %8.02f Cv : %8d Ca : %8d                            \r",
+      printf("V : %8.02f %8d %8d A : -- -- Cv : %8d Ca : --                            \r",
              m_player_video.GetCurrentPTS() / DVD_TIME_BASE, m_player_video.GetDecoderBufferSize(),
-             m_player_video.GetDecoderFreeSpace(), m_player_audio.GetCurrentPTS() / DVD_TIME_BASE, 
-             m_player_audio.GetDelay(), m_player_video.GetCached(), m_player_audio.GetCached());
+             m_player_video.GetDecoderFreeSpace(), m_player_video.GetCached());
     }
     if(m_omx_reader.IsEof())
         break;
@@ -745,9 +545,7 @@ do_exit:
 
   if(!m_stop)
   {
-    if(m_has_audio)
-      m_player_audio.WaitCompletion();
-    else if(m_has_video)
+	if(m_has_video)
       m_player_video.WaitCompletion();
   }
 
@@ -760,9 +558,7 @@ do_exit:
   m_av_clock->OMXStop();
   m_av_clock->OMXStateIdle();
 
-  m_player_subtitles.Close();
   m_player_video.Close();
-  m_player_audio.Close();
 
   if(m_omx_pkt)
   {
