@@ -97,7 +97,7 @@ void OMXPlayerSubtitles::Close()
 void OMXPlayerSubtitles::
 Process(const std::string& font_path, float font_size, OMXClock* clock)
 {
-  SubtitleRenderer renderer(1, font_path, font_size, 0.01f, 0.06f, 0xDD, 0x80);
+  SubtitleRenderer renderer(1, font_path, font_size, 0.5f, 0.5f, 0xDD, 0x80);
 
   Subtitle* next_subtitle{};
   double current_stop{};
