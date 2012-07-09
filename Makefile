@@ -9,7 +9,6 @@ SRC=linux/XMemUtils.cpp \
 		utils/log.cpp \
 		DynamicDll.cpp \
 		utils/RegExp.cpp \
-		folly/Unicode.cpp \
 		BitstreamConverter.cpp \
 		SubtitleRenderer.cpp \
 		linux/RBP.cpp \
