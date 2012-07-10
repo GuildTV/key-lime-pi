@@ -1,37 +1,21 @@
-
-
-BUILDROOT	:=/
-
-SDKSTAGE	:=/
-
-
-
-
-
-
-
-TARGETFS	:=/
-TOOLCHAIN	:=/usr
 HOST			:=bcm2708
-SYSROOT		:=/
-
 
 JOBS=7
 
 CFLAGS			:= -isystem$(PREFIX)/include
 CXXFLAGS		:= $(CFLAGS)
 CPPFLAGS		:= $(CFLAGS)
-LDFLAGS			:= -L$(BUILDROOT)/lib
-LD					:= $(TOOLCHAIN)/bin/ld
-CC					:= $(TOOLCHAIN)/bin/gcc
+LDFLAGS			:= -L/lib
+LD					:= /usr/bin/ld
+CC					:= /usr/bin/gcc
 CXX         := /usr/bin/g++
-OBJDUMP			:= $(TOOLCHAIN)/bin/objdump
-RANLIB			:= $(TOOLCHAIN)/bin/ranlib
-STRIP				:= $(TOOLCHAIN)/bin/strip
-AR 					:= $(TOOLCHAIN)/bin/ar
+OBJDUMP			:= /usr/bin/objdump
+RANLIB			:= /usr/bin/ranlib
+STRIP				:= /usr/bin/strip
+AR 					:= /usr/bin/ar
 CXXCP 			:= $(CXX) -E
 PATH 				:= $(PREFIX)/bin:/usr/bin:$(PATH)
 
 CFLAGS			+= -pipe -mfloat-abi=hard -mcpu=arm1176jzf-s -fomit-frame-pointer -mabi=aapcs-linux -mtune=arm1176jzf-s -mfpu=vfp -Wno-psabi -mno-apcs-stack-check -O3 -mstructure-size-boundary=32 -mno-sched-prolog
-LDFLAGS			+= -L$(SDKSTAGE)/lib -L$(SDKSTAGE)/usr/lib -L$(SDKSTAGE)/opt/vc/lib/
-INCLUDES		+= -isystem$(SDKSTAGE)/staging/usr/include -isystem$(SDKSTAGE)/staging/opt/vc/include -isystem$(SYSROOT)/opt/vc/include -isystem$(SYSROOT)/usr/include -isystem$(SDKSTAGE)/opt/vc/include/interface/vcos/pthreads -isystem$(SYSROOT)/ffmpeg_compiled/usr/local/include -isystem$(SDKSTAGE)/usr/include/freetype2
+LDFLAGS			+= -L/lib -L/usr/lib -L/opt/vc/lib/
+INCLUDES		+=-isystem/opt/vc/include -isystem/usr/include -isystem/opt/vc/include/interface/vcos/pthreads -isystem/ffmpeg_compiled/usr/local/include

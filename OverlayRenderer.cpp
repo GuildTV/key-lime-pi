@@ -18,7 +18,6 @@
 #include "folly/ScopeGuard.h"
 #include "enforce.h"
 
-#include <VG/vgu.h>
 #include <cassert>
 
 //destroy the renderer
@@ -66,6 +65,11 @@ void OverlayRenderer::initialize_gles() {
 	glClear( GL_DEPTH_BUFFER_BIT );
 	//set shade model
 	glShadeModel(GL_FLAT);
+	
+	glMatrixMode (GL_PROJECTION);
+glLoadIdentity ();
+//glOrtho (0, screen_width_, screen_height_, 0, 0, 1);
+glMatrixMode (GL_MODELVIEW);
 }
 //setup window
 void OverlayRenderer::initialize_window(int layer) {

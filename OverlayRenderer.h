@@ -17,7 +17,6 @@
  */
 
 #include <EGL/egl.h>
-#include <VG/openvg.h>
 #include <GLES/gl.h>
 
 typedef struct
