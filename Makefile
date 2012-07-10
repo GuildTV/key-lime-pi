@@ -10,7 +10,7 @@ SRC=linux/XMemUtils.cpp \
 		DynamicDll.cpp \
 		utils/RegExp.cpp \
 		BitstreamConverter.cpp \
-		SubtitleRenderer.cpp \
+		OverlayRenderer.cpp \
 		linux/RBP.cpp \
 		OMXThread.cpp \
 		OMXReader.cpp \
@@ -18,6 +18,7 @@ SRC=linux/XMemUtils.cpp \
 		OMXCore.cpp \
 		OMXVideo.cpp \
 		OMXClock.cpp \
+		MyRender.cpp \
 		File.cpp \
 		OMXPlayerVideo.cpp \
 		omxplayer.cpp \

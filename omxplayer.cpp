@@ -50,6 +50,8 @@ extern "C" {
 #include "OMXPlayerVideo.h"
 #include "DllOMX.h"
 
+#include "MyRender.h"
+
 #include <string>
 
 volatile bool     g_abort               = false;
@@ -69,6 +71,7 @@ DllBcmHost        m_BcmHost;
 OMXPlayerVideo    m_player_video;
 int               m_tv_show_info        = 0;
 bool              m_has_video           = false;
+MyRender    m_my_render;
 
 enum{ERROR=-1,SUCCESS,ONEBYTE};
 
@@ -378,6 +381,8 @@ int main(int argc, char *argv[])
     SetVideoMode(m_hints_video.width, m_hints_video.height, m_player_video.GetFPS(), m_3d);
 
   }
+  
+  m_my_render.Open(m_av_clock, m_thread_player);
 
   m_av_clock->SetSpeed(DVD_PLAYSPEED_NORMAL);
   m_av_clock->OMXStateExecute();
@@ -559,6 +564,8 @@ do_exit:
   m_av_clock->OMXStateIdle();
 
   m_player_video.Close();
+  
+  m_my_render.Close();
 
   if(m_omx_pkt)
   {
