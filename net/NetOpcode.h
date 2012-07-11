@@ -3,4 +3,6 @@
 
 enum NetOpcode {OP_COMMAND = 0, OP_COMMAND_CONT = 1};
 
+enum NetRole{UNDEFINED, SERVER, CLIENT};
+
 #endif // NETOPCODE_H_INCLUDED

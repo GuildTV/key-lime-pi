@@ -9,17 +9,10 @@
 #define NETIO_H_
 
 #include <arpa/inet.h>
-#include <netinet/in.h>
-#include <netdb.h>
-#include <string>
-#include <pthread.h>
-#include <queue>
 #include <sys/wait.h>
-#include <signal.h>
 
 #include "NetUser.h"
 #include "NetOpcode.h"
-
 
 using namespace std;
 
@@ -52,6 +45,10 @@ public:
     bool ThreadStop();
 
     int CreateServer(char port[]);
+    int CreateClient(char address[], char port[]);
+
+    NetUser GetClient() {return client;};
+    NetMessageQueue GetMessageQueue() {return messageQueue;};
 
 protected:
     pthread_mutex_t     m_queue_lock;
@@ -69,7 +66,8 @@ private:
 	int thisSocketFD;
 	struct addrinfo *servinfo;
 	socklen_t addr_size;
-	NetUser slave;
+	NetUser client;
+	NetRole role;
 
     NetMessageQueue messageQueue;
 };

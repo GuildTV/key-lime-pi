@@ -1,15 +1,5 @@
 #include "NetMessageQueue.h"
 
-NetMessageQueue::NetMessageQueue()
-{
-    //ctor
-}
-
-NetMessageQueue::~NetMessageQueue()
-{
-    //dtor
-}
-
 NetMessage* NetMessageQueue::Pop() {
     Lock();
 

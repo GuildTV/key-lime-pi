@@ -2,13 +2,8 @@
 #define NETMESSAGEQUEUE_H
 
 #include <string>
-#include <string.h>
-#include <pthread.h>
 #include <queue>
-#include <sstream>
 using namespace std;
-
-
 
 class NetUser;
 
@@ -22,8 +17,6 @@ typedef struct NetMessage {
 class NetMessageQueue
 {
     public:
-        NetMessageQueue();
-        virtual ~NetMessageQueue();
 
         NetMessage* Pop();
         int Size();
@@ -33,7 +26,7 @@ class NetMessageQueue
     protected:
         void Lock();
         void Unlock();
-        pthread_mutex_t     m_lock;
+        pthread_mutex_t m_lock;
 
     private:
         queue<NetMessage *> messageQueue;

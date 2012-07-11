@@ -6,15 +6,7 @@
  */
 
 #include "NetIO.h"
-#include <linux/types.h>
-#include <linux/socket.h>
 #include <netdb.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <cstring>
-#include <unistd.h>
-#include <arpa/inet.h>
-#include <netinet/in.h>
 
 #define BACKLOG 5
 
@@ -27,6 +19,7 @@ NetIO::NetIO() {
     m_thread    = 0;
     m_bStop     = false;
     m_running   = false;
+    role = UNDEFINED;
 }
 
 NetIO::~NetIO() {
@@ -97,7 +90,8 @@ void *NetIO::ThreadRun(void *arg)
 
 void NetIO::Close() {
     close(thisSocketFD);
-    slave.Close();
+    client.Close();
+    role = UNDEFINED;
 }
 
 int NetIO::CreateServer(char port[]) {
@@ -112,7 +106,7 @@ int NetIO::CreateServer(char port[]) {
     hints.ai_flags = AI_PASSIVE; // use my IP
 
     if ((rv = getaddrinfo(NULL, port, &hints, &servinfo)) != 0) {
-        fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
+        printf("getaddrinfo: %s\n", gai_strerror(rv));
         return 1;
     }
 
@@ -161,37 +155,95 @@ int NetIO::CreateServer(char port[]) {
 
     printf("server: waiting for connections...\n");
 
+    role = SERVER;
     ThreadCreate();
 
     return 0;
 }
 
-void NetIO::ThreadProcess() {
-    struct sockaddr_storage their_addr; // connector's address information
-    socklen_t sin_size;
+int NetIO::CreateClient(char address[], char port[]) {
+    struct addrinfo hints, *servinfo, *p;
+    int rv;
     char s[INET6_ADDRSTRLEN];
-    int new_fd;
 
-    while(!m_bStop && m_running) {
-        //wait for client
-        sin_size = sizeof their_addr;
-        new_fd = accept(thisSocketFD, (struct sockaddr *)&their_addr, &sin_size);
-        if (new_fd == -1) {
-            perror("accept");
-        }
+    memset(&hints, 0, sizeof hints);
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
 
-        inet_ntop(their_addr.ss_family,
-                get_in_addr((struct sockaddr *)&their_addr), s, sizeof s);
-            printf("server: got connection from %s\n", s);
-
-        //save client
-        slave.Create(new_fd, &messageQueue);
-
-        while(!m_bStop && m_running && slave.isConnected()) {  // main accept() loop
-                slave.RecieveMessage();
-        }
+    if ((rv = getaddrinfo(address, port, &hints, &servinfo)) != 0) {
+        printf("getaddrinfo: %s\n", gai_strerror(rv));
+        return 1;
     }
-    Close();
+
+    // loop through all the results and connect to the first we can
+    for(p = servinfo; p != NULL; p = p->ai_next) {
+        if ((thisSocketFD = socket(p->ai_family, p->ai_socktype,
+                p->ai_protocol)) == -1) {
+            perror("client: socket");
+            continue;
+        }
+
+        if (connect(thisSocketFD, p->ai_addr, p->ai_addrlen) == -1) {
+            close(thisSocketFD);
+            perror("client: connect");
+            continue;
+        }
+
+        break;
+    }
+
+    if (p == NULL) {
+        printf("client: failed to connect\n");
+        return 2;
+    }
+
+    inet_ntop(p->ai_family, get_in_addr((struct sockaddr *)p->ai_addr),
+            s, sizeof s);
+    printf("client: connecting to %s\n", s);
+
+    freeaddrinfo(servinfo); // all done with this structure
+
+    client.Create(thisSocketFD, &messageQueue, CLIENT);
+
+    role = CLIENT;
+    ThreadCreate(); //TODO - clientify this
+
+    return 0;
+}
+
+void NetIO::ThreadProcess() {
+    if(role == SERVER) {
+        struct sockaddr_storage their_addr; // connector's address information
+        socklen_t sin_size;
+        char s[INET6_ADDRSTRLEN];
+        int new_fd;
+
+        while(!m_bStop && m_running) {
+            //wait for client
+            sin_size = sizeof their_addr;
+            new_fd = accept(thisSocketFD, (struct sockaddr *)&their_addr, &sin_size);
+            if (new_fd == -1) {
+                   perror("accept");
+            }
+
+            inet_ntop(their_addr.ss_family,
+                    get_in_addr((struct sockaddr *)&their_addr), s, sizeof s);
+                printf("server: got connection from %s\n", s);
+
+            //save client
+            client.Create(new_fd, &messageQueue, SERVER);
+
+            while(!m_bStop && m_running && client.isConnected()) {  // main recv() loop
+                client.RecieveMessage();
+            }
+        }
+        Close();
+    } else if (role == CLIENT) {
+        while(!m_bStop && m_running && client.isConnected()) {  // main recv() loop
+            client.RecieveMessage();
+        }
+        Close();
+    }
 }
 
 
@@ -199,7 +251,8 @@ int main(int argc, char *argv[]){
 
     NetIO net;
 
-    net.CreateServer("6789");
+    net.CreateClient("127.0.0.1","6789");
+    //net.CreateServer("6789");
     while(true){}
 
     return 0;

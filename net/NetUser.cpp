@@ -2,6 +2,8 @@
 
 NetUser::NetUser(){
     connected = false;
+    handshaken = false;
+    role = UNDEFINED;
 
     partialMessage.length = 0;
     partialMessage.complete = true;
@@ -25,7 +27,11 @@ string NetUser::RecieveMessage() {
     if(numbytes <= 4)
         return "";  //TODO error
 
-    return processMessage(buf);
+    if(handshaken)
+        return processMessage(buf);
+
+    processHandshake(buf);
+    return "";
 }
 
 string NetUser::processMessage(string str){
@@ -40,7 +46,7 @@ string NetUser::processMessage(string str){
     len1 = len1&248;
     int len = len2 + 32*len1;
 
-    string msg = str.substr(2, str.length()-4);
+    string msg = str.substr(2, str.length()-2);//last digit is 4 when telnet, 2 when c++ :P
 
     NetOpcode op = (NetOpcode)opcode;
     switch(op){
@@ -72,13 +78,37 @@ string NetUser::processMessage(string str){
     return msg;
 }
 
+bool NetUser::processHandshake(string str){
+    //str = str.substr(0, str.length()-2);
+
+    if(role == SERVER){
+        if(str.compare(SHAKECLIENT) == 0){
+            handshaken = true;
+            printf("Sending handshake to client\n");
+            SendMessageRAW(SHAKESERVER);
+            return true;
+        } else {
+            Close();
+            printf("%s\n", str.c_str());
+            return false;
+        }
+    } else if (role == CLIENT) {
+        if(str.compare(SHAKESERVER) == 0){
+            handshaken = true;
+            printf("Handshake with server completed\n");
+            return true;
+        } else {
+            Close();
+            return false;
+        }
+    }
+
+    return false;
+}
+
 void NetUser::CheckMessageFinished() {
     int desiredLength = partialMessage.length;
     int actualLength = partialMessage.message.length();
-
-    SendMessage("yo");
-
-
 
     if(actualLength < desiredLength)
         return;
@@ -96,6 +126,16 @@ void NetUser::CheckMessageFinished() {
     }
 }
 
+bool NetUser::SendMessageRAW(string msg){
+    while(msg.length() > 0 && connected){
+        int sent = send(myfd, (char*)msg.c_str(), msg.length(), 0);
+        msg = msg.substr(sent);
+
+        //TODO timeout??
+    }
+
+    return true;
+}
 
 bool NetUser::SendMessage(string msg){
     if(!connected)
@@ -123,7 +163,7 @@ bool NetUser::SendMessage(string msg){
         int bit1 = len1+opcode;
 
         //compole header
-        unsigned char b1 = len1;
+        unsigned char b1 = bit1;
         unsigned char b2 = len2;
         char header[2];
         header[0] = b1;
@@ -148,27 +188,32 @@ bool NetUser::SendMessage(string msg){
 
         //TODO - add timeout
     }
-
-
-    //TODO safeness :) and headers etc
-    //make sure it sends more than 2 bytes :P
-
-
+    return true;
 }
 
-void NetUser::Create(int sockfd, NetMessageQueue* que) {
+void NetUser::Create(int sockfd, NetMessageQueue* que, NetRole myrole) {
     if(connected)
         return;
 
     myfd = sockfd;
     messageQueue = que;
     connected = true;
+    role = myrole;
+
+    if(role == CLIENT){
+        //initiate handshake
+        printf("Starting handshake with server\n");
+        SendMessageRAW(SHAKECLIENT);
+    }
 }
 
 void NetUser::Close() {
     if(!connected)
         return;
 
+    printf("Closed connection\n");
     connected = false;
+    handshaken = false;
+    role = UNDEFINED;
     close(myfd);
 }
