@@ -12,6 +12,20 @@
 
 using namespace std;
 
+void sigchld_handler(int s)
+{
+    while(waitpid(-1, NULL, WNOHANG) > 0);
+}
+// get sockaddr, IPv4 or IPv6:
+void *get_in_addr(struct sockaddr *sa)
+{
+    if (sa->sa_family == AF_INET) {
+        return &(((struct sockaddr_in*)sa)->sin_addr);
+    }
+
+    return &(((struct sockaddr_in6*)sa)->sin6_addr);
+}
+
 NetIO::NetIO() {
     pthread_mutex_init(&m_queue_lock, NULL);
     pthread_attr_setdetachstate(&m_tattr, PTHREAD_CREATE_JOINABLE);
@@ -25,13 +39,6 @@ NetIO::NetIO() {
 NetIO::~NetIO() {
     pthread_mutex_destroy(&m_queue_lock);
     pthread_attr_destroy(&m_tattr);
-}
-
-void NetIO::SendLock() {
-    pthread_mutex_lock(&m_queue_lock);
-}
-void NetIO::SendUnlock() {
-    pthread_mutex_unlock(&m_queue_lock);
 }
 
 bool NetIO::ThreadStop()
@@ -89,12 +96,13 @@ void *NetIO::ThreadRun(void *arg)
 }
 
 void NetIO::Close() {
+    printf("Socket closed\n");
     close(thisSocketFD);
     client.Close();
     role = UNDEFINED;
 }
 
-int NetIO::CreateServer(char port[]) {
+int NetIO::CreateServer(string port) {
     struct addrinfo hints, *servinfo, *p;
     struct sigaction sa;
     int yes=1;
@@ -105,7 +113,7 @@ int NetIO::CreateServer(char port[]) {
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags = AI_PASSIVE; // use my IP
 
-    if ((rv = getaddrinfo(NULL, port, &hints, &servinfo)) != 0) {
+    if ((rv = getaddrinfo(NULL, port.c_str(), &hints, &servinfo)) != 0) {
         printf("getaddrinfo: %s\n", gai_strerror(rv));
         return 1;
     }
@@ -119,6 +127,12 @@ int NetIO::CreateServer(char port[]) {
         }
 
         if (setsockopt(thisSocketFD, SOL_SOCKET, SO_REUSEADDR, &yes,
+                sizeof(int)) == -1) {
+            perror("setsockopt");
+            exit(1);
+        }
+
+        if (setsockopt(thisSocketFD, IPPROTO_TCP, TCP_NODELAY, &yes,
                 sizeof(int)) == -1) {
             perror("setsockopt");
             exit(1);
@@ -153,15 +167,13 @@ int NetIO::CreateServer(char port[]) {
         exit(1);
     }
 
-    printf("server: waiting for connections...\n");
-
     role = SERVER;
     ThreadCreate();
 
     return 0;
 }
 
-int NetIO::CreateClient(char address[], char port[]) {
+int NetIO::CreateClient(string address, string port) {
     struct addrinfo hints, *servinfo, *p;
     int rv;
     char s[INET6_ADDRSTRLEN];
@@ -170,7 +182,7 @@ int NetIO::CreateClient(char address[], char port[]) {
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
 
-    if ((rv = getaddrinfo(address, port, &hints, &servinfo)) != 0) {
+    if ((rv = getaddrinfo(address.c_str(), port.c_str(), &hints, &servinfo)) != 0) {
         printf("getaddrinfo: %s\n", gai_strerror(rv));
         return 1;
     }
@@ -206,7 +218,7 @@ int NetIO::CreateClient(char address[], char port[]) {
     client.Create(thisSocketFD, &messageQueue, CLIENT);
 
     role = CLIENT;
-    ThreadCreate(); //TODO - clientify this
+    ThreadCreate();
 
     return 0;
 }
@@ -220,6 +232,7 @@ void NetIO::ThreadProcess() {
 
         while(!m_bStop && m_running) {
             //wait for client
+            printf("server: waiting for connections...\n");
             sin_size = sizeof their_addr;
             new_fd = accept(thisSocketFD, (struct sockaddr *)&their_addr, &sin_size);
             if (new_fd == -1) {
@@ -244,16 +257,4 @@ void NetIO::ThreadProcess() {
         }
         Close();
     }
-}
-
-
-int main(int argc, char *argv[]){
-
-    NetIO net;
-
-    net.CreateClient("127.0.0.1","6789");
-    //net.CreateServer("6789");
-    while(true){}
-
-    return 0;
 }

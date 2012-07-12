@@ -14,29 +14,30 @@ NetUser::~NetUser(){
     Close();
 }
 
-string NetUser::RecieveMessage() {
+void NetUser::RecieveMessage() {
     if(!connected)
-        return "";
+        return;
 
     char buf[MAXDATASIZE+DATAHEADER];
-    int numbytes = recv(myfd, buf, MAXDATASIZE+DATAHEADER-1, 0);
+    memset(&buf, 0, MAXDATASIZE+DATAHEADER);
+    int numbytes = recv(myfd, &buf, MAXDATASIZE+DATAHEADER-1, 0);
 
+    //close connection on empty message
     if(numbytes == 0)
-        close(myfd); //TODO
+        Close();
 
-    if(numbytes <= 4)
-        return "";  //TODO error
+    if(numbytes <= 2)
+        return;  //discard junk message
 
     if(handshaken)
-        return processMessage(buf);
-
-    processHandshake(buf);
-    return "";
+        processMessage(buf);
+    else
+        processHandshake(buf);
 }
 
-string NetUser::processMessage(string str){
+void NetUser::processMessage(string str){
     if(!connected)
-        return "";
+        return;
 
     int opcode = (str[0] - '0');
     opcode = opcode&7;
@@ -46,7 +47,7 @@ string NetUser::processMessage(string str){
     len1 = len1&248;
     int len = len2 + 32*len1;
 
-    string msg = str.substr(2, str.length()-2);//last digit is 4 when telnet, 2 when c++ :P
+    string msg = str.substr(2);//add , str.length()-4 when access by telnet
 
     NetOpcode op = (NetOpcode)opcode;
     switch(op){
@@ -74,8 +75,6 @@ string NetUser::processMessage(string str){
         printf("Received message with unknown opcode %d\n", opcode);
     break;
     }
-
-    return msg;
 }
 
 bool NetUser::processHandshake(string str){
@@ -146,6 +145,8 @@ bool NetUser::SendMessage(string msg){
 
     bool first = true;
 
+    //msg += '\0';
+
     while(msg.length() > 0 && connected){
         //determine length bytes
         int length = msg.length();
@@ -163,14 +164,12 @@ bool NetUser::SendMessage(string msg){
         int bit1 = len1+opcode;
 
         //compole header
-        unsigned char b1 = bit1;
-        unsigned char b2 = len2;
-        char header[2];
-        header[0] = b1;
-        header[1] = b2;
+        char b1 = char(bit1);
+        char b2 = char(len2);
 
         //add header
-        msg = header + msg;
+        msg = b2 + msg;
+        msg = b1 + msg;
 
         int sent = send(myfd, (char*)msg.c_str(), msg.length(), 0);
 
@@ -210,7 +209,7 @@ void NetUser::Create(int sockfd, NetMessageQueue* que, NetRole myrole) {
 void NetUser::Close() {
     if(!connected)
         return;
-
+    send(myfd, '\0', 0, 0);
     printf("Closed connection\n");
     connected = false;
     handshaken = false;

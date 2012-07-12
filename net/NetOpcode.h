@@ -1,7 +1,7 @@
 #ifndef NETOPCODE_H_INCLUDED
 #define NETOPCODE_H_INCLUDED
 
-enum NetOpcode {OP_COMMAND = 0, OP_COMMAND_CONT = 1};
+enum NetOpcode {OP_COMMAND = 1, OP_COMMAND_CONT = 2};
 
 enum NetRole{UNDEFINED, SERVER, CLIENT};
 

@@ -29,7 +29,7 @@ public:
     void Create(int sockfd, NetMessageQueue* messageQueue, NetRole myrole);
     void Close();
 
-    string RecieveMessage();
+    void RecieveMessage();
     bool SendMessage(string msg);
 
     int getFD(){return myfd;};
@@ -44,7 +44,7 @@ private:
     bool connected;
     bool handshaken;
 
-    string processMessage(string str);
+    void processMessage(string str);
     bool processHandshake(string str);
     void CheckMessageFinished();
     bool SendMessageRAW(string msg);

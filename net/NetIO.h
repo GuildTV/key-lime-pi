@@ -10,25 +10,12 @@
 
 #include <arpa/inet.h>
 #include <sys/wait.h>
+#include <netinet/tcp.h>
 
 #include "NetUser.h"
 #include "NetOpcode.h"
 
 using namespace std;
-
-void sigchld_handler(int s)
-{
-    while(waitpid(-1, NULL, WNOHANG) > 0);
-}
-// get sockaddr, IPv4 or IPv6:
-void *get_in_addr(struct sockaddr *sa)
-{
-    if (sa->sa_family == AF_INET) {
-        return &(((struct sockaddr_in*)sa)->sin_addr);
-    }
-
-    return &(((struct sockaddr_in6*)sa)->sin6_addr);
-}
 
 class NetIO {
 public:
@@ -44,11 +31,11 @@ public:
     pthread_t ThreadHandle();
     bool ThreadStop();
 
-    int CreateServer(char port[]);
-    int CreateClient(char address[], char port[]);
+    int CreateServer(string port);
+    int CreateClient(string address, string port);
 
-    NetUser GetClient() {return client;};
-    NetMessageQueue GetMessageQueue() {return messageQueue;};
+    NetUser* GetClient() {return &client;};
+    NetMessageQueue* GetMessageQueue() {return &messageQueue;};
 
 protected:
     pthread_mutex_t     m_queue_lock;
