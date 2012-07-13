@@ -21,7 +21,7 @@
 
 #include "OverlayRenderer.h"
 #include "folly/ScopeGuard.h"
-#include "enforce.h"
+#include "OMX/enforce.h"
 
 #include <cassert>
 

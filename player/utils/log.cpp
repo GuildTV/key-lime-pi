@@ -19,10 +19,10 @@
  *
  */
 
-#include "system.h"
-#include "log.h"
-#include "stdio_utf8.h"
-#include "stat_utf8.h"
+#include "OMX/system.h"
+#include "utils/log.h"
+#include "linux/stdio_utf8.h"
+#include "linux/stat_utf8.h"
 #include "utils/StdString.h"
 
 static FILE*       m_file           = NULL;

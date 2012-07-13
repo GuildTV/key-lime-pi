@@ -1,5 +1,5 @@
 /*
- * 
+ *
  *      Copyright (C) 2012 Edgar Hucek
  *
  * This program is free software; you can redistribute it and/or modify
@@ -25,7 +25,7 @@
 #include <sys/mman.h>
 #include <linux/fb.h>
 #include <sys/ioctl.h>
-#include <getopt.h> 
+#include <getopt.h>
 
 #define AV_NOWARN_DEPRECATED
 
@@ -34,21 +34,21 @@ extern "C" {
 #include <libavutil/avutil.h>
 };
 
-#include "OMXStreamInfo.h"
+#include "OMX/OMXStreamInfo.h"
 
 #include "utils/log.h"
 
-#include "DllAvUtil.h"
-#include "DllAvFormat.h"
-#include "DllAvFilter.h"
-#include "DllAvCodec.h"
+#include "OMX/DllAvUtil.h"
+#include "OMX/DllAvFormat.h"
+#include "OMX/DllAvFilter.h"
+#include "OMX/DllAvCodec.h"
 #include "linux/RBP.h"
 
-#include "OMXVideo.h"
-#include "OMXClock.h"
-#include "OMXReader.h"
-#include "OMXPlayerVideo.h"
-#include "DllOMX.h"
+#include "OMX/OMXVideo.h"
+#include "OMX/OMXClock.h"
+#include "OMX/OMXReader.h"
+#include "OMX/OMXPlayerVideo.h"
+#include "OMX/DllOMX.h"
 
 #include "MyRender.h"
 
@@ -185,11 +185,11 @@ void SetVideoMode(int width, int height, float fps, bool is3d)
       h = tv->height;
       r = tv->frame_rate;
 
-      //printf("mode %dx%d@%d %s%s:%x\n", tv->width, tv->height, 
+      //printf("mode %dx%d@%d %s%s:%x\n", tv->width, tv->height,
       //       tv->frame_rate, tv->native?"N":"", tv->scan_mode?"I":"", tv->code);
 
       /* Check if frame rate match (equal or exact multiple) */
-      if(ifps) 
+      if(ifps)
       {
         if(r == ((r/ifps)*ifps))
           score += abs((int)(r/ifps-1)) * (1<<8); // prefer exact framerate to multiples. Ideal is 1
@@ -197,7 +197,7 @@ void SetVideoMode(int width, int height, float fps, bool is3d)
           score += ((match_flag & HDMI_MODE_MATCH_FRAMERATE) ? (1<<28):(1<<12))/r; // bad - but prefer higher framerate
       }
       /* Check size too, only choose, bigger resolutions */
-      if(width && height) 
+      if(width && height)
       {
         /* cost of too small a resolution is high */
         score += max((int)(width - w), 0) * (1<<16);
@@ -205,23 +205,23 @@ void SetVideoMode(int width, int height, float fps, bool is3d)
         /* cost of too high a resolution is lower */
         score += max((int)(w-width),   0) * ((match_flag & HDMI_MODE_MATCH_RESOLUTION) ? (1<<8):(1<<0));
         score += max((int)(h-height),  0) * ((match_flag & HDMI_MODE_MATCH_RESOLUTION) ? (1<<8):(1<<0));
-      } 
-      else if (!isNative) 
+      }
+      else if (!isNative)
       {
         // native is good
         score += 1<<16;
       }
 
-      if (scan_mode != tv->scan_mode) 
+      if (scan_mode != tv->scan_mode)
         score += (match_flag & HDMI_MODE_MATCH_SCANMODE) ? (1<<20):(1<<8);
 
       if (w*9 != h*16) // not 16:9 is a small negative
         score += 1<<12;
 
-      printf("mode %dx%d@%d %s%s:%x score=%d\n", tv->width, tv->height, 
+      printf("mode %dx%d@%d %s%s:%x score=%d\n", tv->width, tv->height,
              tv->frame_rate, tv->native?"N":"", tv->scan_mode?"I":"", tv->code, score);
 
-      if (score < best_score) 
+      if (score < best_score)
       {
         tv_found = tv;
         best_score = score;
@@ -233,7 +233,7 @@ void SetVideoMode(int width, int height, float fps, bool is3d)
 
   if(tv_found)
   {
-    printf("Output mode %d: %dx%d@%d %s%s:%x\n", tv_found->code, tv_found->width, tv_found->height, 
+    printf("Output mode %d: %dx%d@%d %s%s:%x\n", tv_found->code, tv_found->width, tv_found->height,
            tv_found->frame_rate, tv_found->native?"N":"", tv_found->scan_mode?"I":"", tv_found->code);
     // if we are closer to ntsc version of framerate, let gpu know
     int ifps = (int)(fps+0.5f);
@@ -287,9 +287,9 @@ int main(int argc, char *argv[])
   };
 
   int c;
-  while ((c = getopt_long(argc, argv, "wihn:o:cslpd3yt:rf:g:", longopts, NULL)) != -1)  
+  while ((c = getopt_long(argc, argv, "wihn:o:cslpd3yt:rf:g:", longopts, NULL)) != -1)
   {
-    switch (c) 
+    switch (c)
     {
       case 'r':
         m_refresh = true;
@@ -365,8 +365,8 @@ int main(int argc, char *argv[])
       goto do_exit;
 
   m_omx_reader.GetHints(OMXSTREAM_VIDEO, m_hints_video);
-          
-  if(m_has_video && !m_player_video.Open(m_hints_video, m_av_clock, m_Deinterlace,  m_bMpeg, 
+
+  if(m_has_video && !m_player_video.Open(m_hints_video, m_av_clock, m_Deinterlace,  m_bMpeg,
                                          m_hdmi_clock_sync, m_thread_player))
     goto do_exit;
 
@@ -381,7 +381,7 @@ int main(int argc, char *argv[])
     SetVideoMode(m_hints_video.width, m_hints_video.height, m_player_video.GetFPS(), m_3d);
 
   }
-  
+
   m_my_render.Open(m_av_clock, m_thread_player);
 
   m_av_clock->SetSpeed(DVD_PLAYSPEED_NORMAL);
@@ -395,7 +395,7 @@ int main(int argc, char *argv[])
 
     if(g_abort)
       goto do_exit;
-    
+
     while((ch[chnum] = getchar()) != EOF) chnum++;
     if (chnum > 1) ch[0] = ch[chnum - 1] | (ch[chnum - 2] << 8);
 
@@ -500,7 +500,7 @@ int main(int argc, char *argv[])
         FlushStreams(startpts);
 
       m_player_video.Close();
-      if(m_has_video && !m_player_video.Open(m_hints_video, m_av_clock, m_Deinterlace,  m_bMpeg, 
+      if(m_has_video && !m_player_video.Open(m_hints_video, m_av_clock, m_Deinterlace,  m_bMpeg,
                                          m_hdmi_clock_sync, m_thread_player))
         goto do_exit;
 
@@ -520,7 +520,7 @@ int main(int argc, char *argv[])
       if(m_tv_show_info)
       {
         char response[80];
-        vc_gencmd(response, sizeof response, "render_bar 4 video_fifo %d %d %d %d", 
+        vc_gencmd(response, sizeof response, "render_bar 4 video_fifo %d %d %d %d",
                 m_player_video.GetDecoderBufferSize()-m_player_video.GetDecoderFreeSpace(),
                 0 , 0, m_player_video.GetDecoderBufferSize());
       }
@@ -564,7 +564,7 @@ do_exit:
   m_av_clock->OMXStateIdle();
 
   m_player_video.Close();
-  
+
   m_my_render.Close();
 
   if(m_omx_pkt)

@@ -19,8 +19,8 @@
  *
  */
 
-#include "OMXClock.h"
-#include "OMXThread.h"
+#include "OMX/OMXClock.h"
+#include "OMX/OMXThread.h"
 
 #include "OverlayRenderer.h"
 

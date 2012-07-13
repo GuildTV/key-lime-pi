@@ -28,10 +28,10 @@
 #define VCHI_BULK_ALIGN 1
 #endif
 #ifndef VCHI_BULK_GRANULARITY
-#define VCHI_BULK_GRANULARITY 1 
+#define VCHI_BULK_GRANULARITY 1
 #endif
 */
-//#define OMX_SKIP64BIT 
+//#define OMX_SKIP64BIT
 #ifndef USE_VCHIQ_ARM
 #define USE_VCHIQ_ARM
 #endif
@@ -42,7 +42,7 @@
 #define HAVE_VMCS_CONFIG
 #endif
 
-#include "DllBCM.h"
+#include "OMX/DllBCM.h"
 
 class CRBP
 {

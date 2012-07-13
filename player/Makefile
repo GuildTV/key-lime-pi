@@ -7,20 +7,20 @@ INCLUDES+=-I./ -Ilinux -Iffmpeg_compiled/usr/local/include/
 
 SRC=linux/XMemUtils.cpp \
 		utils/log.cpp \
-		DynamicDll.cpp \
+		OMX/DynamicDll.cpp \
 		utils/RegExp.cpp \
-		BitstreamConverter.cpp \
+		OMX/BitstreamConverter.cpp \
 		OverlayRenderer.cpp \
 		linux/RBP.cpp \
-		OMXThread.cpp \
-		OMXReader.cpp \
-		OMXStreamInfo.cpp \
-		OMXCore.cpp \
-		OMXVideo.cpp \
-		OMXClock.cpp \
+		OMX/OMXThread.cpp \
+		OMX/OMXReader.cpp \
+		OMX/OMXStreamInfo.cpp \
+		OMX/OMXCore.cpp \
+		OMX/OMXVideo.cpp \
+		OMX/OMXClock.cpp \
 		MyRender.cpp \
-		File.cpp \
-		OMXPlayerVideo.cpp \
+		OMX/File.cpp \
+		OMX/OMXPlayerVideo.cpp \
 		omxplayer.cpp \
 
 OBJS+=$(filter %.o,$(SRC:.cpp=.o))
@@ -28,7 +28,7 @@ OBJS+=$(filter %.o,$(SRC:.cpp=.o))
 all: omxplayer.bin
 
 %.o: %.cpp
-	@rm -f $@ 
+	@rm -f $@
 	$(CXX) $(CFLAGS) $(INCLUDES) -c $< -o $@ -Wno-deprecated-declarations
 
 list_test:
