@@ -68,7 +68,14 @@ bool NetTest::ThreadStop()
 
 bool NetTest::ThreadCreate()
 {
-  pthread_create(&m_thread, &m_tattr, &NetTest::ThreadRun, this);
+  pthread_attr_init(&m_tattr);
+  int ret = pthread_create(&m_thread, &m_tattr, &NetTest::ThreadRun, this);
+
+  if(ret != 0){
+    printf("pthread_create code %d\n", ret);
+    return false;
+  }
+
   running = true;
 
   printf("NetTest::%s - Thread with id %d started\n", __func__, (int)m_thread);
@@ -82,10 +89,12 @@ pthread_t NetTest::ThreadHandle()
 
 void *NetTest::ThreadRun(void *arg)
 {
+  printf("NetTest::%s - Running thread process\n", __func__);
   NetTest *thread = static_cast<NetTest *>(arg);
   thread->ThreadProcess();
 
   printf("NetTest::%s - Exited thread with  id %d\n", __func__, (int)thread->ThreadHandle());
+  pthread_attr_destroy(&(thread->m_tattr));
   pthread_exit(NULL);
 }
 
@@ -93,7 +102,9 @@ void NetTest::ThreadProcess() {
     cout << "Message printer ready" << endl;
     NetMessageQueue* que = (*netio).GetMessageQueue();
     while(running){
+        FLog::Log(FLOG_INFO, "NetUser::processMessage - n");
         while(!(*que).isEmpty()) {
+            FLog::Log(FLOG_INFO, "NetUser::processMessage - msg");
             NetMessage* mess = (*que).Pop();
             cout << "Recieved: " << (*mess).message << endl;
         }

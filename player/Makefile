@@ -25,6 +25,14 @@ SRC=linux/XMemUtils.cpp \
 
 OBJS+=$(filter %.o,$(SRC:.cpp=.o))
 
+SRCNETTEST=net/NetIO.cpp \
+		net/NetUser.cpp \
+		net/NetMessageQueue.cpp \
+		logger.cpp \
+		net/NetTest.cpp \
+
+OBJSNETTEST+=$(filter %.o,$(SRCNETTEST:.cpp=.o))
+
 all: omxplayer.bin
 
 %.o: %.cpp
@@ -37,6 +45,10 @@ list_test:
 omxplayer.bin: $(OBJS)
 	$(CXX) $(LDFLAGS) -o omxplayer.bin $(OBJS) -lvchiq_arm -lvcos -lrt -lpthread -lavutil -lavcodec -lavformat -lswscale -lpcre
 	#arm-unknown-linux-gnueabi-strip omxplayer.bin
+
+nettest.bin: $(OBJSNETTEST)
+	$(CXX) $(LDFLAGS) -o nettest.bin $(OBJSNETTEST) -lvchiq_arm -lvcos -lrt -lpthread
+	#arm-unknown-linux-gnueabi-strip nettest.bin
 
 clean:
 	for i in $(OBJS); do (if test -e "$$i"; then ( rm $$i ); fi ); done

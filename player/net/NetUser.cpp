@@ -93,7 +93,7 @@ void NetUser::processMessage(string str){
         }
     break;
     default:
-        FLog::Log(FLOG_DEBUG, "NetUser::processMessage - Received message with unknoen opcode %d", opcode);
+        FLog::Log(FLOG_DEBUG, "NetUser::processMessage - Received message with unknown opcode %d", opcode);
     break;
     }
 }
@@ -226,7 +226,7 @@ void NetUser::Create(int sockfd, NetMessageQueue* que, NetRole myrole) {
 
     if(role == CLIENT){
         //initiate handshake
-        FLog::Log(FLOG_ERROR, "NetUser::Create(Client) - Starting handshake");
+        FLog::Log(FLOG_INFO, "NetUser::Create(Client) - Starting handshake");
         SendMessageRAW(SHAKECLIENT);
     }
 }
@@ -235,7 +235,7 @@ void NetUser::Close() {
     if(!connected)
         return;
     send(myfd, '\0', 0, 0);
-    FLog::Log(FLOG_ERROR, "NetUser::Close - Closed connection");
+    FLog::Log(FLOG_INFO, "NetUser::Close - Closed connection");
     connected = false;
     handshaken = false;
     role = UNDEFINED;

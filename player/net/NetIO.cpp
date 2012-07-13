@@ -110,7 +110,7 @@ void *NetIO::ThreadRun(void *arg)
 }
 
 void NetIO::Close() {
-    FLog::Log(FLOG_ERROR, "NetIO::Close - Sockets closed");
+    FLog::Log(FLOG_INFO, "NetIO::Close - Sockets closed");
     close(thisSocketFD);
     client.Close();
     role = UNDEFINED;

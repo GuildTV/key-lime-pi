@@ -21,6 +21,8 @@
 
  #include "NetMessageQueue.h"
 
+ #include "logger.h"
+
 NetMessage* NetMessageQueue::Pop() {
     Lock();
 
@@ -56,7 +58,7 @@ void NetMessageQueue::Push(NetMessage* msg) {
     Lock();
 
     messageQueue.push(msg);
-
+FLog::Log(FLOG_INFO, "NetUser::processMessage - push");
     Unlock();
 }
 
