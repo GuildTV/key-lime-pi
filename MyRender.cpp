@@ -1,3 +1,24 @@
+/*
+ *      Copyright (C) 2012 GuildTV
+ *      http://www.guildtv.co.uk
+ *
+ *  This Program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2, or (at your option)
+ *  any later version.
+ *
+ *  This Program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; see the file COPYING.  If not, write to
+ *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+ *  http://www.gnu.org/copyleft/gpl.html
+ *
+ */
+
 #include "MyRender.h"
 
 #include <stdio.h>
@@ -34,10 +55,10 @@ bool MyRender::Open(OMXClock *av_clock, bool use_thread)
 {
   if (!av_clock)
     return false;
-  
+
   if(ThreadHandle())
     Close();
-	
+
   m_av_clock    = av_clock;
   m_use_thread  = use_thread;
 
@@ -64,17 +85,17 @@ bool MyRender::Close()
 
 void MyRender::Process() {
 	OverlayRenderer renderer(1);
-	
+
 	double lastTime = 80000.0;
   while(!m_bStop && !m_bAbort){
 	  double currentTime = m_av_clock->GetPTS();
 	  if(currentTime != lastTime){
 		  lastTime = currentTime;
 		  //update here
-		  
-	  } 
+
+	  }
 		//render here??
 		renderer.show_next();
-	  
+
   }
 }

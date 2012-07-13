@@ -1,3 +1,24 @@
+/*
+ *      Copyright (C) 2012 GuildTV
+ *      http://www.guildtv.co.uk
+ *
+ *  This Program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2, or (at your option)
+ *  any later version.
+ *
+ *  This Program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; see the file COPYING.  If not, write to
+ *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+ *  http://www.gnu.org/copyleft/gpl.html
+ *
+ */
+
 #include "NetUser.h"
 
 NetUser::NetUser(){
@@ -53,7 +74,7 @@ void NetUser::processMessage(string str){
     switch(op){
     case OP_COMMAND:
         if(!partialMessage.complete)
-            printf("Discarded incomplete message\n");
+            FLog::Log(FLOG_DEBUG, "NetUser::processMessage - Discarded incomplete message");
 
         partialMessage.length = len;
         partialMessage.complete = false;
@@ -64,7 +85,7 @@ void NetUser::processMessage(string str){
     break;
     case OP_COMMAND_CONT:
         if(partialMessage.complete){
-            printf("Discarded lost message piece\n");
+            FLog::Log(FLOG_DEBUG, "NetUser::processMessage - Discarded stray message fragment");
         } else {
              partialMessage.message.append(msg);
 
@@ -72,7 +93,7 @@ void NetUser::processMessage(string str){
         }
     break;
     default:
-        printf("Received message with unknown opcode %d\n", opcode);
+        FLog::Log(FLOG_DEBUG, "NetUser::processMessage - Received message with unknoen opcode %d", opcode);
     break;
     }
 }
@@ -83,20 +104,21 @@ bool NetUser::processHandshake(string str){
     if(role == SERVER){
         if(str.compare(SHAKECLIENT) == 0){
             handshaken = true;
-            printf("Sending handshake to client\n");
+            FLog::Log(FLOG_DEBUG, "NetUser::processHandshake(Server) - Responding to handshake");
             SendMessageRAW(SHAKESERVER);
             return true;
         } else {
+            FLog::Log(FLOG_ERROR, "NetUser::processHandshake(Server) - Received invalid handshake");
             Close();
-            printf("%s\n", str.c_str());
             return false;
         }
     } else if (role == CLIENT) {
         if(str.compare(SHAKESERVER) == 0){
             handshaken = true;
-            printf("Handshake with server completed\n");
+            FLog::Log(FLOG_DEBUG, "NetUser::processHandshake(Client) - Handshake Successful");
             return true;
         } else {
+            FLog::Log(FLOG_ERROR, "NetUser::processHandshake(Client) - Received invalid handshake");
             Close();
             return false;
         }
@@ -126,6 +148,9 @@ void NetUser::CheckMessageFinished() {
 }
 
 bool NetUser::SendMessageRAW(string msg){
+    if(!connected)
+        return false;
+
     while(msg.length() > 0 && connected){
         int sent = send(myfd, (char*)msg.c_str(), msg.length(), 0);
         msg = msg.substr(sent);
@@ -201,7 +226,7 @@ void NetUser::Create(int sockfd, NetMessageQueue* que, NetRole myrole) {
 
     if(role == CLIENT){
         //initiate handshake
-        printf("Starting handshake with server\n");
+        FLog::Log(FLOG_ERROR, "NetUser::Create(Client) - Starting handshake");
         SendMessageRAW(SHAKECLIENT);
     }
 }
@@ -210,7 +235,7 @@ void NetUser::Close() {
     if(!connected)
         return;
     send(myfd, '\0', 0, 0);
-    printf("Closed connection\n");
+    FLog::Log(FLOG_ERROR, "NetUser::Close - Closed connection");
     connected = false;
     handshaken = false;
     role = UNDEFINED;

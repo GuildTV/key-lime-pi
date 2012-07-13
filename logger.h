@@ -19,50 +19,19 @@
  *
  */
 
- #include "NetMessageQueue.h"
+#ifndef LOGGER_H
+#define LOGGER_H
 
-NetMessage* NetMessageQueue::Pop() {
-    Lock();
+enum FLogLevels {FLOG_DEBUG, FLOG_INFO, FLOG_WARNING, FLOG_ERROR, FLOG_FATAL};
 
-    NetMessage* msg = messageQueue.front();
-    messageQueue.pop();
+class FLog
+{
+    public:
+        static void Open();
+        static void Close();
+        static void Log(FLogLevels logLevel, const char *format, ... );
+    protected:
+    private:
+};
 
-    Unlock();
-
-    return msg;
-}
-
-int NetMessageQueue::Size() {
-    Lock();
-
-    int size = messageQueue.size();
-
-    Unlock();
-
-    return size;
-}
-
-bool NetMessageQueue::isEmpty() {
-    Lock();
-
-    bool empty = messageQueue.empty();
-
-    Unlock();
-
-    return empty;
-}
-
-void NetMessageQueue::Push(NetMessage* msg) {
-    Lock();
-
-    messageQueue.push(msg);
-
-    Unlock();
-}
-
-void NetMessageQueue::Lock() {
-    pthread_mutex_lock(&m_lock);
-}
-void NetMessageQueue::Unlock() {
-    pthread_mutex_unlock(&m_lock);
-}
+#endif // LOGGER_H

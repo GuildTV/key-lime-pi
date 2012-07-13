@@ -1,17 +1,22 @@
 /*
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ *      Copyright (C) 2012 GuildTV
+ *      http://www.guildtv.co.uk
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *  This Program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2, or (at your option)
+ *  any later version.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ *  This Program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; see the file COPYING.  If not, write to
+ *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+ *  http://www.gnu.org/copyleft/gpl.html
+ *
  */
 
 #include "OverlayRenderer.h"
@@ -43,7 +48,7 @@ surface_() {
     initialize_egl();
 	//initialise gles
 	initialize_gles();
-	
+
   } catch (...) {
     destroy();
     throw;
@@ -65,7 +70,7 @@ void OverlayRenderer::initialize_gles() {
 	glClear( GL_DEPTH_BUFFER_BIT );
 	//set shade model
 	glShadeModel(GL_FLAT);
-	
+
 	glMatrixMode (GL_PROJECTION);
 glLoadIdentity ();
 //glOrtho (0, screen_width_, screen_height_, 0, 0, 1);
@@ -83,13 +88,13 @@ void OverlayRenderer::initialize_window(int layer) {
   dst_rect.y = 0;
   dst_rect.width = screen_width_;
   dst_rect.height = screen_height_;
-     
+
 //define src size as a rectangle
   VC_RECT_T src_rect;
   src_rect.x = 0;
   src_rect.y = 0;
   src_rect.width = screen_width_ << 16;
-  src_rect.height = screen_height_ << 16;        
+  src_rect.height = screen_height_ << 16;
 
 //open display 0
   dispman_display_ = vc_dispmanx_display_open(0 /* LCD */);
@@ -120,7 +125,7 @@ void OverlayRenderer::initialize_window(int layer) {
 }
 
 //destroy the window TODO - no clue how
-void OverlayRenderer::destroy_window() {  
+void OverlayRenderer::destroy_window() {
   if (dispman_element_) {
     auto dispman_update = vc_dispmanx_update_start(0);
     assert(dispman_update);
@@ -177,7 +182,7 @@ void OverlayRenderer::initialize_egl() {
   nativewindow.element = dispman_element_;
   nativewindow.width = screen_width_;
   nativewindow.height = screen_height_;
-     
+
 	 //create window surface
   surface_ = eglCreateWindowSurface(display_, config, &nativewindow, NULL);
   ENFORCE(surface_);
@@ -199,7 +204,7 @@ void OverlayRenderer::destroy_egl() {
       eglMakeCurrent(display_, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
     assert(result);
 
-	//terminate display 
+	//terminate display
     result = eglTerminate(display_);
     assert(result);
 
@@ -221,7 +226,7 @@ void OverlayRenderer::clear() {
 //draw
 void OverlayRenderer::draw() {
   clear();
-  
+
   static GLfloat rot = 0.5;
 
 	VERTEX_3D vertex1 = Vertex3DMake(0.0f, 1.0f, 1.0f);
