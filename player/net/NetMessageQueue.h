@@ -38,8 +38,10 @@ typedef struct NetMessage {
 class NetMessageQueue
 {
     public:
+        NetMessageQueue();
+        ~NetMessageQueue();
 
-        NetMessage* Pop();
+        NetMessage* Pop(bool wait);
         int Size();
         bool isEmpty();
         void Push(NetMessage* msg);
@@ -48,6 +50,7 @@ class NetMessageQueue
         void Lock();
         void Unlock();
         pthread_mutex_t m_lock;
+        pthread_cond_t m_cond;
 
     private:
         queue<NetMessage *> messageQueue;

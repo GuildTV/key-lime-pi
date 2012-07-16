@@ -19,19 +19,44 @@
  *
  */
 
- #include "NetMessageQueue.h"
+#include "NetMessageQueue.h"
 
- #include "logger.h"
+#include "logger.h"
 
-NetMessage* NetMessageQueue::Pop() {
-    Lock();
+NetMessageQueue::NetMessageQueue() {
+    pthread_mutex_init(&m_lock, NULL);
+    pthread_cond_init(&m_cond, NULL);
+}
 
-    NetMessage* msg = messageQueue.front();
-    messageQueue.pop();
+NetMessageQueue::~NetMessageQueue() {
+    pthread_mutex_destroy(&m_lock);
+    pthread_cond_destroy(&m_cond);
+}
 
-    Unlock();
+NetMessage* NetMessageQueue::Pop(bool wait) {
+    if(Size() > 0){
+        Lock();
+        NetMessage* msg = messageQueue.front();
+        messageQueue.pop();
 
-    return msg;
+        Unlock();
+        return msg;
+    }
+
+    if (wait) {
+        Lock();
+
+        pthread_cond_wait(&m_cond, &m_lock);
+
+        NetMessage* msg = messageQueue.front();
+        messageQueue.pop();
+
+        Unlock();
+        return msg;
+    } else {
+        return NULL;
+    }
+
 }
 
 int NetMessageQueue::Size() {
@@ -58,7 +83,10 @@ void NetMessageQueue::Push(NetMessage* msg) {
     Lock();
 
     messageQueue.push(msg);
-FLog::Log(FLOG_INFO, "NetUser::processMessage - push");
+    FLog::Log(FLOG_INFO, "NetUser::processMessage - push");
+
+    pthread_cond_broadcast(&m_cond);
+
     Unlock();
 }
 

@@ -149,7 +149,7 @@ int NetIO::CreateServer(string port) {
             continue;
         }
 
-        if (bind(thisSocketFD, p->ai_addr, p->ai_addrlen) == -1) {
+        if (::bind(thisSocketFD, p->ai_addr, p->ai_addrlen) == -1) {
             close(thisSocketFD);
             FLog::Log(FLOG_DEBUG, "NetIO::CreateServer - Failed to bind socket");
             continue;

@@ -105,7 +105,7 @@ void NetTest::ThreadProcess() {
         FLog::Log(FLOG_INFO, "NetUser::processMessage - n");
         while(!(*que).isEmpty()) {
             FLog::Log(FLOG_INFO, "NetUser::processMessage - msg");
-            NetMessage* mess = (*que).Pop();
+            NetMessage* mess = (*que).Pop(true);
             cout << "Recieved: " << (*mess).message << endl;
         }
     }
