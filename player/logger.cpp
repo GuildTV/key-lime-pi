@@ -21,20 +21,13 @@
 
 #include "logger.h"
 
-#include <stdio.h>
-#include <string>
-
-#include "utils/StdString.h"
-
-using namespace std;
-
 static FILE* flogFile = NULL;
 
 static char levelNames[][8] = {"DEBUG", "INFO", "WARNING", "ERROR", "FATAL"};
 
-void FLog::Open() {
+void FLog::Open(string path) {
     if(!flogFile){
-        flogFile = fopen("GTVPlayer.log","a");
+        flogFile = fopen(path.c_str(),"a");
         if(!flogFile)
             printf("Failed to open log flogFile");
     }

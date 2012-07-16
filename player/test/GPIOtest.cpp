@@ -19,26 +19,39 @@
  *
  */
 
-#ifndef LOGGER_H
-#define LOGGER_H
+#include "GPIO.h"
+#include "logger.h"
 
-#include <stdio.h>
-#include <string>
+#include <pthread.h>
 
-#include "utils/StdString.h"
+int main(int argc, char *argv[]){
+    FLog::Open("GPIOtest.log");
 
-using namespace std;
+    GPIO gpioHandle;
 
-enum FLogLevels {FLOG_DEBUG, FLOG_INFO, FLOG_WARNING, FLOG_ERROR, FLOG_FATAL};
+    printf("Start of GPIO test\n");
 
-class FLog
-{
-    public:
-        static void Open(string path);
-        static void Close();
-        static void Log(FLogLevels logLevel, const char *format, ... );
-    protected:
-    private:
-};
 
-#endif // LOGGER_H
+    gpioHandle.BindInput(22, 100000);
+    gpioHandle.BindOutput(21);
+    if(!gpioHandle.WriteOutput(GPIO_LOW))
+        printf("FAILED!!");
+
+    gpioHandle.ThreadCreate();
+
+    while(true){
+        if(gpioHandle.CondWait(GPIO_HIGH, false, 1, 100)) {
+            printf("got change\n");
+            gpioHandle.WriteOutput(GPIO_HIGH);
+            break;
+        }
+
+        printf("repeat again\n");
+    }
+
+    gpioHandle.ThreadStop();
+
+    printf("End of GPIO test\n");
+
+    FLog::Close();
+}

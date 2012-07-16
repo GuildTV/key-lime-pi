@@ -29,9 +29,15 @@ SRCNETTEST=net/NetIO.cpp \
 		net/NetUser.cpp \
 		net/NetMessageQueue.cpp \
 		logger.cpp \
-		net/NetTest.cpp \
+		test/NetTest.cpp \
 
 OBJSNETTEST+=$(filter %.o,$(SRCNETTEST:.cpp=.o))
+
+SRCGPIOTEST=GPIO.cpp \
+		logger.cpp \
+		test/GPIOtest.cpp \
+
+OBJSGPIOTEST+=$(filter %.o,$(SRCGPIOTEST:.cpp=.o))
 
 all: omxplayer.bin
 
@@ -46,9 +52,13 @@ omxplayer.bin: $(OBJS)
 	$(CXX) $(LDFLAGS) -o omxplayer.bin $(OBJS) -lvchiq_arm -lvcos -lrt -lpthread -lavutil -lavcodec -lavformat -lswscale -lpcre
 	#arm-unknown-linux-gnueabi-strip omxplayer.bin
 
-nettest.bin: $(OBJSNETTEST)
+nettest: $(OBJSNETTEST)
 	$(CXX) $(LDFLAGS) -o nettest.bin $(OBJSNETTEST) -lvchiq_arm -lvcos -lrt -lpthread
 	#arm-unknown-linux-gnueabi-strip nettest.bin
+
+gpiotest: $(OBJSGPIOTEST)
+	$(CXX) $(LDFLAGS) -o gpiotest.bin $(OBJSGPIOTEST) -lvchiq_arm -lvcos -lrt -lpthread -DGPIOTEST
+	#arm-unknown-linux-gnueabi-strip gpiotest.bin
 
 clean:
 	for i in $(OBJS); do (if test -e "$$i"; then ( rm $$i ); fi ); done

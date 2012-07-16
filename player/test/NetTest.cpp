@@ -19,8 +19,8 @@
  *
  */
 
-#include "NetIO.h"
-#include "NetMessageQueue.h"
+#include "net/NetIO.h"
+#include "net/NetMessageQueue.h"
 
 #include "logger.h"
 
@@ -115,7 +115,7 @@ void NetTest::ThreadProcess() {
 }
 
 int main(int argc, char *argv[]){
-    FLog::Open();
+    FLog::Open("NetTest.log");
 
     NetIO net;
 
