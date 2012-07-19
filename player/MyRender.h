@@ -21,6 +21,7 @@
 
 #include "OMX/OMXClock.h"
 #include "OMX/OMXThread.h"
+#include "OMX/OMXPlayerVideo.h"
 
 #include "OverlayRenderer.h"
 
@@ -31,23 +32,36 @@
 
 using namespace std;
 
-class MyRender : public OMXThread
+class MyRender
 {
 protected:
   bool                      m_open;
   OMXClock                  *m_av_clock;
-  bool                      m_bAbort;
   bool                      m_use_thread;
+
+  pthread_attr_t      m_tattr;
+  struct sched_param  m_sched_param;
+  pthread_mutex_t     m_lock;
+  pthread_t           m_thread;
+  volatile bool       m_running;
+  volatile bool       m_bStop;
 
   void Lock();
   void UnLock();
 private:
+  static void *Run(void *arg);
+  OMXPlayerVideo *vid;
+  std::string filename;
 
 public:
   MyRender();
   ~MyRender();
-  bool Open(OMXClock *av_clock, bool use_thread);
-  bool Close();
+  bool Open(OMXClock *av_clock, bool use_thread, OMXPlayerVideo *m_player_video, std::string file);
   void Process();
+
+  bool Create();
+  bool Running();
+  pthread_t ThreadHandle();
+  bool Close();
 };
 

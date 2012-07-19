@@ -21,7 +21,8 @@
 
 #include "OverlayRenderer.h"
 
-int OverlayRenderer::Create() {
+int OverlayRenderer::Create(std::string file) {
+    filename = file;
     esCreateWindow ("Overlay Renderer");
 
     if (!Init ())
@@ -42,7 +43,7 @@ void OverlayRenderer::Draw () {
     glClear(GL_COLOR_BUFFER_BIT);
 
 
-    glClearColor(0.0f, 0.0f, 1.0f, 0.5f);
+    glClearColor(0.0f, 1.0f, 1.0f, 0.5f);
 
     // Use the program object
     glUseProgram(programObject);
@@ -53,6 +54,14 @@ void OverlayRenderer::Draw () {
     glDrawArrays(GL_TRIANGLES, 0, 3);
 
     eglSwapBuffers(eglDisplay, eglSurface);
+}
+
+void OverlayRenderer::Run() {
+    Draw();
+}
+
+void OverlayRenderer::PreDraw() {
+    //Draw();
 }
 
 GLboolean OverlayRenderer::esCreateWindow (const char* title) {

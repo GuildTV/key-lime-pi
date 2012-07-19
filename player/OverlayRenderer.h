@@ -25,9 +25,9 @@
 #include <EGL/egl.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <stdarg.h>
 #include <sys/time.h>
+#include <string>
 
 #ifdef RENDERTEST
 #include  <X11/Xlib.h>
@@ -37,9 +37,11 @@
 
 class OverlayRenderer {
 public:
-    int Create();
+    int Create(std::string file);
     OverlayRenderer();
     void Draw();
+    void PreDraw();
+    void Run();
 
 protected:
     GLboolean esCreateWindow (const char* title);
@@ -60,6 +62,7 @@ private:
     Display *x_display;
 #endif
 
+    std::string filename;
 };
 
 

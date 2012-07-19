@@ -107,7 +107,7 @@ int OMXLink::Run() {
                                          false, m_thread_player))
     goto do_exit;
 
-  m_my_render.Open(m_av_clock, m_thread_player);
+  m_my_render.Open(m_av_clock, m_thread_player, &m_player_video, m_filename);
 
   m_av_clock->SetSpeed(DVD_PLAYSPEED_NORMAL);
   m_av_clock->OMXStateExecute();
