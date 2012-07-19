@@ -33,6 +33,7 @@ bool    OMXClock::m_ismasterclock;
 
 OMXClock::OMXClock()
 {
+  m_dllAvFormat.Load();
 
   m_video_clock = DVD_NOPTS_VALUE;
   m_audio_clock = DVD_NOPTS_VALUE;
@@ -64,6 +65,7 @@ OMXClock::~OMXClock()
 {
   Deinitialize();
 
+  m_dllAvFormat.Unload();
   pthread_mutex_destroy(&m_lock);
 }
 
