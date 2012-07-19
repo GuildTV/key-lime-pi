@@ -26,6 +26,7 @@
 #include <sys/wait.h>
 #include <netinet/tcp.h>
 #include <fcntl.h>
+#include <unistd.h>
 
 #include "logger.h"
 
