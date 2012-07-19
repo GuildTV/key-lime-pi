@@ -28,6 +28,7 @@
 #include <stdio.h>
 #include <string>
 #include <cstring>
+#include <unistd.h>
 using namespace std;
 
 enum GPIOState { GPIO_LOW=0, GPIO_HIGH=1 };
