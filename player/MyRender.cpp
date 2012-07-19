@@ -63,6 +63,7 @@ bool MyRender::Open(OMXClock *av_clock, bool use_thread)
   m_use_thread  = use_thread;
 
   //m_FlipTimeStamp = m_av_clock->GetAbsoluteClock();
+  printf("start?");
 
   if(m_use_thread)
     Create();
@@ -84,7 +85,8 @@ bool MyRender::Close()
 
 
 void MyRender::Process() {
-	OverlayRenderer renderer(1);
+	OverlayRenderer renderer;
+	renderer.Create();
 
 	double lastTime = 80000.0;
   while(!m_bStop && !m_bAbort){
@@ -95,7 +97,7 @@ void MyRender::Process() {
 
 	  }
 		//render here??
-		renderer.show_next();
+		renderer.Draw();
 
   }
 }

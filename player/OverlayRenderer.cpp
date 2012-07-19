@@ -20,256 +20,348 @@
  */
 
 #include "OverlayRenderer.h"
-#include "folly/ScopeGuard.h"
-#include "OMX/enforce.h"
 
-#include <cassert>
+int OverlayRenderer::Create() {
+    esCreateWindow ("Overlay Renderer");
 
-//destroy the renderer
-OverlayRenderer::~OverlayRenderer() {
-  destroy();
+    if (!Init ())
+        return 1;
+
+    return 0;
 }
 
-//create the renderer
-OverlayRenderer::
-OverlayRenderer(int layer):
-//set no value
-dispman_element_(),
-dispman_display_(),
-screen_width_(),
-screen_height_(),
-display_(),
-context_(),
-surface_() {
-  try {
-	  //initialise the window
-    initialize_window(layer);
-	//initialise egl
-    initialize_egl();
-	//initialise gles
-	initialize_gles();
+void OverlayRenderer::Draw () {
+    GLfloat vVertices[] = {  0.0f,  0.5f, 0.0f,
+                            -0.5f, -0.5f, 0.0f,
+                             0.5f, -0.5f, 0.0f };
 
-  } catch (...) {
-    destroy();
-    throw;
-  }
+    // Set the viewport
+    glViewport(0, 0, width, height);
+
+    // Clear the color buffer
+    glClear(GL_COLOR_BUFFER_BIT);
+
+
+    glClearColor(0.0f, 0.0f, 1.0f, 0.5f);
+
+    // Use the program object
+    glUseProgram(programObject);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, vVertices);
+    glEnableVertexAttribArray(0);
+
+    glDrawArrays(GL_TRIANGLES, 0, 3);
+
+    eglSwapBuffers(eglDisplay, eglSurface);
 }
 
-//destroy
-void OverlayRenderer::destroy() {
-  destroy_egl();
-  destroy_window();
-}
-
-//setup opengl es
-void OverlayRenderer::initialize_gles() {
-	//set transparent black bg
-	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-	//clear
-	glClear( GL_COLOR_BUFFER_BIT );
-	glClear( GL_DEPTH_BUFFER_BIT );
-	//set shade model
-	glShadeModel(GL_FLAT);
-
-	glMatrixMode (GL_PROJECTION);
-glLoadIdentity ();
-//glOrtho (0, screen_width_, screen_height_, 0, 0, 1);
-glMatrixMode (GL_MODELVIEW);
-}
-//setup window
-void OverlayRenderer::initialize_window(int layer) {
-	//check display has size
-  ENFORCE(graphics_get_display_size(0 /* LCD */, &screen_width_, &screen_height_)
-          >= 0);
-
-//define dest size as a rectangle
-  VC_RECT_T dst_rect;
-  dst_rect.x = 0;
-  dst_rect.y = 0;
-  dst_rect.width = screen_width_;
-  dst_rect.height = screen_height_;
-
-//define src size as a rectangle
-  VC_RECT_T src_rect;
-  src_rect.x = 0;
-  src_rect.y = 0;
-  src_rect.width = screen_width_ << 16;
-  src_rect.height = screen_height_ << 16;
-
-//open display 0
-  dispman_display_ = vc_dispmanx_display_open(0 /* LCD */);
-  ENFORCE(dispman_display_);
-
-  {
-	  //start update display loop??
-    auto dispman_update = vc_dispmanx_update_start(0);
-    ENFORCE(dispman_update);
-    SCOPE_EXIT {
-      ENFORCE(!vc_dispmanx_update_submit_sync(dispman_update));
-    };
-
-	//create display element
-    dispman_element_ =
-        vc_dispmanx_element_add(dispman_update,
-                                dispman_display_,
-                                layer,
-                                &dst_rect,
-                                0 /*src*/,
-                                &src_rect,
-                                DISPMANX_PROTECTION_NONE,
-                                0 /*alpha*/,
-                                0 /*clamp*/,
-                                (DISPMANX_TRANSFORM_T) 0 /*transform*/);
-    ENFORCE(dispman_element_);
-  }
-}
-
-//destroy the window TODO - no clue how
-void OverlayRenderer::destroy_window() {
-  if (dispman_element_) {
-    auto dispman_update = vc_dispmanx_update_start(0);
-    assert(dispman_update);
-
-    if (dispman_update) {
-      auto error = vc_dispmanx_element_remove(dispman_update, dispman_element_);
-      assert(!error);
-
-      error = vc_dispmanx_update_submit_sync(dispman_update);
-      assert(!error);
+GLboolean OverlayRenderer::esCreateWindow (const char* title) {
+    if (!WinCreate (title)) {
+        return GL_FALSE;
     }
 
-    dispman_element_ = {};
-  }
+    if (!CreateEGLContext ()) {
+        return GL_FALSE;
+    }
 
-  if (dispman_display_) {
-    auto error = vc_dispmanx_display_close(dispman_display_);
-    assert(!error);
-
-    dispman_display_ = {};
-  }
+    return GL_TRUE;
 }
 
-//initialise egl
-void OverlayRenderer::initialize_egl() {
-  // get an EGL display connection
-  display_ = eglGetDisplay(EGL_DEFAULT_DISPLAY);
-  ENFORCE(display_);
+int OverlayRenderer::Init () {
+    const char *vShaderStr =
+        "attribute vec4 vPosition;    \n"
+        "void main()                  \n"
+        "{                            \n"
+        "   gl_Position = vPosition;  \n"
+        "}                            \n";
 
-  // initialize the EGL display connection
-  ENFORCE(eglInitialize(display_, NULL, NULL));
+    const char *fShaderStr =
+        "precision mediump float;\n"\
+        "void main()                                  \n"
+        "{                                            \n"
+        "  gl_FragColor = vec4 ( 1.0, 0.0, 0.0, 1.0 );\n"
+        "}                                            \n";
 
-  // get an appropriate EGL frame buffer configuration
-  static const EGLint attribute_list[] = {
-    EGL_RED_SIZE, 8,
-    EGL_GREEN_SIZE, 8,
-    EGL_BLUE_SIZE, 8,
-    EGL_ALPHA_SIZE, 8,
-    EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
-    EGL_NONE
-  };
-  EGLConfig config{};
-  EGLint num_config{};
+    GLuint vertexShader;
+    GLuint fragmentShader;
+    GLint linked;
 
-	//load config
-  ENFORCE(eglChooseConfig(display_, attribute_list, &config, 1, &num_config));
-  ENFORCE(num_config);
+    // Load the vertex/fragment shaders
+    vertexShader = LoadShader(GL_VERTEX_SHADER, vShaderStr);
+    fragmentShader = LoadShader(GL_FRAGMENT_SHADER, fShaderStr);
 
-	//bing opengl api
-  ENFORCE(eglBindAPI(EGL_OPENGL_ES_API));
+    // Create the program object
+    programObject = glCreateProgram();
 
-//egl window
-  static EGL_DISPMANX_WINDOW_T nativewindow;
-  nativewindow.element = dispman_element_;
-  nativewindow.width = screen_width_;
-  nativewindow.height = screen_height_;
+    if (programObject == 0)
+        return 0;
 
-	 //create window surface
-  surface_ = eglCreateWindowSurface(display_, config, &nativewindow, NULL);
-  ENFORCE(surface_);
+    glAttachShader(programObject, vertexShader);
+    glAttachShader(programObject, fragmentShader);
 
-  // create an EGL rendering context
-  context_ = eglCreateContext(display_, config, EGL_NO_CONTEXT, NULL);
-  ENFORCE(context_);
+    // Bind vPosition to attribute 0
+    glBindAttribLocation(programObject, 0, "vPosition");
 
-//make it current
-  auto result = eglMakeCurrent(display_, surface_, surface_, context_);
-  assert(result);
+    // Link the program
+    glLinkProgram(programObject);
+
+    // Check the link status
+    glGetProgramiv(programObject, GL_LINK_STATUS, &linked);
+
+    if (!linked) {
+        GLint infoLen = 0;
+
+        glGetProgramiv(programObject, GL_INFO_LOG_LENGTH, &infoLen);
+
+        if (infoLen > 1) {
+            printf ( "Error linking program:\n");
+        }
+
+        glDeleteProgram(programObject);
+        return GL_FALSE;
+    }
+
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    return GL_TRUE;
 }
 
-//destroy egl
-void OverlayRenderer::destroy_egl() {
-  if (display_) {
-	  //set null as current display
-    auto result =
-      eglMakeCurrent(display_, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
-    assert(result);
+GLuint OverlayRenderer::LoadShader (GLenum type, const char *shaderSrc) {
+    GLuint shader;
+    GLint compiled;
 
-	//terminate display
-    result = eglTerminate(display_);
-    assert(result);
+    // Create the shader object
+    shader = glCreateShader(type);
 
-	//clear display stuff
-    context_ = {};
-    surface_ = {};
-    display_ = {};
-  }
+    if (shader == 0)
+        return 0;
+
+    // Load the shader source
+    glShaderSource(shader, 1, &shaderSrc, NULL);
+
+    // Compile the shader
+    glCompileShader(shader);
+
+    // Check the compile status
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &compiled);
+
+    if (!compiled) {
+        GLint infoLen = 0;
+
+        glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &infoLen);
+
+        if (infoLen > 1) {
+            printf ("Error compiling shader\n");
+        }
+
+        glDeleteShader(shader);
+        return 0;
+    }
+
+    return shader;
 }
 
+#ifndef RENDERTEST
+EGLBoolean OverlayRenderer::WinCreate(const char *title) {
+   int32_t success = 0;
 
-//clear screen
-void OverlayRenderer::clear() {
-  //clear screen
-  glClear(GL_COLOR_BUFFER_BIT);
-  assert(!glGetError());
+   static EGL_DISPMANX_WINDOW_T nativewindow;
+
+   DISPMANX_ELEMENT_HANDLE_T dispman_element;
+   DISPMANX_DISPLAY_HANDLE_T dispman_display;
+   DISPMANX_UPDATE_HANDLE_T dispman_update;
+   VC_RECT_T dst_rect;
+   VC_RECT_T src_rect;
+
+
+   uint32_t display_width;
+   uint32_t display_height;
+
+   // create an EGL window surface, passing context width/height
+   success = graphics_get_display_size(0, &display_width, &display_height);
+   if (success < 0) {
+      return EGL_FALSE;
+   }
+
+   // You can hardcode the resolution here:
+   display_width = 720;
+   display_height = 576;
+
+   dst_rect.x = 0;
+   dst_rect.y = 0;
+   dst_rect.width = display_width;
+   dst_rect.height = display_height;
+
+   src_rect.x = 0;
+   src_rect.y = 0;
+   src_rect.width = display_width << 16;
+   src_rect.height = display_height << 16;
+
+   dispman_display = vc_dispmanx_display_open(0);
+   dispman_update = vc_dispmanx_update_start(0);
+
+   dispman_element = vc_dispmanx_element_add (dispman_update, dispman_display, 1, &dst_rect, 0, &src_rect,
+                                              DISPMANX_PROTECTION_NONE, 0, 0, (DISPMANX_TRANSFORM_T) 0);
+
+   nativewindow.element = dispman_element;
+   nativewindow.width = display_width;
+   nativewindow.height = display_height;
+   vc_dispmanx_update_submit_sync( dispman_update );
+
+   hWnd = &nativewindow;
+   width = display_width;
+   height = display_height;
+
+	return EGL_TRUE;
 }
-
-//draw
-void OverlayRenderer::draw() {
-  clear();
-
-  static GLfloat rot = 0.5;
-
-	VERTEX_3D vertex1 = Vertex3DMake(0.0f, 1.0f, 1.0f);
-	VERTEX_3D vertex2 = Vertex3DMake(1.0f, 0.0f, 1.0f);
-	VERTEX_3D vertex3 = Vertex3DMake(-1.0f, 0.0f, 1.0f);
-
-	VERTEX_3D vertex4 = Vertex3DMake(0.0f, -1.0f, 1.0f);
-
-	TRIANGLE_3D triangles[2];
-	triangles[0] = Triangle3DMake(vertex1, vertex3, vertex2);
-	triangles[1] = Triangle3DMake(vertex4, vertex2, vertex3);
-
-	glRotatef(rot, 0.0, 0.0, 1.0);
-	//glClearColor(0.7, 0.7 , 0.7, 1.0);
-	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glColor4f(1.0, 0.0, 0.0, 1.0);
-	glVertexPointer(3, GL_FLOAT, 0, &triangles);
-	glDrawArrays(GL_TRIANGLES, 0, 6);
-	glDisableClientState(GL_VERTEX_ARRAY);
-  //TODO - draw here :)
-}
-
-//show on screen
-void OverlayRenderer::swap_buffers() {
-  EGLBoolean result = eglSwapBuffers(display_, surface_);
-  assert(result);
-}
-
-VERTEX_3D OverlayRenderer::Vertex3DMake(float x, float y, float z)
+#else
+EGLBoolean OverlayRenderer::WinCreate(const char *title)
 {
-	VERTEX_3D ret;
-	ret.x = (GLfloat)x;
-	ret.y = (GLfloat)y;
-	ret.z = (GLfloat)z;
-	return ret;
+    Window root;
+    XSetWindowAttributes swa;
+    XSetWindowAttributes  xattr;
+    Atom wm_state;
+    XWMHints hints;
+    XEvent xev;
+    Window win;
+
+    /*
+     * X11 native display initialization
+     */
+
+    width = 1024;
+    height = 576;
+
+    x_display = XOpenDisplay(NULL);
+    if (x_display == NULL) {
+        return EGL_FALSE;
+    }
+
+    root = DefaultRootWindow(x_display);
+
+    swa.event_mask = ExposureMask | PointerMotionMask | KeyPressMask;
+    win = XCreateWindow(x_display, root, 0, 0, width, height, 0, CopyFromParent, InputOutput, CopyFromParent, CWEventMask, &swa);
+
+    xattr.override_redirect = 0;
+    XChangeWindowAttributes (x_display, win, CWOverrideRedirect, &xattr);
+
+    hints.input = 1;
+    hints.flags = InputHint;
+    XSetWMHints(x_display, win, &hints);
+
+    // make the window visible on the screen
+    XMapWindow (x_display, win);
+    XStoreName (x_display, win, title);
+
+    // get identifiers for the provided atom name strings
+    wm_state = XInternAtom (x_display, "_NET_WM_STATE", 0);
+
+    memset ( &xev, 0, sizeof(xev) );
+    xev.type                 = ClientMessage;
+    xev.xclient.window       = win;
+    xev.xclient.message_type = wm_state;
+    xev.xclient.format       = 32;
+    xev.xclient.data.l[0]    = 1;
+    xev.xclient.data.l[1]    = 0;
+    XSendEvent (x_display, DefaultRootWindow (x_display), 0, SubstructureNotifyMask, &xev);
+
+    hWnd = (EGLNativeWindowType) win;
+    return EGL_TRUE;
+}
+#endif
+
+OverlayRenderer::OverlayRenderer(){
+#ifdef RENDERTEST
+    x_display = NULL;
+#endif
 }
 
-TRIANGLE_3D OverlayRenderer::Triangle3DMake(VERTEX_3D v1, VERTEX_3D v2, VERTEX_3D v3)
-{
-	TRIANGLE_3D ret;
-	ret.v1 = v1;
-	ret.v2 = v2;
-	ret.v3 = v3;
-	return ret;
+EGLBoolean OverlayRenderer::CreateEGLContext(){
+#ifndef RENDERTEST
+    EGLint attribList[] =
+    {
+        EGL_RED_SIZE,       8,
+        EGL_GREEN_SIZE,     8,
+        EGL_BLUE_SIZE,      8,
+        EGL_ALPHA_SIZE,     8,
+        EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
+        EGL_NONE
+    };
+#else
+    EGLint attribList[] =
+    {
+        EGL_RED_SIZE,       5,
+        EGL_GREEN_SIZE,     6,
+        EGL_BLUE_SIZE,      5,
+        EGL_ALPHA_SIZE,     (0 & 1) ? 8 : EGL_DONT_CARE,
+        EGL_DEPTH_SIZE,     (0 & 2) ? 8 : EGL_DONT_CARE,
+        EGL_STENCIL_SIZE,   (0 & 4) ? 8 : EGL_DONT_CARE,
+        EGL_SAMPLE_BUFFERS, (0 & 8) ? 1 : 0,
+        EGL_NONE
+    };
+#endif
+
+    EGLint numConfigs;
+    EGLConfig config;
+#ifdef RENDERTEST
+    EGLint contextAttribs[] = { EGL_CONTEXT_CLIENT_VERSION, 2, EGL_NONE, EGL_NONE };
+#else
+    EGLint contextAttribs[] = { EGL_CONTEXT_CLIENT_VERSION, 2, EGL_NONE };
+#endif
+
+    // Get Display
+#ifdef RENDERTEST
+    eglDisplay = eglGetDisplay((EGLNativeDisplayType)x_display);
+#else
+    eglDisplay = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+#endif
+    if (eglDisplay == EGL_NO_DISPLAY) {
+        return EGL_FALSE;
+    }
+
+    // Initialize EGL
+    if (!eglInitialize(eglDisplay, NULL, NULL)) {
+        return EGL_FALSE;
+    }
+
+    // Get configs
+    if (!eglGetConfigs(eglDisplay, NULL, 0, &numConfigs)) {
+        return EGL_FALSE;
+    }
+
+    // Choose config
+    if (!eglChooseConfig(eglDisplay, attribList, &config, 1, &numConfigs)) {
+        return EGL_FALSE;
+    }
+
+    eglBindAPI(EGL_OPENGL_ES_API);
+
+    // Create a surface
+    eglSurface = eglCreateWindowSurface(eglDisplay, config, (EGLNativeWindowType)hWnd, NULL);
+    if (eglSurface == EGL_NO_SURFACE) {
+        return EGL_FALSE;
+    }
+
+    // Create a GL context
+    eglContext = eglCreateContext(eglDisplay, config, EGL_NO_CONTEXT, contextAttribs );
+    if (eglContext == EGL_NO_CONTEXT) {
+        return EGL_FALSE;
+    }
+
+    // Make the context current
+    if (!eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext)) {
+        return EGL_FALSE;
+    }
+
+    return EGL_TRUE;
 }
+
+#ifdef RENDERTEST
+int main (int argc, char *argv[]){
+    OverlayRenderer r;
+    r.Create();
+    while(true){
+        r.Draw();
+    }
+    return 0;
+}
+#endif

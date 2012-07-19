@@ -42,6 +42,7 @@ protected:
   void Lock();
   void UnLock();
 private:
+
 public:
   MyRender();
   ~MyRender();

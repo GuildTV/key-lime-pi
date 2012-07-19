@@ -42,11 +42,8 @@ public:
 
 	void Close();
 
-    bool ThreadCreate();
-	void ThreadProcess();
 	bool ThreadRunning();
     pthread_t ThreadHandle();
-    bool ThreadStop();
 
     int CreateServer(string port);
     int CreateClient(string address, string port);
@@ -61,8 +58,10 @@ protected:
     pthread_t           m_thread;
     volatile bool       m_running;
     volatile bool       m_bStop;
-    void SendLock();
-    void SendUnlock();
+
+    bool ThreadCreate();
+	void ThreadProcess();
+    bool ThreadStop();
 
 private:
     static void *ThreadRun(void *arg);

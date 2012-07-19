@@ -33,7 +33,6 @@ bool    OMXClock::m_ismasterclock;
 
 OMXClock::OMXClock()
 {
-  m_dllAvFormat.Load();
 
   m_video_clock = DVD_NOPTS_VALUE;
   m_audio_clock = DVD_NOPTS_VALUE;
@@ -65,7 +64,6 @@ OMXClock::~OMXClock()
 {
   Deinitialize();
 
-  m_dllAvFormat.Unload();
   pthread_mutex_destroy(&m_lock);
 }
 
@@ -540,7 +538,7 @@ double OMXClock::OMXWallTime(bool lock /* = true */)
 
   if(lock)
     UnLock();
-  
+
   return pts;
 }
 
@@ -571,7 +569,7 @@ double OMXClock::OMXMediaTime(bool lock /* = true */)
   pts = FromOMXTime(timeStamp.nTimestamp);
   if(lock)
     UnLock();
-  
+
   return pts;
 }
 
@@ -733,7 +731,7 @@ bool OMXClock::OMXSpeed(int speed, bool lock /* = true */)
 {
   if(m_omx_clock.GetComponent() == NULL)
     return false;
-  
+
   if(lock)
     Lock();
 
@@ -771,18 +769,18 @@ void OMXClock::AddTimespecs(struct timespec &time, long millisecs)
    }
 }
 
-double OMXClock::GetPTS() 
-{ 
+double OMXClock::GetPTS()
+{
   Lock();
   double pts = m_iCurrentPts;
   UnLock();
   return pts;
 }
 
-void OMXClock::SetPTS(double pts) 
-{ 
+void OMXClock::SetPTS(double pts)
+{
   Lock();
-  m_iCurrentPts = pts; 
+  m_iCurrentPts = pts;
   UnLock();
 };
 
