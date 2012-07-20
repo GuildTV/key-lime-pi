@@ -1,5 +1,3 @@
-#pragma once
-
 /*
  *      Copyright (C) 2012 GuildTV
  *      http://www.guildtv.co.uk
@@ -21,48 +19,37 @@
  *
  */
 
-#include <GLES2/gl2.h>
-#include <EGL/egl.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdarg.h>
-#include <sys/time.h>
-#include <string>
+#include "OMXLink.h"
 
-#ifdef RENDERTEST
-#include  <X11/Xlib.h>
-#include  <X11/Xatom.h>
-#include  <X11/Xutil.h>
-#endif
+using namespace std;
 
-class OverlayRenderer {
-public:
-    int Create(std::string file);
-    OverlayRenderer();
-    void Draw();
-    void PreDraw();
-    void Run();
-
+class OMXWrapper
+{
 protected:
-    GLboolean esCreateWindow (const char* title);
-    EGLBoolean WinCreate(const char *title);
-    EGLBoolean CreateEGLContext();
-    int Init();
-    GLuint LoadShader(GLenum type, const char *shaderSrc);
+  bool                      m_open;
 
+  pthread_attr_t      m_tattr;
+  struct sched_param  m_sched_param;
+  pthread_mutex_t     m_lock;
+  pthread_t           m_thread;
+  volatile bool       m_running;
+  volatile bool       m_bStop;
+
+  void Lock();
+  void UnLock();
 private:
-    GLuint programObject;
-    GLint width;
-    GLint height;
-    EGLNativeWindowType hWnd;
-    EGLDisplay eglDisplay;
-    EGLContext eglContext;
-    EGLSurface eglSurface;
-#ifdef RENDERTEST
-    Display *x_display;
-#endif
+  static void *Run(void *arg);
+  OMXLink* omx;
+  void Process();
 
-    std::string filename;
+public:
+  OMXWrapper();
+  ~OMXWrapper();
+  bool Play();
+  void Load(string f);
+
+  bool Running();
+  pthread_t ThreadHandle();
+  bool Stop();
 };
-
 

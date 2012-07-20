@@ -363,14 +363,3 @@ EGLBoolean OverlayRenderer::CreateEGLContext(){
 
     return EGL_TRUE;
 }
-
-#ifdef RENDERTEST
-int main (int argc, char *argv[]){
-    OverlayRenderer r;
-    r.Create();
-    while(true){
-        r.Draw();
-    }
-    return 0;
-}
-#endif

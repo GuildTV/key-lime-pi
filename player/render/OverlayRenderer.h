@@ -1,3 +1,5 @@
+#pragma once
+
 /*
  *      Copyright (C) 2012 GuildTV
  *      http://www.guildtv.co.uk
@@ -19,36 +21,49 @@
  *
  */
 
-#ifndef RENDERTEST_H
-#define RENDERTEST_H
-
-#include "net/NetIO.h"
+#include <GLES2/gl2.h>
+#include <EGL/egl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <sys/time.h>
 #include <string>
-#include "logger.h"
-#include "render/OverlayRenderer.h"
-#include "OMXWrapper.h"
+#include <string.h>
 
-class RenderTest
-{
-    public:
-        RenderTest();
-        virtual ~RenderTest();
-        void Run();
-        void Stop(){run=false;};
-    protected:
-        void VideoLoad(std::string name);
-        void VideoPlay();
-        bool FileExists(const char * filename);
-    private:
-        NetIO net;
-        bool run;
-        void HandleMessage(NetMessage* msg);
-        bool videoLoaded;
 #ifdef RENDERTEST
-        OverlayRenderer* renderer;
-#else
-        OMXWrapper* wrap;
+#include  <X11/Xlib.h>
+#include  <X11/Xatom.h>
+#include  <X11/Xutil.h>
 #endif
+
+class OverlayRenderer {
+public:
+    int Create(std::string file);
+    OverlayRenderer();
+    void Draw();
+    void PreDraw();
+    void Run();
+
+protected:
+    GLboolean esCreateWindow (const char* title);
+    EGLBoolean WinCreate(const char *title);
+    EGLBoolean CreateEGLContext();
+    int Init();
+    GLuint LoadShader(GLenum type, const char *shaderSrc);
+
+private:
+    GLuint programObject;
+    GLint width;
+    GLint height;
+    EGLNativeWindowType hWnd;
+    EGLDisplay eglDisplay;
+    EGLContext eglContext;
+    EGLSurface eglSurface;
+#ifdef RENDERTEST
+    Display *x_display;
+#endif
+
+    std::string filename;
 };
 
-#endif // RENDERTEST_H
+

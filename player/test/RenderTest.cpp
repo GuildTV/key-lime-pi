@@ -1,3 +1,24 @@
+/*
+ *      Copyright (C) 2012 GuildTV
+ *      http://www.guildtv.co.uk
+ *
+ *  This Program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2, or (at your option)
+ *  any later version.
+ *
+ *  This Program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; see the file COPYING.  If not, write to
+ *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+ *  http://www.gnu.org/copyleft/gpl.html
+ *
+ */
+
 #include "RenderTest.h"
 #include <jsoncpp/json/json.h>
 #include <time.h>
@@ -15,6 +36,7 @@
 
 RenderTest::RenderTest() {
     run = false;
+    videoLoaded = false;
 }
 
 RenderTest::~RenderTest() {
@@ -46,7 +68,7 @@ void RenderTest::HandleMessage(NetMessage* msg){
     Json::Reader reader;
     bool parsedSuccess = reader.parse((*msg).message, root, false);
     if(!parsedSuccess){
-        #ifdef DUMPJSON
+#ifdef DUMPJSON
         time_t rawtime;
         struct tm * time;
 
@@ -68,25 +90,30 @@ void RenderTest::HandleMessage(NetMessage* msg){
         fclose(f);
 
         FLog::Log(FLOG_ERROR, "RenderTest::HandleMessage - Failed to parse json. Dumped to \"%s\"", path.c_str());
-        #else
+#else
         FLog::Log(FLOG_ERROR, "RenderTest::HandleMessage - Failed to parse json.");
-        #endif
+#endif
         return;
     }
 
     const string type = root["type"].asString();
 
     //preload a video to be played
-    if(type.compare("preload") == 0){
+    if(type.compare("preloadVideo") == 0){
         const string name = root["name"].asString();
 
         VideoLoad(name);
+
+    } else if (type.compare("playVideo") == 0){
+
+        VideoPlay();
 
     }
 
 }
 
 void RenderTest::VideoLoad(std::string name){
+    videoLoaded = false;
     FLog::Log(FLOG_INFO, "RenderTest::VideoLoad - Starting preload of \"%s\"", name.c_str());
     std::string pathVid = DATAFOLDER;
     pathVid += name;
@@ -98,21 +125,47 @@ void RenderTest::VideoLoad(std::string name){
     //verify files exist
     if(!FileExists(pathVid.c_str())){
         FLog::Log(FLOG_ERROR, "RenderTest::VideoLoad - Couldnt find video file for \"%s\"", name.c_str());
-        (*net.GetClient()).SendMessage("{\"type\":\"preload\",\"status\":\"failed\"}"); //TODO better message to whoever
+        (*net.GetClient()).SendMessage("{\"type\":\"preloadVideo\",\"status\":\"failed\"}"); //TODO better message to whoever
         return;
     }
     if(!FileExists(pathJson.c_str())){
         FLog::Log(FLOG_ERROR, "RenderTest::VideoLoad - Couldnt find script file for \"%s\"", name.c_str());
-        (*net.GetClient()).SendMessage("{\"type\":\"preload\",\"status\":\"failed\"}"); //TODO better message to whoever
+        (*net.GetClient()).SendMessage("{\"type\":\"preloadVideo\",\"status\":\"failed\"}"); //TODO better message to whoever
         return;
     }
 
+#ifndef RENDERTEST
     //load video
-    //TODO
+    wrap = new OMXWrapper;
+    wrap->Load(pathVid);//convert to bool or int?
 
+#else
     //load gl stuff
-    //TODO
 
+    renderer = new OverlayRenderer;
+    renderer->Create(pathJson);
+
+    renderer->PreDraw();
+#endif
+
+    videoLoaded = true;
+}
+
+void RenderTest::VideoPlay() {
+    if(!videoLoaded){
+        (*net.GetClient()).SendMessage("{\"type\":\"playVideo\",\"status\":\"nothing loaded\"}"); //TODO better message to whoever
+        return;
+    }
+    videoLoaded = false;
+
+#ifndef RENDERTEST
+    //play video
+    wrap->Play();//is bool for success starting
+
+#else
+    //play gl stuff
+    renderer->Run();
+#endif
 }
 
 bool RenderTest::FileExists(const char * filename) {
