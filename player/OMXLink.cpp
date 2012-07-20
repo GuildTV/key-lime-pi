@@ -71,34 +71,23 @@ void OMXLink::FlushStreams(double pts)
     m_av_clock->OMXUpdateClock(pts);
 }
 
-int OMXLink::Load(std::string m_filename) {
-    FLog::Log(FLOG_INFO, "OMXLink::%s - GO", __func__);
+bool OMXLink::Load(std::string m_filename) {
+  FLog::Log(FLOG_DEBUG, "OMXLink::Load - Loading video %s", m_filename.c_str());
 
-    printf("\nrun - %s %d\n", filename.c_str(), filename.length());
-    printf("run - %s %d\n", filename.c_str(), filename.length());
-
-printf("o - %s\n", filename.c_str());
   g_RBP = new CRBP;
   g_OMX = new COMXCore;
-printf("o - %s\n", filename.c_str());
 
-  //m_filename = "data/new/video.mp4";
-  //m_filename = filename.c_str();
-filename = m_filename;
   CLog::Init("./");
-printf("o - %s\n", filename.c_str());
   g_RBP->Initialize();
   g_OMX->Initialize();
 
   m_av_clock = new OMXClock();
 
   m_thread_player = true;
- // m_filename = filename;
-  printf("o - %s\n", filename.c_str());
 
-  if(!m_omx_reader.Open(filename.c_str(), false)){
+  if(!m_omx_reader.Open(m_filename.c_str(), false)){
     Exit();
-    return -1;
+    return false;
   }
 
   m_bMpeg         = m_omx_reader.IsMpegVideo();
@@ -106,7 +95,7 @@ printf("o - %s\n", filename.c_str());
 
   if(!m_av_clock->OMXInitialize(m_has_video, false)){
     Exit();
-    return -1;
+    return false;
   }
 
   m_omx_reader.GetHints(OMXSTREAM_VIDEO, m_hints_video);
@@ -114,10 +103,10 @@ printf("o - %s\n", filename.c_str());
   if(m_has_video && !m_player_video.Open(m_hints_video, m_av_clock, m_Deinterlace,  m_bMpeg,
                                          false, m_thread_player)){
     Exit();
-    return -1;
+    return false;
   }
 
-  m_my_render.Open(m_av_clock, m_thread_player, &m_player_video, filename);
+  m_my_render.Open(m_av_clock, m_thread_player, &m_player_video, m_filename);
 
   m_av_clock->SetSpeed(DVD_PLAYSPEED_NORMAL);
   m_av_clock->OMXStateExecute();
@@ -125,13 +114,11 @@ printf("o - %s\n", filename.c_str());
 
   SetSpeed(OMX_PLAYSPEED_PAUSE);
   m_av_clock->OMXPause();
-
-  OMXClock::OMXSleep(5000);
-
-  return 1;
+  return true;
 }
 
-int OMXLink::Play() {
+bool OMXLink::Play() {
+  FLog::Log(FLOG_DEBUG, "OMXLink::Play - Playing video");
   SetSpeed(OMX_PLAYSPEED_NORMAL);
   m_av_clock->OMXResume();
 
@@ -139,7 +126,7 @@ int OMXLink::Play() {
   {
     if(g_abort){
     Exit();
-    return -1;
+    return false;
   }
 
     if(m_Pause)
@@ -172,18 +159,17 @@ int OMXLink::Play() {
 
   }
 
-  Exit();
-  return 1;
+  return Exit();
 }
 
-int OMXLink::Exit() {
-  printf("\n");
-
+bool OMXLink::Exit() {
   if(!m_stop)
   {
 	if(m_has_video)
       m_player_video.WaitCompletion();
   }
+
+  FLog::Log(FLOG_DEBUG, "OMXLink::Exit - End of video");
 
   m_av_clock->OMXStop();
   m_av_clock->OMXStateIdle();
@@ -203,13 +189,5 @@ int OMXLink::Exit() {
   g_OMX->Deinitialize();
   g_RBP->Deinitialize();
 
-  return 1;
+  return true;
 }
-/*
-int main (int argc, char *argv[]){
-    OMXLink omx;
-    omx.ThreadCreate();
-    while(true){}
-    return 1;
-}
-*/

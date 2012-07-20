@@ -65,13 +65,13 @@ class OMXLink
     public:
         OMXLink();
         ~OMXLink();
-        int Load(std::string m_filename);
-        int Play();
-        int Exit();
-        void SetSpeed(int iSpeed);
-        void FlushStreams(double pts);
+        bool Load(std::string m_filename);
+        bool Play();
+        bool Exit();
 
     protected:
+        void SetSpeed(int iSpeed);
+        void FlushStreams(double pts);
     private:
         static void *ThreadRun(void *arg);
 
@@ -91,7 +91,6 @@ class OMXLink
         bool              m_has_video;
         MyRender    m_my_render;
 
-        std::string filename;
         CRBP                  *g_RBP;
         COMXCore              *g_OMX;
 };

@@ -31,7 +31,6 @@ pthread_mutex_init(&m_lock, NULL);
   pthread_attr_setdetachstate(&m_tattr, PTHREAD_CREATE_JOINABLE);
   pthread_attr_init(&m_tattr);
   m_thread    = 0;
-  m_bStop     = false;
   m_running   = false;
 }
 
@@ -43,17 +42,6 @@ OMXWrapper::~OMXWrapper()
   pthread_attr_destroy(&m_tattr);
 }
 
-void OMXWrapper::Lock()
-{
-    pthread_mutex_lock(&m_lock);
-}
-
-void OMXWrapper::UnLock()
-{
-    pthread_mutex_unlock(&m_lock);
-}
-
-
 bool OMXWrapper::Play()
 {
   if(ThreadHandle())
@@ -61,16 +49,15 @@ bool OMXWrapper::Play()
 
   if(m_running)
   {
-    CLog::Log(LOGERROR, "OMXWrapper::%s - Thread already running\n", __func__);
+    FLog::Log(FLOG_DEBUG, "OMXWrapper::Play - Video is already playing");
     return false;
   }
 
-  m_bStop    = false;
   m_running = true;
 
   pthread_create(&m_thread, &m_tattr, &OMXWrapper::Run, this);
 
-  CLog::Log(LOGDEBUG, "OMXWrapper::%s - Thread with id %d started\n", __func__, (int)m_thread);
+  FLog::Log(FLOG_DEBUG, "OMXWrapper::Play - Thread with id %d started", (int)m_thread);
   return true;
 }
 
@@ -78,17 +65,18 @@ bool OMXWrapper::Stop()
 {
   if(!m_running)
   {
-    CLog::Log(LOGDEBUG, "OMXWrapper::%s - No thread running\n", __func__);
+    FLog::Log(FLOG_DEBUG, "OMXWrapper::Stop - No video playing");
     return false;
   }
 
-  m_bStop = true;
+  omx->Exit();
+
   pthread_join(m_thread, NULL);
   m_running = false;
 
   m_thread = 0;
 
-  CLog::Log(LOGDEBUG, "OMXWrapper::%s - Thread stopped\n", __func__);
+  FLog::Log(FLOG_DEBUG, "OMXWrapper::Stop - Stopped Video Playback");
   return true;
 }
 
@@ -107,7 +95,7 @@ void *OMXWrapper::Run(void *arg)
   OMXWrapper *thread = static_cast<OMXWrapper *>(arg);
   thread->Process();
 
-  CLog::Log(LOGDEBUG, "OMXWrapper::%s - Exited thread with  id %d\n", __func__, (int)thread->ThreadHandle());
+  FLog::Log(FLOG_DEBUG, "OMXWrapper::Run - Finished playback in thread with id %d\n", (int)thread->ThreadHandle());
   pthread_exit(NULL);
 }
 
