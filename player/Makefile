@@ -2,8 +2,8 @@ include Makefile.include
 
 CFLAGS+=-std=c++0x -DSTANDALONE -D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS -DTARGET_POSIX -D_LINUX -fPIC -DPIC -D_REENTRANT -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -DHAVE_CMAKE_CONFIG -D__VIDEOCORE4__ -U_FORTIFY_SOURCE -Wall -DHAVE_OMXLIB -DUSE_EXTERNAL_FFMPEG  -DHAVE_LIBAVCODEC_AVCODEC_H -DHAVE_LIBAVUTIL_OPT_H -DHAVE_LIBAVUTIL_MEM_H -DHAVE_LIBAVUTIL_AVUTIL_H -DHAVE_LIBAVFORMAT_AVFORMAT_H -DHAVE_LIBAVFILTER_AVFILTER_H -DOMX -DOMX_SKIP64BIT -ftree-vectorize -DUSE_EXTERNAL_OMX -DTARGET_RASPBERRY_PI -DUSE_EXTERNAL_LIBBCM_HOST
 
-LDFLAGS+=-L./ -lc -lWFC -lGLESv2 -lEGL -lbcm_host -lopenmaxil -ljsoncpp -lz -Lffmpeg_compiled/usr/local/lib/
-INCLUDES+=-I./ -Ilinux -Iffmpeg_compiled/usr/local/include/ -I/opt/vc/include.
+LDFLAGS+=-L./ -lc -lWFC -lGLESv2 -lEGL -lbcm_host -lopenmaxil -ljsoncpp -lz
+INCLUDES+=-I./ -Ilinux -Iffmpeg_compiled/include/ -I/opt/vc/include.
 
 SRC=linux/XMemUtils.cpp \
 		utils/log.cpp \
@@ -45,16 +45,6 @@ SRCGPIOTEST=GPIO.cpp \
 
 OBJSGPIOTEST+=$(filter %.o,$(SRCGPIOTEST:.cpp=.o))
 
-SRCRENDERTEST=test.cpp \
-		logger.cpp \
-
-OBJSRENDERTEST+=$(filter %.o,$(SRCRENDERTEST:.cpp=.o))
-
-SRCRENDERTESTA=OverlayRenderer.cpp \
-		logger.cpp \
-
-OBJSRENDERTESTA+=$(filter %.o,$(SRCRENDERTESTA:.cpp=.o))
-
 all: omxplayer.bin
 
 %.o: %.cpp
@@ -82,7 +72,6 @@ clean:
 	@rm -f omxplayer.bin
 	@rm -rf omxplayer-dist
 	@rm -f omxplayer-dist.tar.gz
-	make -f Makefile.ffmpeg clean
 
 ffmpeg:
 	@rm -rf ffmpeg
@@ -99,10 +88,3 @@ dist: omxplayer.bin
 	cp -a ffmpeg_compiled/usr/local/lib/*.so* omxplayer-dist/usr/lib/omxplayer/
 	tar -czf omxplayer-dist.tar.gz omxplayer-dist
 
-rendertest.bin: $(OBJSRENDERTEST)
-	$(CXX) $(LDFLAGS) -o rendertest.bin $(OBJSRENDERTEST) -lvchiq_arm -lvcos -lrt -lpthread
-	#arm-unknown-linux-gnueabi-strip rendertest.bin
-
-rendertest2.bin: $(OBJSRENDERTESTA)
-	$(CXX) $(LDFLAGS) -o rendertest2.bin $(OBJSRENDERTESTA) -lvchiq_arm -lvcos -lrt -lpthread
-	#arm-unknown-linux-gnueabi-strip rendertest2.bin
