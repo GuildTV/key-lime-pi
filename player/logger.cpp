@@ -51,7 +51,7 @@ void FLog::Log(FLogLevels logLevel, const char *format, ... ) {
     strData.FormatV(format,va);
     va_end(va);
 
-    #ifdef DEBUGLOG
+    #ifndef DEBUGLOG
     if(logLevel == FLOG_DEBUG)
         return;
     #endif

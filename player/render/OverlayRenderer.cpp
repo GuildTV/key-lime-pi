@@ -28,41 +28,475 @@ int OverlayRenderer::Create(std::string file) {
     if (!Init ())
         return 1;
 
+    timecodePosition = CENTER;
+    LoadOverlayText();
+
     return 0;
 }
 
+bool OverlayRenderer::LoadFreetype(string font_file) {
+    if(FT_Init_FreeType(&library)){
+        FLog::Log(FLOG_ERROR, "OverlayRenderer::LoadFreetype - failed to load freetype library");
+        return false;
+    }
+
+    if(FT_New_Face(library, font_file.c_str(), 0, &face)){
+        FLog::Log(FLOG_ERROR, "OverlayRenderer::LoadFreetype - failed to load freetype font face");
+        return false;
+    }
+
+    FLog::Log(FLOG_DEBUG, "OverlayRenderer::LoadFreetype - loaded freetype font file '%s'", font_file.c_str());
+    return true;
+}
+
+bool OverlayRenderer::LoadFreetypeRange(string font_file, int height, int start, int end, TextChar *storage){
+    if(!LoadFreetype(font_file)){
+        return false;
+    }
+
+    if(start < 0 || end > MAXCHARVALUE){
+        FLog::Log(FLOG_ERROR, "OverlayRenderer::LoadFreetypeRange - start or end index out of range");
+        return false;
+    }
+
+    for(int i=start;i<=end;i++) {
+        if(!LoadFreetypeChar(height, i, &storage[i])){
+            return false;
+        }
+    }
+
+    FLog::Log(FLOG_DEBUG, "OverlayRenderer::LoadFreetype - loaded freetype character range %d-%d", start, end);
+    CloseFreetype();
+    return true;
+}
+
+bool OverlayRenderer::LoadFreetypeChar(int height, int value, TextChar *character) {
+    unsigned int h = height;
+    FT_Set_Char_Size(face, h << 6, h << 6, 96, 96);
+
+    unsigned char ch = value;
+
+    if(FT_Load_Glyph(face, FT_Get_Char_Index(face, ch), FT_LOAD_RENDER)){
+        FLog::Log(FLOG_ERROR, "OverlayRenderer::LoadFreetype - failed to load freetype glyph");
+        return false;
+    }
+
+    FT_GlyphSlot slot = face->glyph;
+    FreetypeToTexture(&slot, character);
+
+    return true;
+}
+
+void OverlayRenderer::FreetypeToTexture(FT_GlyphSlot *slot, TextChar* character){
+    FT_Bitmap *bitmap = &(*slot)->bitmap;
+    int width = pow2(bitmap->width);
+    int height = pow2(bitmap->rows);
+    GLubyte* expanded_data = new GLubyte[ 2 * width * height];
+
+    character->width = bitmap->width;
+    character->height = bitmap->rows;
+    character->advanceX = (*slot)->advance.x;
+    character->advanceY = (*slot)->advance.y;
+    character->bitLeft = (*slot)->bitmap_left;
+    character->bitTop = (*slot)->bitmap_top;
+    character->loaded = true;
+
+    for(int j = 0; j <height ; j++) {
+        for(int i = 0; i < width; i++) {
+            expanded_data[2 * (i + j * width)] = 255;
+            expanded_data[2 * (i + j * width) + 1] = (i >= bitmap->width || j >= bitmap->rows) ? 0 : bitmap->buffer[i + bitmap->width * j];
+        }
+    }
+
+    glGenTextures(1, &(*character).texture);
+    glBindTexture(GL_TEXTURE_2D, (*character).texture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+    glTexImage2D(GL_TEXTURE_2D,0,GL_LUMINANCE_ALPHA,width,height,0,GL_LUMINANCE_ALPHA,GL_UNSIGNED_BYTE,expanded_data);
+
+    free((void *)expanded_data);
+}
+
+unsigned int OverlayRenderer::pow2(unsigned int a) {
+    unsigned int rval=2;
+    // rval<<=1 Is A Prettier Way Of Writing rval*=2;
+    while(rval<a) rval<<=1;
+    return rval;
+}
+
+void OverlayRenderer::CloseFreetype() {
+    FT_Done_Face(face);
+    FT_Done_FreeType(library);
+}
+
+void OverlayRenderer::WriteString(char * text, TextChar *charSet, int x, int y, float scaleX, float scaleY) { //TODO - multiline?
+#ifndef RENDERTEST
+    scaleX *= 9.0f/16.0f; //skew for raspberry screen output, even though has been told aspect ratio is 16/9
+#endif
+    float xPos = x;
+        xPos *= 2;
+        xPos /= width;
+        xPos -= 1.0f;
+    float yPos = y;
+        yPos *= 2;
+        yPos /= height;
+        yPos -= 1.0f;
+    for (int i=0;i<strlen(text);i++){
+    unsigned char c = text[i];
+    TextChar *ch = &charSet[c];
+    if(!ch->loaded){
+        *ch = charSet[DEFAULTCHARVALUE];
+        if(!ch->loaded){
+            FLog::Log(FLOG_ERROR, "OverlayRenderer::WriteString - default character wasnt loaded");
+            return;
+        }
+    }
+
+    float chH = pow2(ch->height);
+        chH *= scaleY;
+        chH *= 2.0f;
+        chH /= height;//TODO, convert to use pow2 to ensure constant widths??
+    float chW = pow2(ch->width);
+        chW *= scaleX;
+        chW *= 2.0f;
+        chW /= width;
+
+    float bL = ch->bitLeft;
+        bL /= width;
+        bL *= scaleX;
+        bL *= 2.0f;
+
+    float bT = ch->bitTop;
+        bT /= height;
+        bT *= scaleY;
+        bT *= 2.0f;
+
+
+    GLfloat vVertices[] = { xPos+bL,  yPos+bT, 0.0f,  // Position 0
+                            0.0f,  0.0f,        // TexCoord 0
+                            xPos+bL,  yPos-chH+bT, 0.0f,  // Position 1
+                            0.0f,  1.0f,        // TexCoord 1
+                            xPos+chW+bL,  yPos-chH+bT, 0.0f,  // Position 2
+                            1.0f,  1.0f,        // TexCoord 2
+                            xPos+chW+bL,  yPos+bT, 0.0f,  // Position 3
+                            1.0f,  0.0f         // TexCoord 3
+                         };
+    GLushort indices[] = { 0, 1, 2, 0, 2, 3 };
+
+    glVertexAttribPointer (positionLoc, 3, GL_FLOAT,
+                           GL_FALSE, 5 * sizeof(GLfloat), vVertices );
+    // Load the texture coordinate
+    glVertexAttribPointer (texCoordLoc, 2, GL_FLOAT,
+                           GL_FALSE, 5 * sizeof(GLfloat), &vVertices[3] );
+
+    glEnableVertexAttribArray ( positionLoc );
+    glEnableVertexAttribArray ( texCoordLoc );
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, ch->texture);
+    glUniform1i ( samplerLoc, 0 );
+    glDrawElements ( GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, indices );
+
+    float xInc = ch->advanceX >> 6;
+        xInc *= scaleX;
+        xInc *= 2.0f;
+        xInc /= width;
+    xPos += xInc;
+    }
+}
+
+bool OverlayRenderer::LoadOverlayText() {
+    int height = 100;
+    LoadFreetypeRange("resources/Overlay.ttf", height, 32, 127, overlayText);
+    FLog::Log(FLOG_INFO, "OverlayRenderer::LoadOverlayText - loaded overlay text characters");
+}
+
 void OverlayRenderer::Draw () {
-    GLfloat vVertices[] = {  0.0f,  0.5f, 0.0f,
-                            -0.5f, -0.5f, 0.0f,
-                             0.5f, -0.5f, 0.0f };
-
-    // Set the viewport
-    glViewport(0, 0, width, height);
-
     // Clear the color buffer
     glClear(GL_COLOR_BUFFER_BIT);
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+
+#ifdef RENDERTEST
+    if(bgTexture != TEXTURE_LOAD_ERROR) {
+        GLfloat vVertices[] = { -1.0f,  1.0f, 0.0f,  // Position 0
+                                0.0f,  1.0f,        // TexCoord 0
+                               -1.0f, -1.0f, 0.0f,  // Position 1
+                                0.0f,  0.0f,        // TexCoord 1
+                                1.0f, -1.0f, 0.0f,  // Position 2
+                                1.0f,  0.0f,        // TexCoord 2
+                                1.0f,  1.0f, 0.0f,  // Position 3
+                                1.0f,  1.0f         // TexCoord 3
+                            };
+        GLushort indices[] = { 0, 1, 2, 0, 2, 3 };
+
+        glVertexAttribPointer (positionLoc, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), vVertices );
+        glVertexAttribPointer (texCoordLoc, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), &vVertices[3] );
+
+        glEnableVertexAttribArray ( positionLoc );
+        glEnableVertexAttribArray ( texCoordLoc );
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, bgTexture);
+        glUniform1i ( samplerLoc, 0 );
+        glDrawElements ( GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, indices );
+
+    }
+#endif
+
+    /*
+    GLfloat vVertices[] = { -0.5f,  0.5f, 0.0f,  // Position 0
+                            0.0f,  0.0f,        // TexCoord 0
+                           -0.5f, -0.5f, 0.0f,  // Position 1
+                            0.0f,  1.0f,        // TexCoord 1
+                            0.5f, -0.5f, 0.0f,  // Position 2
+                            1.0f,  1.0f,        // TexCoord 2
+                            0.5f,  0.5f, 0.0f,  // Position 3
+                            1.0f,  0.0f         // TexCoord 3
+                         };
+GLushort indices[] = { 0, 1, 2, 0, 2, 3 };
 
 
-    glClearColor(0.0f, 1.0f, 1.0f, 0.5f);
 
-    // Use the program object
-    glUseProgram(programObject);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, vVertices);
-    glEnableVertexAttribArray(0);
+    glVertexAttribPointer (positionLoc, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), vVertices );
+    glVertexAttribPointer (texCoordLoc, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), &vVertices[3] );
 
-    glDrawArrays(GL_TRIANGLES, 0, 3);
+    glEnableVertexAttribArray ( positionLoc );
+    glEnableVertexAttribArray ( texCoordLoc );
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, overlayText[50].texture);
+    FLog::Log(FLOG_INFO, "%d %d", overlayText[50].texture, test.width);
+    glUniform1i ( samplerLoc, 0 );
+    glDrawElements ( GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, indices );*/
+
+    WriteString("Hey there :)",overlayText, 100,100,1,1);
+
+    DrawTimeStamp();
 
     eglSwapBuffers(eglDisplay, eglSurface);
 }
 
+void OverlayRenderer::DrawTimeStamp() {
+
+    char str[10];
+    int mins, secs, frames;
+    frames = (currentRefresh/2)%25;
+    secs = (currentRefresh/50)%60;
+    mins = (currentRefresh/50)/60;
+    sprintf(str, "%2.2d:%2.2d.%2.2d", mins, secs, frames);
+
+    int x;
+    switch(timecodePosition){
+    case RIGHT:
+        x = width-150;
+        break;
+    case CENTER:
+        x = width/2-75;
+        break;
+    case LEFT:
+        x = 10;
+        break;
+    default:
+        return;
+    }
+
+    WriteString(str,overlayText, x,540,0.25,0.25);
+}
+
+GLuint OverlayRenderer::CreateSimpleTexture2D( )
+{
+   // Texture object handle
+   GLuint textureId;
+
+   // 2x2 Image, 3 bytes per pixel (R, G, B)
+   GLubyte pixels[4 * 3] =
+   {
+      255,   0,   0, // Red
+        0, 255,   0, // Green
+        0,   0, 255, // Blue
+      255, 255,   0  // Yellow
+   };
+
+   // Use tightly packed data
+   glPixelStorei ( GL_UNPACK_ALIGNMENT, 1 );
+
+   // Generate a texture object
+   glGenTextures ( 1, &textureId );
+
+   // Bind the texture object
+   glBindTexture ( GL_TEXTURE_2D, textureId );
+
+   // Load the texture
+   glTexImage2D ( GL_TEXTURE_2D, 0, GL_RGB, 2, 2, 0, GL_RGB, GL_UNSIGNED_BYTE, pixels );
+
+   // Set the filtering mode
+   glTexParameteri ( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+   glTexParameteri ( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+
+   return textureId;
+
+}
+
 void OverlayRenderer::Run() {
-    Draw();
+    #ifdef RENDERTEST
+    LoadBG("resources/background.png");
+#endif
+
+    currentRefresh = 0;
+
+    while(true){
+        Draw();
+        currentRefresh++;
+        usleep(20*1000);
+    }
+
 }
 
 void OverlayRenderer::PreDraw() {
+    glClear(GL_COLOR_BUFFER_BIT);
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    WriteString("Video Ready", overlayText, 175,238,1,1);
+    eglSwapBuffers(eglDisplay, eglSurface);
+
     //Draw();
 }
+
+#ifdef RENDERTEST
+void OverlayRenderer::LoadBG(string filename) {
+    string s = "resources/background.png";
+    int w, h;
+    bgTexture = loadTexture(s, w, h);
+    if(bgTexture == TEXTURE_LOAD_ERROR)
+        FLog::Log(FLOG_ERROR, "OverlayRenderer::LoadBG - Failed to load BG image");
+    FLog::Log(FLOG_INFO, "%dx%d", w, h);
+}
+
+GLuint OverlayRenderer::loadTexture(const string filename, int &width, int &height) {
+   //header for testing if it is a png
+   png_byte header[8];
+
+   //open file as binary
+   FILE *fp = fopen(filename.c_str(), "rb");
+   if (!fp) {
+     return TEXTURE_LOAD_ERROR;
+   }
+
+   //read the header
+   fread(header, 1, 8, fp);
+
+   //test if png
+   int is_png = !png_sig_cmp(header, 0, 8);
+   if (!is_png) {
+     fclose(fp);
+     return TEXTURE_LOAD_ERROR;
+   }
+
+   //create png struct
+   png_structp png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL,
+       NULL, NULL);
+   if (!png_ptr) {
+     fclose(fp);
+     return (TEXTURE_LOAD_ERROR);
+   }
+
+   //create png info struct
+   png_infop info_ptr = png_create_info_struct(png_ptr);
+   if (!info_ptr) {
+     png_destroy_read_struct(&png_ptr, (png_infopp) NULL, (png_infopp) NULL);
+     fclose(fp);
+     return (TEXTURE_LOAD_ERROR);
+   }
+
+   //create png info struct
+   png_infop end_info = png_create_info_struct(png_ptr);
+   if (!end_info) {
+     png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp) NULL);
+     fclose(fp);
+     return (TEXTURE_LOAD_ERROR);
+   }
+
+   //png error stuff, not sure libpng man suggests this.
+   if (setjmp(png_jmpbuf(png_ptr))) {
+     png_destroy_read_struct(&png_ptr, &info_ptr, &end_info);
+     fclose(fp);
+     return (TEXTURE_LOAD_ERROR);
+   }
+
+   //init png reading
+   png_init_io(png_ptr, fp);
+
+   //let libpng know you already read the first 8 bytes
+   png_set_sig_bytes(png_ptr, 8);
+
+   // read all the info up to the image data
+   png_read_info(png_ptr, info_ptr);
+
+   //variables to pass to get info
+   int bit_depth, color_type;
+   png_uint_32 twidth, theight;
+
+   // get info about png
+   png_get_IHDR(png_ptr, info_ptr, &twidth, &theight, &bit_depth, &color_type,
+       NULL, NULL, NULL);
+
+   //update width and height based on png info
+   width = twidth;
+   height = theight;
+
+   // Update the png info struct.
+   png_read_update_info(png_ptr, info_ptr);
+
+   // Row size in bytes.
+   int rowbytes = png_get_rowbytes(png_ptr, info_ptr);
+
+   // Allocate the image_data as a big block, to be given to opengl
+   png_byte *image_data = new png_byte[rowbytes * height];
+   if (!image_data) {
+     //clean up memory and close stuff
+     png_destroy_read_struct(&png_ptr, &info_ptr, &end_info);
+     fclose(fp);
+     return TEXTURE_LOAD_ERROR;
+   }
+
+   //row_pointers is for pointing to image_data for reading the png with libpng
+   png_bytep *row_pointers = new png_bytep[height];
+   if (!row_pointers) {
+     //clean up memory and close stuff
+     png_destroy_read_struct(&png_ptr, &info_ptr, &end_info);
+     delete[] image_data;
+     fclose(fp);
+     return TEXTURE_LOAD_ERROR;
+   }
+   // set the individual row_pointers to point at the correct offsets of image_data
+   for (int i = 0; i < height; ++i)
+     row_pointers[height - 1 - i] = image_data + i * rowbytes;
+
+   //read the png into image_data through row_pointers
+   png_read_image(png_ptr, row_pointers);
+
+   //Now generate the OpenGL texture object
+   GLuint texture;
+   glGenTextures(1, &texture);
+   glBindTexture(GL_TEXTURE_2D, texture);
+   glTexImage2D(GL_TEXTURE_2D,0, GL_RGB, width, height, 0,
+       GL_RGB, GL_UNSIGNED_BYTE, (GLvoid*) image_data);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+   //clean up memory and close stuff
+   png_destroy_read_struct(&png_ptr, &info_ptr, &end_info);
+   delete[] image_data;
+   delete[] row_pointers;
+   fclose(fp);
+
+   return texture;
+ }
+ #endif
 
 GLboolean OverlayRenderer::esCreateWindow (const char* title) {
     if (!WinCreate (title)) {
@@ -78,18 +512,24 @@ GLboolean OverlayRenderer::esCreateWindow (const char* title) {
 
 int OverlayRenderer::Init () {
     const char *vShaderStr =
-        "attribute vec4 vPosition;    \n"
-        "void main()                  \n"
-        "{                            \n"
-        "   gl_Position = vPosition;  \n"
-        "}                            \n";
+      "attribute vec4 a_position;   \n"
+      "attribute vec2 a_texCoord;   \n"
+      "varying vec2 v_texCoord;     \n"
+      "void main()                  \n"
+      "{                            \n"
+      "   gl_Position = a_position; \n"
+      "   v_texCoord = a_texCoord;  \n"
+      "}                            \n";
 
-    const char *fShaderStr =
-        "precision mediump float;\n"\
-        "void main()                                  \n"
-        "{                                            \n"
-        "  gl_FragColor = vec4 ( 1.0, 0.0, 0.0, 1.0 );\n"
-        "}                                            \n";
+   const char *fShaderStr =
+      "precision mediump float;                            \n"
+      "varying vec2 v_texCoord;                            \n"
+      "uniform sampler2D s_texture;                        \n"
+      "void main()                                         \n"
+      "{                                                   \n"
+      "  gl_FragColor = texture2D( s_texture, v_texCoord );\n"
+      //"  gl_FragColor = vec4(1, 1, 1, texture2D( s_texture, v_texCoord ).a);\n"
+      "}                                            \n";
 
     GLuint vertexShader;
     GLuint fragmentShader;
@@ -108,17 +548,19 @@ int OverlayRenderer::Init () {
     glAttachShader(programObject, vertexShader);
     glAttachShader(programObject, fragmentShader);
 
-    // Bind vPosition to attribute 0
-    glBindAttribLocation(programObject, 0, "vPosition");
 
     // Link the program
     glLinkProgram(programObject);
 
+    positionLoc = glGetAttribLocation ( programObject, "a_position" );
+    texCoordLoc = glGetAttribLocation ( programObject, "a_texCoord" );
+    samplerLoc =  glGetUniformLocation( programObject, "s_texture" );
+
     // Check the link status
     glGetProgramiv(programObject, GL_LINK_STATUS, &linked);
 
+    GLint infoLen = 0;
     if (!linked) {
-        GLint infoLen = 0;
 
         glGetProgramiv(programObject, GL_INFO_LOG_LENGTH, &infoLen);
 
@@ -131,6 +573,35 @@ int OverlayRenderer::Init () {
     }
 
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+
+
+    //attempt (probably fail) to setup an ortho view
+    float w = width;
+    float h = height;
+    float f = 100;
+    float n = 0.0001;
+
+    float ortho[] = {  1.0f/w,  0.0f, 0.0f, 0.0f,
+                        0.0f, 1.0f/h, 0.0f, 0.0f,
+                        0.0f, 0.0f, -2.0f/(f-n), -(f+n)/(f-n),
+                        0.0f, 0.0f, 0.0f, 1.0f };
+
+    GLint i32Location;
+    i32Location = glGetUniformLocation(programObject, "WorldViewProjection");
+    glUniformMatrix4fv(i32Location, 1, GL_FALSE, ortho);
+
+
+    // Set the viewport
+    glViewport(0, 0, width, height);
+
+    glEnable(GL_TEXTURE_2D);
+    glDisable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+
+    // Use the program object
+    glUseProgram(programObject);
+
     return GL_TRUE;
 }
 

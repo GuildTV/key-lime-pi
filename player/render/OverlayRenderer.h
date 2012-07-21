@@ -29,12 +29,37 @@
 #include <sys/time.h>
 #include <string>
 #include <string.h>
+#include <vector>
+#include <ft2build.h>
+#include FT_FREETYPE_H
 
 #ifdef RENDERTEST
 #include  <X11/Xlib.h>
 #include  <X11/Xatom.h>
 #include  <X11/Xutil.h>
+#define PNG_SKIP_SETJMP_CHECK
+#include <png.h>
+#define TEXTURE_LOAD_ERROR -1
 #endif
+
+#include "logger.h"
+
+#define MAXCHARVALUE 127
+#define DEFAULTCHARVALUE 45
+
+enum Position {NONE, LEFT, CENTER, RIGHT};
+
+struct TextChar {
+    TextChar() :loaded(false), texture(-1){}
+    GLuint texture;
+    int width;
+    int height;
+    int advanceX;
+    int advanceY;
+    int bitTop;
+    int bitLeft;
+    bool loaded;
+};
 
 class OverlayRenderer {
 public:
@@ -43,6 +68,16 @@ public:
     void Draw();
     void PreDraw();
     void Run();
+    bool LoadFreetype(string font_file);
+    bool LoadFreetypeChar(int height, int value, TextChar *character);
+    void CloseFreetype();
+    void FreetypeToTexture(FT_GlyphSlot *slot, TextChar* character);
+    GLuint CreateSimpleTexture2D();
+    unsigned int pow2(unsigned int num);
+    bool LoadFreetypeRange(string font_file, int height, int start, int end, TextChar *storage);
+    bool LoadOverlayText();
+    void WriteString(char * text, TextChar *charSet, int x, int y, float scaleX, float scaleY);
+    void DrawTimeStamp();
 
 protected:
     GLboolean esCreateWindow (const char* title);
@@ -61,9 +96,23 @@ private:
     EGLSurface eglSurface;
 #ifdef RENDERTEST
     Display *x_display;
+    GLuint loadTexture(const string filename, int &width, int &height);
+    void LoadBG(string filename);
+    GLuint bgTexture;
 #endif
 
     std::string filename;
+    FT_Library library;
+    FT_Face face;
+    GLuint texture;
+    GLint positionLoc;
+    GLint texCoordLoc;
+    GLint samplerLoc;
+
+    TextChar overlayText[MAXCHARVALUE+1];
+
+    long currentRefresh;
+    Position timecodePosition;
 };
 
 

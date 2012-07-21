@@ -129,7 +129,7 @@ void MyRender::Process() {
 
   OverlayRenderer renderer;
   renderer.Create(filename);
-
+  renderer.PreDraw();
   double startTime = 2840000.0; // currently vid->GetCurrentPTS*1.75??
 
   while(!m_bStop && m_running){
@@ -139,7 +139,6 @@ void MyRender::Process() {
 		  break;
 
 	  }
-		//render prevideo
-		renderer.PreDraw();
+
   }
 }

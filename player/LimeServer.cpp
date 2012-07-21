@@ -19,7 +19,7 @@
  *
  */
 
-#include "RenderTest.h"
+#include "LimeServer.h"
 #include <jsoncpp/json/json.h>
 #include <time.h>
 #include <stdio.h>
@@ -53,6 +53,9 @@ void RenderTest::Run() {
         Stop();
         return;
     }
+
+    VideoLoad("new");
+    VideoPlay();
 
     while(run && net.ThreadRunning()){
         //get next message

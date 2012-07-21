@@ -25,8 +25,12 @@
 #include "net/NetIO.h"
 #include <string>
 #include "logger.h"
+
+#ifdef RENDERTEST
 #include "render/OverlayRenderer.h"
+#else
 #include "OMXWrapper.h"
+#endif
 
 class RenderTest
 {
