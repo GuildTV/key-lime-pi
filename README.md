@@ -1,34 +1,8 @@
-GTVPlayer
-=========
+key-lime-pie
+============
 
-GTVPlayer is a commandline OMX player for the Raspberry Pi. It is based upon OMXPlayer 
-by huceke, and has been modified to support rendering overlays with OpenGL ES2.
-Audio and subtitle support has been removed for lack of need.
+key-lime-pie is a custom video playback program designed to playback video, over two raspberry pi's, to allow for keying of video using a vision mixer. It builds on omxplayer, for video playback, and uses opengl es2 for rendering of text over the video backgrounds.
 
 Very early and very sloppy :)
 
-Compiling GTVPlayer
--------------------
-
-    make
-    make dist
-
-
-Using GTVPlayer
----------------
-
-    Usage: omxplayer [OPTIONS] [FILE]
-    Options :
-    -h / --help                    print this help
-    -i / --info                    dump stream format and exit
-    -s / --stats                   pts and buffer stats
-    -d / --deinterlace             deinterlacing
-    -3 / --3d                      switch tv into 3d mode
-    -y / --hdmiclocksync           adjust display refresh rate to match video
-    -t / --sid index               show subtitle with index
-    -r / --refresh                 adjust framerate/resolution to video
-
-For example:
-
-    ./omxplayer test.mkv
 
