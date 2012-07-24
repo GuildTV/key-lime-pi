@@ -145,8 +145,7 @@ void RenderTest::VideoLoad(std::string name){
 #else
     //load gl stuff
 
-    renderer = new OverlayRenderer;
-    renderer->Create(pathJson);
+    renderer = new OverlayRenderer(pathJson);
 
     renderer->PreDraw();
 #endif

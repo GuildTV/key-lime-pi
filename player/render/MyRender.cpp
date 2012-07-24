@@ -95,6 +95,10 @@ bool MyRender::Close()
     return false;
   }
 
+  if(renderer){
+    renderer->Stop();
+  }
+
   m_bStop = true;
   pthread_join(m_thread, NULL);
   m_running = false;
@@ -127,15 +131,14 @@ void *MyRender::Run(void *arg)
 
 void MyRender::Process() {
 
-  OverlayRenderer renderer;
-  renderer.Create(filename);
-  renderer.PreDraw();
+  renderer = new OverlayRenderer(filename);
+  renderer->PreDraw();
   double startTime = 2840000.0; // currently vid->GetCurrentPTS*1.75??
 
   while(!m_bStop && m_running){
 	  double currentTime = vid->GetCurrentPTS();
 	  if(currentTime > startTime){
-		  renderer.Run();
+		  renderer->Run();
 		  break;
 
 	  }

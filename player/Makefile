@@ -10,6 +10,7 @@ SRC=linux/XMemUtils.cpp \
 		OMX/DynamicDll.cpp \
 		utils/RegExp.cpp \
 		OMX/BitstreamConverter.cpp \
+		render/Freetype.cpp \
 		render/OverlayRenderer.cpp \
 		linux/RBP.cpp \
 		OMX/OMXThread.cpp \

@@ -52,6 +52,7 @@ private:
   static void *Run(void *arg);
   OMXPlayerVideo *vid;
   std::string filename;
+  OverlayRenderer *renderer;
 
 public:
   MyRender();

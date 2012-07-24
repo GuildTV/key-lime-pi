@@ -30,8 +30,6 @@
 #include <string>
 #include <string.h>
 #include <vector>
-#include <ft2build.h>
-#include FT_FREETYPE_H
 
 #ifdef RENDERTEST
 #include  <X11/Xlib.h>
@@ -42,42 +40,29 @@
 #define TEXTURE_LOAD_ERROR -1
 #endif
 
-#include "logger.h"
+#include "render/Freetype.h"
 
-#define MAXCHARVALUE 127
-#define DEFAULTCHARVALUE 45
+#include "logger.h"
 
 enum Position {NONE, LEFT, CENTER, RIGHT};
 
-struct TextChar {
-    TextChar() :loaded(false), texture(-1){}
-    GLuint texture;
-    int width;
-    int height;
-    int advanceX;
-    int advanceY;
-    int bitTop;
-    int bitLeft;
-    bool loaded;
-};
-
 class OverlayRenderer {
 public:
-    int Create(std::string file);
-    OverlayRenderer();
+    OverlayRenderer(std::string file);
     void Draw();
     void PreDraw();
     void Run();
-    bool LoadFreetype(string font_file);
-    bool LoadFreetypeChar(int height, int value, TextChar *character);
-    void CloseFreetype();
-    void FreetypeToTexture(FT_GlyphSlot *slot, TextChar* character);
+
     GLuint CreateSimpleTexture2D();
-    unsigned int pow2(unsigned int num);
-    bool LoadFreetypeRange(string font_file, int height, int start, int end, TextChar *storage);
     bool LoadOverlayText();
-    void WriteString(char * text, TextChar *charSet, int x, int y, float scaleX, float scaleY);
     void DrawTimeStamp();
+    void Stop();
+
+    GLint getWidth() {return width;};
+    GLint getHeight() {return height;};
+    GLuint getPosLoc() {return positionLoc;};
+    GLuint getTexLoc() {return texCoordLoc;};
+    GLuint getSamLoc() {return samplerLoc;};
 
 protected:
     GLboolean esCreateWindow (const char* title);
@@ -102,17 +87,18 @@ private:
 #endif
 
     std::string filename;
-    FT_Library library;
-    FT_Face face;
-    GLuint texture;
+
     GLint positionLoc;
     GLint texCoordLoc;
     GLint samplerLoc;
 
+    Freetype *ft;
     TextChar overlayText[MAXCHARVALUE+1];
 
     long currentRefresh;
     Position timecodePosition;
+
+    bool running;
 };
 
 

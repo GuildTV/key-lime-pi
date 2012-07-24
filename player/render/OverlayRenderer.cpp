@@ -21,200 +21,27 @@
 
 #include "OverlayRenderer.h"
 
-int OverlayRenderer::Create(std::string file) {
+OverlayRenderer::OverlayRenderer(std::string file){
+#ifdef RENDERTEST
+    x_display = NULL;
+#endif
+    ft = new Freetype(this);
+
     filename = file;
     esCreateWindow ("Overlay Renderer");
 
-    if (!Init ())
-        return 1;
+    Init();
 
     timecodePosition = CENTER;
     LoadOverlayText();
-
-    return 0;
-}
-
-bool OverlayRenderer::LoadFreetype(string font_file) {
-    if(FT_Init_FreeType(&library)){
-        FLog::Log(FLOG_ERROR, "OverlayRenderer::LoadFreetype - failed to load freetype library");
-        return false;
-    }
-
-    if(FT_New_Face(library, font_file.c_str(), 0, &face)){
-        FLog::Log(FLOG_ERROR, "OverlayRenderer::LoadFreetype - failed to load freetype font face");
-        return false;
-    }
-
-    FLog::Log(FLOG_DEBUG, "OverlayRenderer::LoadFreetype - loaded freetype font file '%s'", font_file.c_str());
-    return true;
-}
-
-bool OverlayRenderer::LoadFreetypeRange(string font_file, int height, int start, int end, TextChar *storage){
-    if(!LoadFreetype(font_file)){
-        return false;
-    }
-
-    if(start < 0 || end > MAXCHARVALUE){
-        FLog::Log(FLOG_ERROR, "OverlayRenderer::LoadFreetypeRange - start or end index out of range");
-        return false;
-    }
-
-    for(int i=start;i<=end;i++) {
-        if(!LoadFreetypeChar(height, i, &storage[i])){
-            return false;
-        }
-    }
-
-    FLog::Log(FLOG_DEBUG, "OverlayRenderer::LoadFreetype - loaded freetype character range %d-%d", start, end);
-    CloseFreetype();
-    return true;
-}
-
-bool OverlayRenderer::LoadFreetypeChar(int height, int value, TextChar *character) {
-    unsigned int h = height;
-    FT_Set_Char_Size(face, h << 6, h << 6, 96, 96);
-
-    unsigned char ch = value;
-
-    if(FT_Load_Glyph(face, FT_Get_Char_Index(face, ch), FT_LOAD_RENDER)){
-        FLog::Log(FLOG_ERROR, "OverlayRenderer::LoadFreetype - failed to load freetype glyph");
-        return false;
-    }
-
-    FT_GlyphSlot slot = face->glyph;
-    FreetypeToTexture(&slot, character);
-
-    return true;
-}
-
-void OverlayRenderer::FreetypeToTexture(FT_GlyphSlot *slot, TextChar* character){
-    FT_Bitmap *bitmap = &(*slot)->bitmap;
-    int width = pow2(bitmap->width);
-    int height = pow2(bitmap->rows);
-    GLubyte* expanded_data = new GLubyte[ 2 * width * height];
-
-    character->width = bitmap->width;
-    character->height = bitmap->rows;
-    character->advanceX = (*slot)->advance.x;
-    character->advanceY = (*slot)->advance.y;
-    character->bitLeft = (*slot)->bitmap_left;
-    character->bitTop = (*slot)->bitmap_top;
-    character->loaded = true;
-
-    for(int j = 0; j <height ; j++) {
-        for(int i = 0; i < width; i++) {
-            expanded_data[2 * (i + j * width)] = 255;
-            expanded_data[2 * (i + j * width) + 1] = (i >= bitmap->width || j >= bitmap->rows) ? 0 : bitmap->buffer[i + bitmap->width * j];
-        }
-    }
-
-    glGenTextures(1, &(*character).texture);
-    glBindTexture(GL_TEXTURE_2D, (*character).texture);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-
-    glTexImage2D(GL_TEXTURE_2D,0,GL_LUMINANCE_ALPHA,width,height,0,GL_LUMINANCE_ALPHA,GL_UNSIGNED_BYTE,expanded_data);
-
-    free((void *)expanded_data);
-}
-
-unsigned int OverlayRenderer::pow2(unsigned int a) {
-    unsigned int rval=2;
-    // rval<<=1 Is A Prettier Way Of Writing rval*=2;
-    while(rval<a) rval<<=1;
-    return rval;
-}
-
-void OverlayRenderer::CloseFreetype() {
-    FT_Done_Face(face);
-    FT_Done_FreeType(library);
-}
-
-void OverlayRenderer::WriteString(char * text, TextChar *charSet, int x, int y, float scaleX, float scaleY) { //TODO - multiline?
-#ifndef RENDERTEST
-    scaleX *= 9.0f/16.0f; //skew for raspberry screen output, even though has been told aspect ratio is 16/9
-#endif
-    float xPos = x;
-        xPos *= 2;
-        xPos /= width;
-        xPos -= 1.0f;
-    float yPos = y;
-        yPos *= 2;
-        yPos /= height;
-        yPos -= 1.0f;
-    for (int i=0;i<strlen(text);i++){
-    unsigned char c = text[i];
-    TextChar *ch = &charSet[c];
-    if(!ch->loaded){
-        *ch = charSet[DEFAULTCHARVALUE];
-        if(!ch->loaded){
-            FLog::Log(FLOG_ERROR, "OverlayRenderer::WriteString - default character wasnt loaded");
-            return;
-        }
-    }
-
-    float chH = pow2(ch->height);
-        chH *= scaleY;
-        chH *= 2.0f;
-        chH /= height;//TODO, convert to use pow2 to ensure constant widths??
-    float chW = pow2(ch->width);
-        chW *= scaleX;
-        chW *= 2.0f;
-        chW /= width;
-
-    float bL = ch->bitLeft;
-        bL /= width;
-        bL *= scaleX;
-        bL *= 2.0f;
-
-    float bT = ch->bitTop;
-        bT /= height;
-        bT *= scaleY;
-        bT *= 2.0f;
-
-
-    GLfloat vVertices[] = { xPos+bL,  yPos+bT, 0.0f,  // Position 0
-                            0.0f,  0.0f,        // TexCoord 0
-                            xPos+bL,  yPos-chH+bT, 0.0f,  // Position 1
-                            0.0f,  1.0f,        // TexCoord 1
-                            xPos+chW+bL,  yPos-chH+bT, 0.0f,  // Position 2
-                            1.0f,  1.0f,        // TexCoord 2
-                            xPos+chW+bL,  yPos+bT, 0.0f,  // Position 3
-                            1.0f,  0.0f         // TexCoord 3
-                         };
-    GLushort indices[] = { 0, 1, 2, 0, 2, 3 };
-
-    glVertexAttribPointer (positionLoc, 3, GL_FLOAT,
-                           GL_FALSE, 5 * sizeof(GLfloat), vVertices );
-    // Load the texture coordinate
-    glVertexAttribPointer (texCoordLoc, 2, GL_FLOAT,
-                           GL_FALSE, 5 * sizeof(GLfloat), &vVertices[3] );
-
-    glEnableVertexAttribArray ( positionLoc );
-    glEnableVertexAttribArray ( texCoordLoc );
-
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, ch->texture);
-    glUniform1i ( samplerLoc, 0 );
-    glDrawElements ( GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, indices );
-
-    float xInc = ch->advanceX >> 6;
-        xInc *= scaleX;
-        xInc *= 2.0f;
-        xInc /= width;
-    xPos += xInc;
-    }
 }
 
 bool OverlayRenderer::LoadOverlayText() {
     int height = 100;
-    LoadFreetypeRange("resources/Overlay.ttf", height, 32, 127, overlayText);
+    ft->LoadFreetypeRange("resources/Overlay.ttf", height, 32, 127, overlayText);
     FLog::Log(FLOG_INFO, "OverlayRenderer::LoadOverlayText - loaded overlay text characters");
 }
+
 
 void OverlayRenderer::Draw () {
     // Clear the color buffer
@@ -248,34 +75,7 @@ void OverlayRenderer::Draw () {
     }
 #endif
 
-    /*
-    GLfloat vVertices[] = { -0.5f,  0.5f, 0.0f,  // Position 0
-                            0.0f,  0.0f,        // TexCoord 0
-                           -0.5f, -0.5f, 0.0f,  // Position 1
-                            0.0f,  1.0f,        // TexCoord 1
-                            0.5f, -0.5f, 0.0f,  // Position 2
-                            1.0f,  1.0f,        // TexCoord 2
-                            0.5f,  0.5f, 0.0f,  // Position 3
-                            1.0f,  0.0f         // TexCoord 3
-                         };
-GLushort indices[] = { 0, 1, 2, 0, 2, 3 };
-
-
-
-
-    glVertexAttribPointer (positionLoc, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), vVertices );
-    glVertexAttribPointer (texCoordLoc, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), &vVertices[3] );
-
-    glEnableVertexAttribArray ( positionLoc );
-    glEnableVertexAttribArray ( texCoordLoc );
-
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, overlayText[50].texture);
-    FLog::Log(FLOG_INFO, "%d %d", overlayText[50].texture, test.width);
-    glUniform1i ( samplerLoc, 0 );
-    glDrawElements ( GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, indices );*/
-
-    WriteString("Hey there :)",overlayText, 100,100,1,1);
+    ft->WriteString("Hey there :)",overlayText, 100,100,1,1);
 
     DrawTimeStamp();
 
@@ -306,7 +106,7 @@ void OverlayRenderer::DrawTimeStamp() {
         return;
     }
 
-    WriteString(str,overlayText, x,540,0.25,0.25);
+    ft->WriteString(str,overlayText, x,540,0.25,0.25);
 }
 
 GLuint OverlayRenderer::CreateSimpleTexture2D( )
@@ -344,27 +144,34 @@ GLuint OverlayRenderer::CreateSimpleTexture2D( )
 }
 
 void OverlayRenderer::Run() {
-    #ifdef RENDERTEST
+    running = true;
+#ifdef RENDERTEST
     LoadBG("resources/background.png");
 #endif
 
     currentRefresh = 0;
 
-    while(true){
+    while(running){
         Draw();
         currentRefresh++;
         usleep(20*1000);
     }
 
+    //wipe screen
+    glClear(GL_COLOR_BUFFER_BIT);
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    eglSwapBuffers(eglDisplay, eglSurface);
+}
+
+void OverlayRenderer::Stop() {
+    running = false;
 }
 
 void OverlayRenderer::PreDraw() {
     glClear(GL_COLOR_BUFFER_BIT);
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-    WriteString("Video Ready", overlayText, 175,238,1,1);
+    ft->WriteString("Video Ready", overlayText, 175,238,1,1);
     eglSwapBuffers(eglDisplay, eglSurface);
-
-    //Draw();
 }
 
 #ifdef RENDERTEST
@@ -748,12 +555,6 @@ EGLBoolean OverlayRenderer::WinCreate(const char *title)
     return EGL_TRUE;
 }
 #endif
-
-OverlayRenderer::OverlayRenderer(){
-#ifdef RENDERTEST
-    x_display = NULL;
-#endif
-}
 
 EGLBoolean OverlayRenderer::CreateEGLContext(){
 #ifndef RENDERTEST
