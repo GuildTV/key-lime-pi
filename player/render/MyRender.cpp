@@ -131,7 +131,8 @@ void *MyRender::Run(void *arg)
 
 void MyRender::Process() {
 
-  renderer = new OverlayRenderer(filename);
+  renderer = new OverlayRenderer;
+  renderer->Create(filename);
   renderer->PreDraw();
   double startTime = 2840000.0; // currently vid->GetCurrentPTS*1.75??
 

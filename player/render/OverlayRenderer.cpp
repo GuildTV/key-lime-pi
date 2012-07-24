@@ -21,19 +21,22 @@
 
 #include "OverlayRenderer.h"
 
-OverlayRenderer::OverlayRenderer(std::string file){
+OverlayRenderer::OverlayRenderer(){
 #ifdef RENDERTEST
     x_display = NULL;
 #endif
     ft = new Freetype(this);
 
-    filename = file;
     esCreateWindow ("Overlay Renderer");
 
     Init();
 
     timecodePosition = CENTER;
     LoadOverlayText();
+}
+
+void OverlayRenderer::Create(std::string file){
+    filename = file;
 }
 
 bool OverlayRenderer::LoadOverlayText() {
@@ -147,6 +150,7 @@ void OverlayRenderer::Run() {
     running = true;
 #ifdef RENDERTEST
     LoadBG("resources/background.png");
+    int frameCount = 0;
 #endif
 
     currentRefresh = 0;
@@ -154,7 +158,14 @@ void OverlayRenderer::Run() {
     while(running){
         Draw();
         currentRefresh++;
-        usleep(20*1000);
+        usleep(20000);//20ms (rest of frame)
+
+//force max length of 3 seconds for test bed (otherwise currently goes on forever
+#ifdef RENDERTEST
+        frameCount++;
+        if(frameCount >= 150)
+            break;
+#endif
     }
 
     //wipe screen
@@ -458,7 +469,6 @@ EGLBoolean OverlayRenderer::WinCreate(const char *title) {
    DISPMANX_UPDATE_HANDLE_T dispman_update;
    VC_RECT_T dst_rect;
    VC_RECT_T src_rect;
-
 
    uint32_t display_width;
    uint32_t display_height;

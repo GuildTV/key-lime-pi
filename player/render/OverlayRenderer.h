@@ -48,7 +48,8 @@ enum Position {NONE, LEFT, CENTER, RIGHT};
 
 class OverlayRenderer {
 public:
-    OverlayRenderer(std::string file);
+    OverlayRenderer();
+    void Create(std::string file);
     void Draw();
     void PreDraw();
     void Run();

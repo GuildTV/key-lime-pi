@@ -19,8 +19,8 @@
  *
  */
 
-#ifndef RENDERTEST_H
-#define RENDERTEST_H
+#ifndef LIMESERVER_H
+#define LIMESERVER_H
 
 #include "net/NetIO.h"
 #include <string>
@@ -32,11 +32,11 @@
 #include "OMXWrapper.h"
 #endif
 
-class RenderTest
+class LimeServer
 {
     public:
-        RenderTest();
-        virtual ~RenderTest();
+        LimeServer();
+        virtual ~LimeServer();
         void Run();
         void Stop(){run=false;};
     protected:
@@ -55,4 +55,4 @@ class RenderTest
 #endif
 };
 
-#endif // RENDERTEST_H
+#endif // LIMESERVER_H

@@ -34,22 +34,25 @@
 #define DATAFOLDER "data/"
 #endif
 
-RenderTest::RenderTest() {
+LimeServer::LimeServer() {
     run = false;
     videoLoaded = false;
+#ifdef RENDERTEST
+    renderer = new OverlayRenderer;
+#endif
 }
 
-RenderTest::~RenderTest() {
+LimeServer::~LimeServer() {
     //dtor
 }
 
-void RenderTest::Run() {
+void LimeServer::Run() {
     run = true;
 
     int ret = net.CreateServer("6789");
     if(ret != 0) {
 
-        FLog::Log(FLOG_ERROR, "RenderTest::Run - failed to create server. Closing program");
+        FLog::Log(FLOG_ERROR, "LimeServer::Run - failed to create server. Closing program");
         Stop();
         return;
     }
@@ -65,8 +68,8 @@ void RenderTest::Run() {
     run = false;
 }
 
-void RenderTest::HandleMessage(NetMessage* msg){
-    FLog::Log(FLOG_DEBUG, "RenderTest::HandleMessage - Handling message");
+void LimeServer::HandleMessage(NetMessage* msg){
+    FLog::Log(FLOG_DEBUG, "LimeServer::HandleMessage - Handling message");
     Json::Value root;
     Json::Reader reader;
     bool parsedSuccess = reader.parse((*msg).message, root, false);
@@ -92,9 +95,9 @@ void RenderTest::HandleMessage(NetMessage* msg){
         fwrite(body.c_str(), 1, body.length(), f);
         fclose(f);
 
-        FLog::Log(FLOG_ERROR, "RenderTest::HandleMessage - Failed to parse json. Dumped to \"%s\"", path.c_str());
+        FLog::Log(FLOG_ERROR, "LimeServer::HandleMessage - Failed to parse json. Dumped to \"%s\"", path.c_str());
 #else
-        FLog::Log(FLOG_ERROR, "RenderTest::HandleMessage - Failed to parse json.");
+        FLog::Log(FLOG_ERROR, "LimeServer::HandleMessage - Failed to parse json.");
 #endif
         return;
     }
@@ -115,9 +118,9 @@ void RenderTest::HandleMessage(NetMessage* msg){
 
 }
 
-void RenderTest::VideoLoad(std::string name){
+void LimeServer::VideoLoad(std::string name){
     videoLoaded = false;
-    FLog::Log(FLOG_INFO, "RenderTest::VideoLoad - Starting preload of \"%s\"", name.c_str());
+    FLog::Log(FLOG_INFO, "LimeServer::VideoLoad - Starting preload of \"%s\"", name.c_str());
     std::string pathVid = DATAFOLDER;
     pathVid += name;
     pathVid += "/video.mp4";
@@ -127,12 +130,12 @@ void RenderTest::VideoLoad(std::string name){
 
     //verify files exist
     if(!FileExists(pathVid.c_str())){
-        FLog::Log(FLOG_ERROR, "RenderTest::VideoLoad - Couldnt find video file for \"%s\"", name.c_str());
+        FLog::Log(FLOG_ERROR, "LimeServer::VideoLoad - Couldnt find video file for \"%s\"", name.c_str());
         (*net.GetClient()).SendMessage("{\"type\":\"preloadVideo\",\"status\":\"failed\"}"); //TODO better message to whoever
         return;
     }
     if(!FileExists(pathJson.c_str())){
-        FLog::Log(FLOG_ERROR, "RenderTest::VideoLoad - Couldnt find script file for \"%s\"", name.c_str());
+        FLog::Log(FLOG_ERROR, "LimeServer::VideoLoad - Couldnt find script file for \"%s\"", name.c_str());
         (*net.GetClient()).SendMessage("{\"type\":\"preloadVideo\",\"status\":\"failed\"}"); //TODO better message to whoever
         return;
     }
@@ -145,7 +148,7 @@ void RenderTest::VideoLoad(std::string name){
 #else
     //load gl stuff
 
-    renderer = new OverlayRenderer(pathJson);
+    renderer->Create(pathJson);
 
     renderer->PreDraw();
 #endif
@@ -153,7 +156,7 @@ void RenderTest::VideoLoad(std::string name){
     videoLoaded = true;
 }
 
-void RenderTest::VideoPlay() {
+void LimeServer::VideoPlay() {
     if(!videoLoaded){
         (*net.GetClient()).SendMessage("{\"type\":\"playVideo\",\"status\":\"nothing loaded\"}"); //TODO better message to whoever
         return;
@@ -170,7 +173,7 @@ void RenderTest::VideoPlay() {
 #endif
 }
 
-bool RenderTest::FileExists(const char * filename) {
+bool LimeServer::FileExists(const char * filename) {
     if (FILE * file = fopen(filename, "r")) {
         fclose(file);
         return true;
@@ -185,8 +188,8 @@ int main(int argc, char *argv[]){
     FLog::Log(FLOG_INFO, "Starting render test");
     printf("Starting render test");
 
-    RenderTest render;
-    render.Run();
+    LimeServer lime;
+    lime.Run();
 
     printf("Closing render test");
     FLog::Log(FLOG_INFO, "Closing render test\n\n");
