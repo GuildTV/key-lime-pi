@@ -83,7 +83,6 @@ void NetMessageQueue::Push(NetMessage* msg) {
     Lock();
 
     messageQueue.push(msg);
-    FLog::Log(FLOG_INFO, "NetUser::processMessage - push");
 
     pthread_cond_broadcast(&m_cond);
 

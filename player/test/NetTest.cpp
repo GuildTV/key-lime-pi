@@ -102,7 +102,6 @@ void NetTest::ThreadProcess() {
     cout << "Message printer ready" << endl;
     NetMessageQueue* que = (*netio).GetMessageQueue();
     while(running){
-        FLog::Log(FLOG_INFO, "NetUser::processMessage - n");
         while(!(*que).isEmpty()) {
             FLog::Log(FLOG_INFO, "NetUser::processMessage - msg");
             NetMessage* mess = (*que).Pop(true);
