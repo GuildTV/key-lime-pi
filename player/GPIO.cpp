@@ -163,11 +163,15 @@ void GPIO::SetPollTime(long poll) {
 }
 
 bool GPIO::BindInput(int pin, int poll){
-    if(inValue.length() != 0)
+    if(inValue.length() != 0){
+        FLog::Log(FLOG_DEBUG, "GPIO::BindInput - Invalid starting value of inValue");
         return false;
+    }
 
-    if(pin < 0)
+    if(pin < 0){
+        FLog::Log(FLOG_DEBUG, "GPIO::BindInput - Invalid pin number");
         return false;
+    }
 
     string prefix = "gpio";
     char name[21];
@@ -175,8 +179,10 @@ bool GPIO::BindInput(int pin, int poll){
     string fullName = prefix + name;
 
     bool exp = ExportPin(pin);
-    if(!exp)
+    if(!exp){
+        FLog::Log(FLOG_DEBUG, "GPIO::BindInput - Failed to export the pin");
         return false;
+    }
 
     inPin = pin;
     pollRate = poll;
@@ -188,7 +194,7 @@ bool GPIO::BindInput(int pin, int poll){
     string value = path + "/value";
 
     //write direction
-    FILE* dirHandle = fopen(direction.c_str(), "r");
+    FILE* dirHandle = fopen(direction.c_str(), "w");
     fwrite("in", 1, 2, dirHandle);
     fclose(dirHandle);
 
@@ -276,12 +282,19 @@ string GPIO::ReadInput() {
     exportCommand += "/value";
 
     FILE* comm = popen(exportCommand.c_str(), "r");
+    if(comm == NULL){
+        FLog::Log(FLOG_ERROR, "GPIO::ReadInput - Failed to run command (%s)", exportCommand.c_str());
+        pclose(comm);
+        return "";
+    }
     char buffer [2];
     if ( fgets (buffer , 2 , comm) == NULL ){
-        FLog::Log(FLOG_ERROR, "GPIO::RunCommand - Invalid command return");
+        FLog::Log(FLOG_ERROR, "GPIO::ReadInput - Invalid command return");
+        pclose(comm);
         return "";
     }
 
+    pclose(comm);
     return buffer;
 }
 
@@ -323,25 +336,31 @@ bool GPIO::RunCommand(const char* command, bool silent){
     FILE* comm = popen(command, "r");
     if(comm == NULL){
         FLog::Log(FLOG_ERROR, "GPIO::RunCommand - Command returned null");
+        pclose(comm);
         return false;
     }
     if(feof(comm)){
         FLog::Log(FLOG_ERROR, "GPIO::RunCommand - Unexpected end of command");
+        pclose(comm);
         return false;
     }
     char buffer [100];
     if ( fgets (buffer , 100 , comm) != NULL ){
         FLog::Log(FLOG_ERROR, "GPIO::RunCommand - Invalid command return");
+        pclose(comm);
         return false;
     }
 
     if(strlen(buffer) > 1 && silent){
         FLog::Log(FLOG_ERROR, "GPIO::RunCommand - Invalid command return");
+        pclose(comm);
         return false;
     } else if (strlen(buffer) < 1 && !silent){
         FLog::Log(FLOG_ERROR, "GPIO::RunCommand - Invalid command return");
+        pclose(comm);
         return false;
     }
 
+    pclose(comm);
     return true;
 }
