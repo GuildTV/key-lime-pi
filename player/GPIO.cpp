@@ -268,9 +268,12 @@ bool GPIO::WriteOutput(GPIOState state) {
     int val = int(state);
     char name[21];
     sprintf(name, "%d", val);
+    FLog::Log(FLOG_DEBUG, "GPIO::WriteOutput - %d", val);
     rewind(outHandle);
 
-    return (fwrite(name, 1, 1, outHandle) == 1);
+    bool s = (fwrite(name, 1, 1, outHandle) == 1);
+    fflush(outHandle);
+    return s;
 }
 
 string GPIO::ReadInput() {

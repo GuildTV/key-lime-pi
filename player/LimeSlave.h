@@ -19,8 +19,8 @@
  *
  */
 
-#ifndef LIMEMASTER_H
-#define LIMEMASTER_H
+#ifndef LIMESLAVE_H
+#define LIMESLAVE_H
 
 #include "net/NetIO.h"
 #include <string>
@@ -34,11 +34,11 @@
 #include "OMXWrapper.h"
 #endif
 
-class LimeMaster
+class LimeSlave
 {
     public:
-        LimeMaster();
-        virtual ~LimeMaster();
+        LimeSlave();
+        virtual ~LimeSlave();
         void Run();
         void Stop(){run=false;};
         void VideoStop();
@@ -49,7 +49,6 @@ class LimeMaster
         bool FileExists(const char * filename);
         bool LoadGPIO();
     private:
-        NetIO control;
         NetIO pi;
         bool run;
         void HandleMessage(NetMessage* msg);
@@ -62,4 +61,4 @@ class LimeMaster
 #endif
 };
 
-#endif // LIMEMASTER_H
+#endif // LIMESLAVE_H

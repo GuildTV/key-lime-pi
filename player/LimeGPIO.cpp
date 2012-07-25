@@ -24,7 +24,7 @@
 #ifdef LIMEMASTER
 #include "LimeMaster.h"
 #else
-#include "LimeClient.h"
+#include "LimeSlave.h"
 #endif
 
 #define GPIO_TIMEOUT_SEC 1
@@ -36,7 +36,7 @@ LimeGPIO::LimeGPIO(LimeMaster *srv){
     pthread_mutex_init(&m_lock, NULL);
 }
 #else
-LimeGPIO::LimeGPIO(LimeClient *cl
+LimeGPIO::LimeGPIO(LimeSlave *cl){
     client = cl;
     pthread_mutex_init(&m_lock, NULL);
 }
@@ -110,18 +110,21 @@ void *LimeGPIO::ThreadRun(void *arg)
 void LimeGPIO::ThreadProcess() {
     FLog::Log(FLOG_INFO, "LimeGPIO::ThreadProcess - Watcher starting");
 #ifdef LIMEMASTER
+FLog::Log(FLOG_INFO, "LimeGPIO::ThreadProcess (master)");
     //tell client to get ready
     if(!gpioHandle->WriteOutput(GPIO_HIGH)){
-        FLog::Log(FLOG_DEBUG, "LimeGPIO::ThreadProcess (server) - Failed to send GPIO signal");
+        FLog::Log(FLOG_ERROR, "LimeGPIO::ThreadProcess (server) - Failed to send GPIO signal");
         return;
     }
     FLog::Log(FLOG_DEBUG, "LimeGPIO::ThreadProcess (server) - Sent GPIO signal");
 
     gpioHandle->ThreadCreate();
 
+    gpioHandle->SetPollTime(1);
+
     //wait for clients response
     while(running){
-        if(gpioHandle->CondWait(GPIO_HIGH, false, 0, 20)){
+        if(gpioHandle->CondWait(GPIO_HIGH, true, 0, 1)){
             FLog::Log(FLOG_DEBUG, "LimeGPIO::ThreadProcess (server) - Recieved GPIO signal");
             break;
         }
@@ -134,9 +137,11 @@ void LimeGPIO::ThreadProcess() {
 
 
 #else
+FLog::Log(FLOG_INFO, "LimeGPIO::ThreadProcess (slave)");
     //wait for server to tell me to play
+    gpioHandle->ThreadCreate();
     while(running){
-        if(gpioHandle->CondWait(GPIO_HIGH, false, 1, 0)){
+        if(gpioHandle->CondWait(GPIO_HIGH, true, 1, 0)){
             FLog::Log(FLOG_DEBUG, "LimeGPIO::ThreadProcess (client) - Recieved GPIO signal");
             break;
         }
@@ -145,6 +150,9 @@ void LimeGPIO::ThreadProcess() {
     //confirm
     gpioHandle->WriteOutput(GPIO_HIGH);
     FLog::Log(FLOG_DEBUG, "LimeGPIO::ThreadProcess (client) - Sent GPIO signal");
+
+    //pause for a moment (unsure about timing :S)
+    usleep(120000);
 
     //play
     client->VideoPlay();

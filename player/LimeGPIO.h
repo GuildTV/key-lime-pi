@@ -48,7 +48,7 @@
 #ifdef LIMEMASTER
 class LimeMaster;
 #else
-class LimeClient;
+class LimeSlave;
 #endif
 
 using namespace std;
@@ -58,7 +58,7 @@ public:
 #ifdef LIMEMASTER
     LimeGPIO(LimeMaster *srv);
 #else
-    LimeGPIO(LimeClient *cl);
+    LimeGPIO(LimeSlave *cl);
 #endif
     virtual ~LimeGPIO();
     pthread_t ThreadHandle();
@@ -86,7 +86,7 @@ private:
 #ifdef LIMEMASTER
     LimeMaster *server;
 #else
-    LimeClient  *client;
+    LimeSlave  *client;
 #endif
 };
 

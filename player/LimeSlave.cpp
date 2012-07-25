@@ -19,7 +19,7 @@
  *
  */
 
-#include "LimeMaster.h"
+#include "LimeSlave.h"
 #include <jsoncpp/json/json.h>
 #include <time.h>
 #include <stdio.h>
@@ -41,7 +41,7 @@
 #define CONTROLPORT "6789"
 #endif
 
-LimeMaster::LimeMaster() {
+LimeSlave::LimeSlave() {
     run = false;
     videoLoaded = false;
 #ifdef RENDERTEST
@@ -49,42 +49,36 @@ LimeMaster::LimeMaster() {
 #endif
 }
 
-LimeMaster::~LimeMaster() {
+LimeSlave::~LimeSlave() {
     //dtor
 }
 
-void LimeMaster::Run() {
+void LimeSlave::Run() {
     run = true;
 
-    int ret = control.CreateServer(CONTROLPORT);
+    int ret = pi.CreateServer(PIPORT);
     if(ret != 0) {
 
-        FLog::Log(FLOG_ERROR, "LimeMaster::Run - failed to create server. Closing program");
+        FLog::Log(FLOG_ERROR, "LimeSlave::Run - failed to create server. Closing program");
         Stop();
         return;
-    }
-
-    string addr = "192.168.1.3";
-    while(pi.CreateClient(addr, PIPORT) != 0) {
-        FLog::Log(FLOG_ERROR, "LimeMaster::Run - failed to connect to slave '%s'", addr.c_str());
-        return;//dont stop here, just for now until can test properly
     }
 
     //finish setup
     FinishSetup();
 }
 
-bool LimeMaster::FinishSetup(){
+bool LimeSlave::FinishSetup(){
 #ifndef RENDERTEST
     if(!LoadGPIO()){
-        FLog::Log(FLOG_ERROR, "LimeMaster::Run - failed to bind to GPIO (try unexporting them and relaunching the program)");
+        FLog::Log(FLOG_ERROR, "LimeSlave::Run - failed to bind to GPIO (try unexporting them and relaunching the program)");
         return false;
     }
 #endif
 
-    while(run && control.ThreadRunning()){
+    while(run && pi.ThreadRunning()){
         //get next message
-        NetMessage* msg = control.GetMessageQueue()->Pop(true);
+        NetMessage* msg = pi.GetMessageQueue()->Pop(true);
         HandleMessage(msg);
     }
     run = false;
@@ -92,8 +86,8 @@ bool LimeMaster::FinishSetup(){
     return true;
 }
 
-void LimeMaster::HandleMessage(NetMessage* msg){
-    FLog::Log(FLOG_DEBUG, "LimeMaster::HandleMessage - Handling message");
+void LimeSlave::HandleMessage(NetMessage* msg){
+    FLog::Log(FLOG_DEBUG, "LimeSlave::HandleMessage - Handling message");
     Json::Value root;
     Json::Reader reader;
     bool parsedSuccess = reader.parse(msg->message, root, false);
@@ -119,9 +113,9 @@ void LimeMaster::HandleMessage(NetMessage* msg){
         fwrite(body.c_str(), 1, body.length(), f);
         fclose(f);
 
-        FLog::Log(FLOG_ERROR, "LimeMaster::HandleMessage - Failed to parse json. Dumped to \"%s\"", path.c_str());
+        FLog::Log(FLOG_ERROR, "LimeSlave::HandleMessage - Failed to parse json. Dumped to \"%s\"", path.c_str());
 #else
-        FLog::Log(FLOG_ERROR, "LimeMaster::HandleMessage - Failed to parse json.");
+        FLog::Log(FLOG_ERROR, "LimeSlave::HandleMessage - Failed to parse json.");
 #endif
         return;
     }
@@ -132,12 +126,9 @@ void LimeMaster::HandleMessage(NetMessage* msg){
     if(type.compare("preloadVideo") == 0){
         const string name = root["name"].asString();
 
-        pi.GetClient()->SendMessage(msg->message);
         VideoLoad(name);
 
     } else if (type.compare("playVideo") == 0){
-
-        pi.GetClient()->SendMessage(msg->message);
 
 #ifdef RENDERTEST
         VideoPlay();
@@ -148,9 +139,9 @@ void LimeMaster::HandleMessage(NetMessage* msg){
 
 }
 
-void LimeMaster::VideoLoad(std::string name){
+void LimeSlave::VideoLoad(std::string name){
     videoLoaded = false;
-    FLog::Log(FLOG_INFO, "LimeMaster::VideoLoad - Starting preload of \"%s\"", name.c_str());
+    FLog::Log(FLOG_INFO, "LimeSlave::VideoLoad - Starting preload of \"%s\"", name.c_str());
     std::string pathVid = DATAFOLDER;
     pathVid += name;
     pathVid += "/video.mp4";
@@ -160,13 +151,13 @@ void LimeMaster::VideoLoad(std::string name){
 
     //verify files exist
     if(!FileExists(pathVid.c_str())){
-        FLog::Log(FLOG_ERROR, "LimeMaster::VideoLoad - Couldnt find video file for \"%s\"", name.c_str());
-        control.GetClient()->SendMessage("{\"type\":\"preloadVideo\",\"status\":\"failed\"}"); //TODO better message to whoever
+        FLog::Log(FLOG_ERROR, "LimeSlave::VideoLoad - Couldnt find video file for \"%s\"", name.c_str());
+        pi.GetClient()->SendMessage("{\"type\":\"preloadVideo\",\"status\":\"failed\"}"); //TODO better message to whoever
         return;
     }
     if(!FileExists(pathJson.c_str())){
-        FLog::Log(FLOG_ERROR, "LimeMaster::VideoLoad - Couldnt find script file for \"%s\"", name.c_str());
-        control.GetClient()->SendMessage("{\"type\":\"preloadVideo\",\"status\":\"failed\"}"); //TODO better message to whoever
+        FLog::Log(FLOG_ERROR, "LimeSlave::VideoLoad - Couldnt find script file for \"%s\"", name.c_str());
+        pi.GetClient()->SendMessage("{\"type\":\"preloadVideo\",\"status\":\"failed\"}"); //TODO better message to whoever
         return;
     }
 
@@ -186,9 +177,9 @@ void LimeMaster::VideoLoad(std::string name){
     videoLoaded = true;
 }
 
-void LimeMaster::VideoPlay() {
+void LimeSlave::VideoPlay() {
     if(!videoLoaded){
-        control.GetClient()->SendMessage("{\"type\":\"playVideo\",\"status\":\"nothing loaded\"}"); //TODO better message to whoever
+        pi.GetClient()->SendMessage("{\"type\":\"playVideo\",\"status\":\"nothing loaded\"}"); //TODO better message to whoever
         return;
     }
     videoLoaded = false;
@@ -204,21 +195,21 @@ void LimeMaster::VideoPlay() {
 #endif
 }
 
-void LimeMaster::VideoStop(){
+void LimeSlave::VideoStop(){
 #ifndef RENDERTEST
     wrap->Stop();
 #else
     //TODO stop code
-    FLog::Log(FLOG_INFO, "LimeMaster::VideoStop - Recieved");
+    FLog::Log(FLOG_INFO, "LimeSlave::VideoStop - Recieved");
 #endif
 }
 
-bool LimeMaster::LoadGPIO() {
+bool LimeSlave::LoadGPIO() {
     limeGPIO = new LimeGPIO(this);
     return limeGPIO->LoadGPIO();
 }
 
-bool LimeMaster::FileExists(const char * filename) {
+bool LimeSlave::FileExists(const char * filename) {
     if (FILE * file = fopen(filename, "r")) {
         fclose(file);
         return true;
@@ -228,12 +219,12 @@ bool LimeMaster::FileExists(const char * filename) {
 
 
 int main(int argc, char *argv[]){
-    FLog::Open("Master.log");
+    FLog::Open("Slave.log");
 
     FLog::Log(FLOG_INFO, "Starting render test");
     printf("Starting render test\n");
 
-    LimeMaster lime;
+    LimeSlave lime;
     lime.Run();
 
     printf("Closing render test\n");

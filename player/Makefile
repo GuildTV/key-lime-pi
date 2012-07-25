@@ -1,11 +1,40 @@
 include Makefile.include
 
-CFLAGS+=-std=c++0x -DSTANDALONE -D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS -DTARGET_POSIX -D_LINUX -fPIC -DPIC -D_REENTRANT -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -DHAVE_CMAKE_CONFIG -D__VIDEOCORE4__ -U_FORTIFY_SOURCE -Wall -DHAVE_OMXLIB -DUSE_EXTERNAL_FFMPEG  -DHAVE_LIBAVCODEC_AVCODEC_H -DHAVE_LIBAVUTIL_OPT_H -DHAVE_LIBAVUTIL_MEM_H -DHAVE_LIBAVUTIL_AVUTIL_H -DHAVE_LIBAVFORMAT_AVFORMAT_H -DHAVE_LIBAVFILTER_AVFILTER_H -DOMX -DOMX_SKIP64BIT -ftree-vectorize -DUSE_EXTERNAL_OMX -DTARGET_RASPBERRY_PI -DUSE_EXTERNAL_LIBBCM_HOST
+CFLAGS+=-std=c++0x -DDEBUGLOG -DSTANDALONE -D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS -DTARGET_POSIX -D_LINUX -fPIC -DPIC -D_REENTRANT -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -DHAVE_CMAKE_CONFIG -D__VIDEOCORE4__ -U_FORTIFY_SOURCE -Wall -DHAVE_OMXLIB -DUSE_EXTERNAL_FFMPEG  -DHAVE_LIBAVCODEC_AVCODEC_H -DHAVE_LIBAVUTIL_OPT_H -DHAVE_LIBAVUTIL_MEM_H -DHAVE_LIBAVUTIL_AVUTIL_H -DHAVE_LIBAVFORMAT_AVFORMAT_H -DHAVE_LIBAVFILTER_AVFILTER_H -DOMX -DOMX_SKIP64BIT -ftree-vectorize -DUSE_EXTERNAL_OMX -DTARGET_RASPBERRY_PI -DUSE_EXTERNAL_LIBBCM_HOST
 
 LDFLAGS+=-L./ -lc -lWFC -lGLESv2 -lEGL -lbcm_host -lopenmaxil -ljsoncpp -lz -lfreetype
 INCLUDES+=-I./ -Ilinux -Iffmpeg_compiled/include/ -I/opt/vc/include. -I/usr/include/freetype2
 
-SRC=linux/XMemUtils.cpp \
+SRCSLAVE=linux/XMemUtils.cpp \
+		utils/log.cpp \
+		OMX/DynamicDll.cpp \
+		utils/RegExp.cpp \
+		OMX/BitstreamConverter.cpp \
+		render/Freetype.cpp \
+		render/OverlayRenderer.cpp \
+		linux/RBP.cpp \
+		OMX/OMXThread.cpp \
+		OMX/OMXReader.cpp \
+		OMX/OMXStreamInfo.cpp \
+		OMX/OMXCore.cpp \
+		OMX/OMXVideo.cpp \
+		OMX/OMXClock.cpp \
+		render/MyRender.cpp \
+		OMX/File.cpp \
+		OMX/OMXPlayerVideo.cpp \
+		OMXLink.cpp \
+		logger.cpp \
+		net/NetIO.cpp \
+		net/NetMessageQueue.cpp \
+		net/NetUser.cpp \
+		OMXWrapper.cpp \
+		LimeSlave.cpp \
+		GPIO.cpp \
+		LimeGPIO.cpp \
+
+OBJSSLAVE+=$(filter %.s.o,$(SRCSLAVE:.cpp=.s.o))
+
+SRCMASTER=linux/XMemUtils.cpp \
 		utils/log.cpp \
 		OMX/DynamicDll.cpp \
 		utils/RegExp.cpp \
@@ -32,7 +61,7 @@ SRC=linux/XMemUtils.cpp \
 		GPIO.cpp \
 		LimeGPIO.cpp \
 
-OBJS+=$(filter %.o,$(SRC:.cpp=.o))
+OBJSMASTER+=$(filter %.m.o,$(SRCMASTER:.cpp=.m.o))
 
 SRCNETTEST=net/NetIO.cpp \
 		net/NetUser.cpp \
@@ -48,18 +77,26 @@ SRCGPIOTEST=GPIO.cpp \
 
 OBJSGPIOTEST+=$(filter %.o,$(SRCGPIOTEST:.cpp=.o))
 
-all: omxplayer.bin
+all: master.bin
 
-%.o: %.cpp
+%.m.o: %.cpp
 	@rm -f $@
-	$(CXX) $(CFLAGS) $(INCLUDES) -c $< -o $@ -Wno-deprecated-declarations
+	$(CXX) $(CFLAGS) -DLIMEMASTER $(INCLUDES) -c $< -o $@ -Wno-deprecated-declarations
+
+%.s.o: %.cpp
+	@rm -f $@
+	$(CXX) $(CFLAGS) -DLIMESLAVE $(INCLUDES) -c $< -o $@ -Wno-deprecated-declarations
 
 list_test:
 	$(CXX) -O3 -o list_test list_test.cpp
 
-omxplayer.bin: $(OBJS)
-	$(CXX) $(LDFLAGS) -o omxplayer.bin $(OBJS) -lvchiq_arm -lvcos -lrt -lpthread -lavutil -lavcodec -lavformat -lswscale -lpcre
-	#arm-unknown-linux-gnueabi-strip omxplayer.bin
+slave.bin: $(OBJSSLAVE)
+	$(CXX) $(LDFLAGS) -o slave.bin $(OBJSSLAVE) -lvchiq_arm -lvcos -lrt -lpthread -lavutil -lavcodec -lavformat -lswscale -lpcre
+	#arm-unknown-linux-gnueabi-strip slave.bin
+
+master.bin: $(OBJSMASTER)
+	$(CXX) $(LDFLAGS) -o master.bin $(OBJSMASTER) -lvchiq_arm -lvcos -lrt -lpthread -lavutil -lavcodec -lavformat -lswscale -lpcre
+	#arm-unknown-linux-gnueabi-strip master.bin
 
 nettest.bin: $(OBJSNETTEST)
 	$(CXX) $(LDFLAGS) -o nettest.bin $(OBJSNETTEST) -lvchiq_arm -lvcos -lrt -lpthread
@@ -75,11 +112,6 @@ clean:
 	@rm -f omxplayer.bin
 	@rm -rf omxplayer-dist
 	@rm -f omxplayer-dist.tar.gz
-
-ffmpeg:
-	@rm -rf ffmpeg
-	make -f Makefile.ffmpeg
-	make -f Makefile.ffmpeg install
 
 dist: omxplayer.bin
 	mkdir -p omxplayer-dist/usr/lib/omxplayer
