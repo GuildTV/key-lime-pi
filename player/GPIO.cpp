@@ -163,7 +163,7 @@ void GPIO::SetPollTime(long poll) {
 }
 
 bool GPIO::BindInput(int pin, int poll){
-    if(inValue.length() == 0)
+    if(inValue.length() != 0)
         return false;
 
     if(pin < 0)
@@ -186,8 +186,6 @@ bool GPIO::BindInput(int pin, int poll){
 
     string direction = path + "/direction";
     string value = path + "/value";
-
-    FLog::Log(FLOG_INFO,"%s fdgrdegte - ",value.c_str());
 
     //write direction
     FILE* dirHandle = fopen(direction.c_str(), "r");
