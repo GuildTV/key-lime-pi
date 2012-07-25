@@ -41,8 +41,13 @@ void OverlayRenderer::Create(std::string file){
 
 bool OverlayRenderer::LoadOverlayText() {
     int height = 100;
-    ft->LoadFreetypeRange("resources/Overlay.ttf", height, 32, 127, overlayText);
+    if(!ft->LoadFreetypeRange("resources/Overlay.ttf", height, 32, 127, overlayText)){
+        FLog::Log(FLOG_ERROR, "OverlayRenderer::LoadOverlayText - failed to load overlay text characters");
+        return false;
+    }
+
     FLog::Log(FLOG_INFO, "OverlayRenderer::LoadOverlayText - loaded overlay text characters");
+    return true;
 }
 
 
@@ -192,7 +197,6 @@ void OverlayRenderer::LoadBG(string filename) {
     bgTexture = loadTexture(s, w, h);
     if(bgTexture == TEXTURE_LOAD_ERROR)
         FLog::Log(FLOG_ERROR, "OverlayRenderer::LoadBG - Failed to load BG image");
-    FLog::Log(FLOG_INFO, "%dx%d", w, h);
 }
 
 GLuint OverlayRenderer::loadTexture(const string filename, int &width, int &height) {
@@ -390,9 +394,6 @@ int OverlayRenderer::Init () {
         return GL_FALSE;
     }
 
-    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-
-
     //attempt (probably fail) to setup an ortho view
     float w = width;
     float h = height;
@@ -419,6 +420,11 @@ int OverlayRenderer::Init () {
 
     // Use the program object
     glUseProgram(programObject);
+
+    //ensure display starts off clean
+    glClear(GL_COLOR_BUFFER_BIT);
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    eglSwapBuffers(eglDisplay, eglSurface);
 
     return GL_TRUE;
 }

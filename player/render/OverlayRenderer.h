@@ -37,7 +37,7 @@
 #include  <X11/Xutil.h>
 #define PNG_SKIP_SETJMP_CHECK
 #include <png.h>
-#define TEXTURE_LOAD_ERROR -1
+#define TEXTURE_LOAD_ERROR 0
 #endif
 
 #include "render/Freetype.h"

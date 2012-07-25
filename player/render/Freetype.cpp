@@ -136,7 +136,7 @@ void Freetype::WriteString(char * text, TextChar *charSet, int x, int y, float s
         yPos *= 2;
         yPos /= renderer->getHeight();
         yPos -= 1.0f;
-    for (int i=0;i<strlen(text);i++){
+    for (uint i=0;i<strlen(text);i++){
     unsigned char c = text[i];
     TextChar *ch = &charSet[c];
     if(!ch->loaded){

@@ -36,8 +36,6 @@
 using namespace std;
 
 struct TextChar {
-    TextChar() :loaded(false), texture(-1){}
-    GLuint texture;
     int width;
     int height;
     int advanceX;
@@ -45,6 +43,8 @@ struct TextChar {
     int bitTop;
     int bitLeft;
     bool loaded;
+    GLuint texture;
+    TextChar() :loaded(false), texture(-1){}
 };
 
 //forward declare overlayrenderer
