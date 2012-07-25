@@ -19,7 +19,7 @@
  *
  */
 
-#include "LimeServer.h"
+#include "LimeMaster.h"
 #include <jsoncpp/json/json.h>
 #include <time.h>
 #include <stdio.h>
@@ -34,7 +34,7 @@
 #define DATAFOLDER "data/"
 #endif
 
-LimeServer::LimeServer() {
+LimeMaster::LimeMaster() {
     run = false;
     videoLoaded = false;
 #ifdef RENDERTEST
@@ -42,20 +42,27 @@ LimeServer::LimeServer() {
 #endif
 }
 
-LimeServer::~LimeServer() {
+LimeMaster::~LimeMaster() {
     //dtor
 }
 
-void LimeServer::Run() {
+void LimeMaster::Run() {
     run = true;
 
     int ret = net.CreateServer("6789");
     if(ret != 0) {
 
-        FLog::Log(FLOG_ERROR, "LimeServer::Run - failed to create server. Closing program");
+        FLog::Log(FLOG_ERROR, "LimeMaster::Run - failed to create server. Closing program");
         Stop();
         return;
     }
+
+#ifndef RENDERTEST
+    if(!LoadGPIO()){
+        FLog::Log(FLOG_ERROR, "LimeMaster::Run - failed to bind to GPIO (try unexporting them and relaunching the program)");
+        return;
+    }
+#endif
 
     VideoLoad("new");
     VideoPlay();
@@ -68,8 +75,8 @@ void LimeServer::Run() {
     run = false;
 }
 
-void LimeServer::HandleMessage(NetMessage* msg){
-    FLog::Log(FLOG_DEBUG, "LimeServer::HandleMessage - Handling message");
+void LimeMaster::HandleMessage(NetMessage* msg){
+    FLog::Log(FLOG_DEBUG, "LimeMaster::HandleMessage - Handling message");
     Json::Value root;
     Json::Reader reader;
     bool parsedSuccess = reader.parse((*msg).message, root, false);
@@ -95,9 +102,9 @@ void LimeServer::HandleMessage(NetMessage* msg){
         fwrite(body.c_str(), 1, body.length(), f);
         fclose(f);
 
-        FLog::Log(FLOG_ERROR, "LimeServer::HandleMessage - Failed to parse json. Dumped to \"%s\"", path.c_str());
+        FLog::Log(FLOG_ERROR, "LimeMaster::HandleMessage - Failed to parse json. Dumped to \"%s\"", path.c_str());
 #else
-        FLog::Log(FLOG_ERROR, "LimeServer::HandleMessage - Failed to parse json.");
+        FLog::Log(FLOG_ERROR, "LimeMaster::HandleMessage - Failed to parse json.");
 #endif
         return;
     }
@@ -112,15 +119,18 @@ void LimeServer::HandleMessage(NetMessage* msg){
 
     } else if (type.compare("playVideo") == 0){
 
+#ifdef RENDERTEST
         VideoPlay();
-
+#else
+        limeGPIO->VideoPlay();
+#endif
     }
 
 }
 
-void LimeServer::VideoLoad(std::string name){
+void LimeMaster::VideoLoad(std::string name){
     videoLoaded = false;
-    FLog::Log(FLOG_INFO, "LimeServer::VideoLoad - Starting preload of \"%s\"", name.c_str());
+    FLog::Log(FLOG_INFO, "LimeMaster::VideoLoad - Starting preload of \"%s\"", name.c_str());
     std::string pathVid = DATAFOLDER;
     pathVid += name;
     pathVid += "/video.mp4";
@@ -130,12 +140,12 @@ void LimeServer::VideoLoad(std::string name){
 
     //verify files exist
     if(!FileExists(pathVid.c_str())){
-        FLog::Log(FLOG_ERROR, "LimeServer::VideoLoad - Couldnt find video file for \"%s\"", name.c_str());
+        FLog::Log(FLOG_ERROR, "LimeMaster::VideoLoad - Couldnt find video file for \"%s\"", name.c_str());
         (*net.GetClient()).SendMessage("{\"type\":\"preloadVideo\",\"status\":\"failed\"}"); //TODO better message to whoever
         return;
     }
     if(!FileExists(pathJson.c_str())){
-        FLog::Log(FLOG_ERROR, "LimeServer::VideoLoad - Couldnt find script file for \"%s\"", name.c_str());
+        FLog::Log(FLOG_ERROR, "LimeMaster::VideoLoad - Couldnt find script file for \"%s\"", name.c_str());
         (*net.GetClient()).SendMessage("{\"type\":\"preloadVideo\",\"status\":\"failed\"}"); //TODO better message to whoever
         return;
     }
@@ -156,7 +166,7 @@ void LimeServer::VideoLoad(std::string name){
     videoLoaded = true;
 }
 
-void LimeServer::VideoPlay() {
+void LimeMaster::VideoPlay() {
     if(!videoLoaded){
         (*net.GetClient()).SendMessage("{\"type\":\"playVideo\",\"status\":\"nothing loaded\"}"); //TODO better message to whoever
         return;
@@ -168,12 +178,27 @@ void LimeServer::VideoPlay() {
     wrap->Play();//is bool for success starting
 
 #else
+
     //play gl stuff
     renderer->Run();
 #endif
 }
 
-bool LimeServer::FileExists(const char * filename) {
+void LimeMaster::VideoStop(){
+#ifndef RENDERTEST
+    wrap->Stop();
+#else
+    //TODO stop code
+    FLog::Log(FLOG_INFO, "LimeMaster::VideoStop - Recieved");
+#endif
+}
+
+bool LimeMaster::LoadGPIO() {
+    limeGPIO = new LimeGPIO(this);
+    return limeGPIO->LoadGPIO();
+}
+
+bool LimeMaster::FileExists(const char * filename) {
     if (FILE * file = fopen(filename, "r")) {
         fclose(file);
         return true;
@@ -186,12 +211,12 @@ int main(int argc, char *argv[]){
     FLog::Open("Renderer.log");
 
     FLog::Log(FLOG_INFO, "Starting render test");
-    printf("Starting render test");
+    printf("Starting render test\n");
 
-    LimeServer lime;
+    LimeMaster lime;
     lime.Run();
 
-    printf("Closing render test");
+    printf("Closing render test\n");
     FLog::Log(FLOG_INFO, "Closing render test\n\n");
 
     FLog::Close();

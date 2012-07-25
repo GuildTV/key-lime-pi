@@ -19,12 +19,14 @@
  *
  */
 
-#ifndef LIMESERVER_H
-#define LIMESERVER_H
+#ifndef LIMEMASTER_H
+#define LIMEMASTER_H
 
 #include "net/NetIO.h"
 #include <string>
 #include "logger.h"
+#include "GPIO.h"
+#include "LimeGPIO.h"
 
 #ifdef RENDERTEST
 #include "render/OverlayRenderer.h"
@@ -32,22 +34,25 @@
 #include "OMXWrapper.h"
 #endif
 
-class LimeServer
+class LimeMaster
 {
     public:
-        LimeServer();
-        virtual ~LimeServer();
+        LimeMaster();
+        virtual ~LimeMaster();
         void Run();
         void Stop(){run=false;};
+        void VideoStop();
+        void VideoPlay();
     protected:
         void VideoLoad(std::string name);
-        void VideoPlay();
         bool FileExists(const char * filename);
+        bool LoadGPIO();
     private:
         NetIO net;
         bool run;
         void HandleMessage(NetMessage* msg);
         bool videoLoaded;
+        LimeGPIO* limeGPIO;
 #ifdef RENDERTEST
         OverlayRenderer* renderer;
 #else
@@ -55,4 +60,4 @@ class LimeServer
 #endif
 };
 
-#endif // LIMESERVER_H
+#endif // LIMEMASTER_H

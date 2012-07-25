@@ -28,7 +28,9 @@ SRC=linux/XMemUtils.cpp \
 		net/NetMessageQueue.cpp \
 		net/NetUser.cpp \
 		OMXWrapper.cpp \
-		LimeServer.cpp \
+		LimeMaster.cpp \
+		GPIO.cpp \
+		LimeGPIO.cpp \
 
 OBJS+=$(filter %.o,$(SRC:.cpp=.o))
 
