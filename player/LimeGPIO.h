@@ -44,6 +44,7 @@
 #include <string>
 #include <cstring>
 #include <unistd.h>
+#include <bcm2835.h>
 
 #ifdef LIMEMASTER
 class LimeMaster;

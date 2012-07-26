@@ -29,6 +29,7 @@
 #include <string>
 #include <cstring>
 #include <unistd.h>
+#include <bcm2835.h>
 using namespace std;
 
 enum GPIOState { GPIO_LOW=0, GPIO_HIGH=1 };
@@ -43,10 +44,11 @@ public:
     bool ThreadRunning() {return running;};
 
     bool BindInput(int port, int poll);
-    bool UnBindInput();
+    void UnBindInput();
     bool BindOutput(int port);
-    bool UnBindOutput();
+    void UnBindOutput();
 
+    int ReadInput();
     bool WriteOutput(GPIOState state);
     void SetPollTime(long poll);
 
@@ -65,8 +67,7 @@ private:
     bool running;
     int inPin;
     int outPin;
-    string inValue;
-    FILE* outHandle;
+    int inValue;
     long pollRate;
     pthread_mutex_t m_lock;
     pthread_cond_t m_cond_high;
@@ -74,10 +75,7 @@ private:
     int lowCount;
     int highCount;
 
-    bool RunCommand(const char* command, bool silent);
-    bool ExportPin(int pin);
-    bool UnExportPin(int pin);
-    string ReadInput();
+
 };
 
 #endif // GPIO_H

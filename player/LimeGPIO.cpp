@@ -118,13 +118,9 @@ FLog::Log(FLOG_INFO, "LimeGPIO::ThreadProcess (master)");
     }
     FLog::Log(FLOG_DEBUG, "LimeGPIO::ThreadProcess (server) - Sent GPIO signal");
 
-    gpioHandle->ThreadCreate();
-
-    gpioHandle->SetPollTime(1);
-
     //wait for clients response
     while(running){
-        if(gpioHandle->CondWait(GPIO_HIGH, true, 0, 1)){
+        if(gpioHandle->ReadInput() == 1){
             FLog::Log(FLOG_DEBUG, "LimeGPIO::ThreadProcess (server) - Recieved GPIO signal");
             break;
         }
@@ -139,12 +135,13 @@ FLog::Log(FLOG_INFO, "LimeGPIO::ThreadProcess (master)");
 #else
 FLog::Log(FLOG_INFO, "LimeGPIO::ThreadProcess (slave)");
     //wait for server to tell me to play
-    gpioHandle->ThreadCreate();
     while(running){
-        if(gpioHandle->CondWait(GPIO_HIGH, true, 1, 0)){
+        if(gpioHandle->ReadInput() == 1){
             FLog::Log(FLOG_DEBUG, "LimeGPIO::ThreadProcess (client) - Recieved GPIO signal");
             break;
         }
+
+        delay(50);
     }
 
     //confirm
@@ -152,7 +149,7 @@ FLog::Log(FLOG_INFO, "LimeGPIO::ThreadProcess (slave)");
     FLog::Log(FLOG_DEBUG, "LimeGPIO::ThreadProcess (client) - Sent GPIO signal");
 
     //pause for a moment (unsure about timing :S)
-    usleep(120000);
+    delay(60);
 
     //play
     client->VideoPlay();

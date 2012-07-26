@@ -30,8 +30,11 @@ OverlayRenderer::OverlayRenderer(){
     esCreateWindow ("Overlay Renderer");
 
     Init();
-
+#ifdef LIMESLAVE
+    timecodePosition = NONE;
+#else
     timecodePosition = CENTER;
+#endif
     LoadOverlayText();
 }
 
@@ -163,10 +166,11 @@ void OverlayRenderer::Run() {
     while(running){
         Draw();
         currentRefresh++;
-        usleep(20000);//20ms (rest of frame)
 
 //force max length of 3 seconds for test bed (otherwise currently goes on forever
 #ifdef RENDERTEST
+        usleep(20000);//20ms (rest of frame)
+
         frameCount++;
         if(frameCount >= 150)
             break;
@@ -186,7 +190,9 @@ void OverlayRenderer::Stop() {
 void OverlayRenderer::PreDraw() {
     glClear(GL_COLOR_BUFFER_BIT);
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+#ifdef LIMEMASTER
     ft->WriteString("Video Ready", overlayText, 175,238,1,1);
+#endif
     eglSwapBuffers(eglDisplay, eglSurface);
 }
 

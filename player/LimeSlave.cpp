@@ -31,7 +31,7 @@
 #endif
 
 #ifndef DATAFOLDER
-#define DATAFOLDER "data/"
+#define DATAFOLDER "data-slave/"
 #endif
 
 #ifndef PIPORT
@@ -171,7 +171,6 @@ void LimeSlave::VideoLoad(std::string name){
 
     renderer->Create(pathJson);
 
-    renderer->PreDraw();
 #endif
 
     videoLoaded = true;
@@ -204,10 +203,12 @@ void LimeSlave::VideoStop(){
 #endif
 }
 
+#ifndef RENDERTEST
 bool LimeSlave::LoadGPIO() {
     limeGPIO = new LimeGPIO(this);
     return limeGPIO->LoadGPIO();
 }
+#endif
 
 bool LimeSlave::FileExists(const char * filename) {
     if (FILE * file = fopen(filename, "r")) {

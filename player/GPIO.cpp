@@ -29,8 +29,10 @@
 #endif
 
 GPIO::GPIO(){
-    inValue == "";
-    outHandle = NULL;
+    bcm2835_init();
+    inValue = -1;
+    inPin = -1;
+    outPin = -1;
     pthread_mutex_init(&m_lock, NULL);
     pthread_cond_init(&m_cond_high, NULL);
     pthread_cond_init(&m_cond_low, NULL);
@@ -43,6 +45,7 @@ GPIO::~GPIO(){
     pthread_mutex_destroy(&m_lock);
     pthread_cond_destroy(&m_cond_high);
     pthread_cond_destroy(&m_cond_low);
+    bcm2835_close();
 }
 
 
@@ -67,9 +70,9 @@ void GPIO::UnLock(){
 }
 
 bool GPIO::CondWait(GPIOState type, bool immediate, long seconds, long milli){
-    if(immediate && type == GPIO_LOW && inValue.compare("0") == 0)
+    if(immediate && type == GPIO_LOW && inValue == 0)
         return true;
-    if(immediate && type == GPIO_HIGH && inValue.compare("1") == 0)
+    if(immediate && type == GPIO_HIGH && inValue == 1)
         return true;
 
     timespec ts;
@@ -130,14 +133,14 @@ void *GPIO::ThreadRun(void *arg)
 void GPIO::ThreadProcess() {
     FLog::Log(FLOG_INFO, "GPIO::ThreadProcess - Watcher starting");
     while(running){
-        usleep(pollRate);
+        delay(pollRate);
 
-        string input = ReadInput();
+        int input = ReadInput();
         Lock();
-        if(input.compare(inValue) != 0) {
+        if(input == inValue) {
             inValue = input;
 
-            if(inValue.compare("1") == 0){ //cond_high
+            if(inValue == 1){ //cond_high
                 if(highCount == 0) {
                 } else if(highCount == 1)
                     pthread_cond_signal(&m_cond_high);
@@ -163,9 +166,13 @@ void GPIO::SetPollTime(long poll) {
 }
 
 bool GPIO::BindInput(int pin, int poll){
-    if(inValue.length() != 0){
+    if(inValue != -1){
         FLog::Log(FLOG_DEBUG, "GPIO::BindInput - Invalid starting value of inValue");
         return false;
+    }
+
+    if(inPin > 0){
+        FLog::Log(FLOG_DEBUG, "GPIO::BindInput - Trying to bind input whilst one is already bound");
     }
 
     if(pin < 0){
@@ -173,30 +180,10 @@ bool GPIO::BindInput(int pin, int poll){
         return false;
     }
 
-    string prefix = "gpio";
-    char name[21];
-    sprintf(name, "%d", pin);
-    string fullName = prefix + name;
-
-    bool exp = ExportPin(pin);
-    if(!exp){
-        FLog::Log(FLOG_DEBUG, "GPIO::BindInput - Failed to export the pin");
-        return false;
-    }
-
     inPin = pin;
-    pollRate = poll;
 
-    string path = GPIOPATH;
-    path += fullName;
-
-    string direction = path + "/direction";
-    string value = path + "/value";
-
-    //write direction
-    FILE* dirHandle = fopen(direction.c_str(), "w");
-    fwrite("in", 1, 2, dirHandle);
-    fclose(dirHandle);
+    bcm2835_gpio_fsel(pin, BCM2835_GPIO_FSEL_INPT);
+    bcm2835_gpio_set_pud(pin, BCM2835_GPIO_PUD_UP);
 
     //read from gpio
     inValue = ReadInput();
@@ -205,165 +192,48 @@ bool GPIO::BindInput(int pin, int poll){
 }
 
 bool GPIO::BindOutput(int pin){
-    if(outHandle)
-        return false;
+    if(outPin != -1){
+        FLog::Log(FLOG_DEBUG, "GPIO::BindOutput - Trying to bind input whilst one is already bound");
+    }
 
     if(pin < 0)
         return false;
 
 
-    string prefix = "gpio";
-    char name[21];
-    sprintf(name, "%d", pin);
-    string fullName = prefix + name;
-
-    bool exp = ExportPin(pin);
-    if(!exp)
-        return false;
-
     outPin = pin;
 
-    string path = GPIOPATH;
-    path += fullName;
+    bcm2835_gpio_fsel(pin, BCM2835_GPIO_FSEL_OUTP);
+    bcm2835_gpio_set_pud(pin, BCM2835_GPIO_PUD_UP);
 
-    string direction = path + "/direction";
-    string value = path + "/value";
-
-    //write direction
-    FILE* dirHandle = fopen(direction.c_str(), "w");
-    fwrite("out", 1, 3, dirHandle);
-    fclose(dirHandle);
-
-    //read from gpio
-    outHandle = fopen(value.c_str(), "w");
     WriteOutput(GPIO_LOW);
     return true;
 }
 
-bool GPIO::UnBindInput() {
-    if(inValue.length() != 0)
-        return true;
-
-    inValue = "";
-
-    //unexport gpio pin
-    return UnExportPin(outPin);
+void GPIO::UnBindInput() {
+    inPin = -1;
+    inValue = -1;
 }
 
-bool GPIO::UnBindOutput() {
-    if(!outHandle)
-        return true;
-
-    //close file handle
-    fclose(outHandle);
-
-    //unexport gpio pin
-    return UnExportPin(inPin);
+void GPIO::UnBindOutput() {
+    outPin = -1;
 }
 
 bool GPIO::WriteOutput(GPIOState state) {
-    if(!outHandle)
+    if(outPin == -1)
         return false;
 
     int val = int(state);
-    char name[21];
-    sprintf(name, "%d", val);
-    FLog::Log(FLOG_DEBUG, "GPIO::WriteOutput - %d", val);
-    rewind(outHandle);
 
-    bool s = (fwrite(name, 1, 1, outHandle) == 1);
-    fflush(outHandle);
-    return s;
-}
-
-string GPIO::ReadInput() {
-    char name[21];
-    sprintf(name, "gpio%d", inPin);
-    string exportCommand = "cat ";
-    exportCommand += GPIOPATH;
-    exportCommand += name;
-    exportCommand += "/value";
-
-    FILE* comm = popen(exportCommand.c_str(), "r");
-    if(comm == NULL){
-        FLog::Log(FLOG_ERROR, "GPIO::ReadInput - Failed to run command (%s)", exportCommand.c_str());
-        pclose(comm);
-        return "";
-    }
-    char buffer [2];
-    if ( fgets (buffer , 2 , comm) == NULL ){
-        FLog::Log(FLOG_ERROR, "GPIO::ReadInput - Invalid command return");
-        pclose(comm);
-        return "";
-    }
-
-    pclose(comm);
-    return buffer;
-}
-
-bool GPIO::ExportPin(int pin) {
-#ifndef GPIOTEST
-    char name[21];
-    sprintf(name, "%d", pin);
-    string exportCommand = "gpio-admin export ";
-    exportCommand += name;
-
-    bool comRet = RunCommand(exportCommand.c_str(), true);
-    if(!comRet) {
-        FLog::Log(FLOG_ERROR, "GPIO::ExportPin - Failed to export pin (is GPIO-admin installed?)");
-        return false;
-    }
-#endif
+    bcm2835_gpio_write(outPin, val);
 
     return true;
 }
 
-bool GPIO::UnExportPin(int pin) {
-#ifndef GPIOTEST
-    char name[21];
-    sprintf(name, "%d", pin);
-    string exportCommand = "gpio-admin unexport ";
-    exportCommand += name;
-
-    bool comRet = RunCommand(exportCommand.c_str(), true);
-    if(!comRet) {
-        FLog::Log(FLOG_ERROR, "GPIO::UnExportPin - Failed to unexport pin (is GPIO-admin installed?)");
-        return false;
-    }
-#endif
-
-    return true;
-}
-
-bool GPIO::RunCommand(const char* command, bool silent){
-    FILE* comm = popen(command, "r");
-    if(comm == NULL){
-        FLog::Log(FLOG_ERROR, "GPIO::RunCommand - Command returned null");
-        pclose(comm);
-        return false;
-    }
-    if(feof(comm)){
-        FLog::Log(FLOG_ERROR, "GPIO::RunCommand - Unexpected end of command");
-        pclose(comm);
-        return false;
-    }
-    char buffer [100];
-    if ( fgets (buffer , 100 , comm) != NULL ){
-        FLog::Log(FLOG_ERROR, "GPIO::RunCommand - Invalid command return");
-        pclose(comm);
-        return false;
+int GPIO::ReadInput() {
+    if(inPin == 0){
+        FLog::Log(FLOG_DEBUG, "GPIO::ReadInput - trying to read input without a valid pin being bound");
+        return -1;
     }
 
-    if(strlen(buffer) > 1 && silent){
-        FLog::Log(FLOG_ERROR, "GPIO::RunCommand - Invalid command return");
-        pclose(comm);
-        return false;
-    } else if (strlen(buffer) < 1 && !silent){
-        FLog::Log(FLOG_ERROR, "GPIO::RunCommand - Invalid command return");
-        pclose(comm);
-        return false;
-    }
-
-    pclose(comm);
-    return true;
+    return bcm2835_gpio_lev(inPin);
 }

@@ -213,10 +213,12 @@ void LimeMaster::VideoStop(){
 #endif
 }
 
+#ifndef RENDERTEST
 bool LimeMaster::LoadGPIO() {
     limeGPIO = new LimeGPIO(this);
     return limeGPIO->LoadGPIO();
 }
+#endif
 
 bool LimeMaster::FileExists(const char * filename) {
     if (FILE * file = fopen(filename, "r")) {
