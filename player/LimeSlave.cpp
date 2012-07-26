@@ -69,12 +69,7 @@ void LimeSlave::Run() {
 }
 
 bool LimeSlave::FinishSetup(){
-#ifndef RENDERTEST
-    if(!LoadGPIO()){
-        FLog::Log(FLOG_ERROR, "LimeSlave::Run - failed to bind to GPIO (try unexporting them and relaunching the program)");
-        return false;
-    }
-#endif
+    limeTimer = new LimeTimer(this);
 
     while(run && pi.ThreadRunning()){
         //get next message
@@ -120,21 +115,33 @@ void LimeSlave::HandleMessage(NetMessage* msg){
         return;
     }
 
+    if(!root.isMember("type")){
+        FLog::Log(FLOG_ERROR, "LimeMaster::HandleMessage - Recieved message without a type");
+        return;
+    }
     const string type = root["type"].asString();
 
     //preload a video to be played
     if(type.compare("preloadVideo") == 0){
+        if(!root.isMember("name")){
+            FLog::Log(FLOG_ERROR, "LimeMaster::HandleMessage - Recieved 'preloadVideo' command without a 'name' field");
+            return;
+        }
         const string name = root["name"].asString();
 
         VideoLoad(name);
 
     } else if (type.compare("playVideo") == 0){
 
-#ifdef RENDERTEST
-        VideoPlay();
-#else
-        limeGPIO->VideoPlay();
-#endif
+        if(!root.isMember("second") || !root.isMember("nanosecond")){
+            FLog::Log(FLOG_ERROR, "LimeMaster::HandleMessage - Recieved 'playVideo' command without complete timings");
+            return;
+        }
+
+        long sec = root["second"].asInt64();
+        long nano = root["nanosecond"].asInt64();
+
+        limeTimer->VideoPlay(sec, nano);
     }
 
 }
@@ -202,13 +209,6 @@ void LimeSlave::VideoStop(){
     FLog::Log(FLOG_INFO, "LimeSlave::VideoStop - Recieved");
 #endif
 }
-
-#ifndef RENDERTEST
-bool LimeSlave::LoadGPIO() {
-    limeGPIO = new LimeGPIO(this);
-    return limeGPIO->LoadGPIO();
-}
-#endif
 
 bool LimeSlave::FileExists(const char * filename) {
     if (FILE * file = fopen(filename, "r")) {

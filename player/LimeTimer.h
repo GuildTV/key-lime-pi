@@ -19,24 +19,11 @@
  *
  */
 
-#ifndef LIMEGPIO_H
-#define LIMEGPIO_H
+#ifndef LIMETIMER_H
+#define LIMETIMER_H
 
-#ifndef GPIO_READY
-#define GPIO_READY 21
-#endif
-#ifndef GPIO_PLAY
-#define GPIO_PLAY 22
-#endif
+#define PLAYTIMEOUTMINUTES 2
 
-
-#ifndef LIMEMASTER
-#ifndef LIMESLAVE
-#define LIMEMASTER
-#endif
-#endif
-
-#include "GPIO.h"
 #include "logger.h"
 #include <pthread.h>
 #include <time.h>
@@ -44,7 +31,6 @@
 #include <string>
 #include <cstring>
 #include <unistd.h>
-#include <bcm2835.h>
 
 #ifdef LIMEMASTER
 class LimeMaster;
@@ -54,20 +40,20 @@ class LimeSlave;
 
 using namespace std;
 
-class LimeGPIO{
+class LimeTimer{
 public:
 #ifdef LIMEMASTER
-    LimeGPIO(LimeMaster *srv);
+    LimeTimer(LimeMaster *ms);
 #else
-    LimeGPIO(LimeSlave *cl);
+    LimeTimer(LimeSlave *sl);
 #endif
-    virtual ~LimeGPIO();
+    virtual ~LimeTimer();
     pthread_t ThreadHandle();
     bool ThreadStop();
     bool ThreadRunning() {return running;};
     bool LoadGPIO();
 
-    bool VideoPlay();
+    bool VideoPlay(long sec, long nano);
 
     void Lock();
     void UnLock();
@@ -82,13 +68,14 @@ private:
     void ThreadProcess();
     bool running;
     pthread_mutex_t m_lock;
-    GPIO *gpioHandle;
+    long playSec;
+    long playNano;
 
 #ifdef LIMEMASTER
-    LimeMaster *server;
+    LimeMaster *master;
 #else
-    LimeSlave  *client;
+    LimeSlave  *slave;
 #endif
 };
 
-#endif // LIMEGPIO_H
+#endif // LIMETIMER_H

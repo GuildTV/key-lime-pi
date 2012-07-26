@@ -25,13 +25,12 @@
 #include "net/NetIO.h"
 #include <string>
 #include "logger.h"
+#include "LimeTimer.h"
 
 #ifdef RENDERTEST
 #include "render/OverlayRenderer.h"
 #else
 #include "OMXWrapper.h"
-#include "GPIO.h"
-#include "LimeGPIO.h"
 #endif
 
 class LimeSlave
@@ -47,19 +46,16 @@ class LimeSlave
     protected:
         void VideoLoad(std::string name);
         bool FileExists(const char * filename);
-#ifndef RENDERTEST
-        bool LoadGPIO();
-#endif
     private:
         NetIO pi;
         bool run;
         void HandleMessage(NetMessage* msg);
         bool videoLoaded;
+        LimeTimer* limeTimer;
 #ifdef RENDERTEST
         OverlayRenderer* renderer;
 #else
         OMXWrapper* wrap;
-        LimeGPIO* limeGPIO;
 #endif
 };
 

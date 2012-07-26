@@ -24,6 +24,9 @@
 #include <time.h>
 #include <stdio.h>
 
+#define VIDEOOFFSETSEC  2
+#define VIDEOOFFSETNANO 0
+
 #ifdef DUMPJSON
 #ifndef JSONDIR
 #define JSONDIR "json-dump/"
@@ -44,6 +47,7 @@
 LimeMaster::LimeMaster() {
     run = false;
     videoLoaded = false;
+    piConnected = false;
 #ifdef RENDERTEST
     renderer = new OverlayRenderer;
 #endif
@@ -64,23 +68,23 @@ void LimeMaster::Run() {
         return;
     }
 
-    string addr = "192.168.1.3";
-    while(pi.CreateClient(addr, PIPORT) != 0) {
+    string addr = "192.168.1.2";
+    if(pi.CreateClient(addr, PIPORT) != 0) {
         FLog::Log(FLOG_ERROR, "LimeMaster::Run - failed to connect to slave '%s'", addr.c_str());
-        return;//dont stop here, just for now until can test properly
+        while(!piConnected){
+            NetMessage* msg = control.GetMessageQueue()->Pop(true);
+            HandleMessage(msg);
+        }
     }
+
+    piConnected = true;
 
     //finish setup
     FinishSetup();
 }
 
 bool LimeMaster::FinishSetup(){
-#ifndef RENDERTEST
-    if(!LoadGPIO()){
-        FLog::Log(FLOG_ERROR, "LimeMaster::Run - failed to bind to GPIO (try unexporting them and relaunching the program)");
-        return false;
-    }
-#endif
+    limeTimer = new LimeTimer(this);
 
     while(run && control.ThreadRunning()){
         //get next message
@@ -126,10 +130,38 @@ void LimeMaster::HandleMessage(NetMessage* msg){
         return;
     }
 
+    if(!root.isMember("type")){
+        FLog::Log(FLOG_ERROR, "LimeMaster::HandleMessage - Recieved message without a type");
+        return;
+    }
     const string type = root["type"].asString();
+
+    if(!piConnected) {
+        if(type.compare("slaveAddress") == 0){
+            if(!root.isMember("address")){
+                FLog::Log(FLOG_ERROR, "LimeMaster::HandleMessage - Recieved 'slaveAddress' command without a 'address' field");
+                return;//TODO inform control
+            }
+            string addr = root["address"].asString();
+
+            if(pi.CreateClient(addr, PIPORT) == 0){
+                piConnected = true;
+            } else {
+                FLog::Log(FLOG_ERROR, "LimeMaster::HandleMessage - failed to connect to slave '%s'", addr.c_str());
+            }
+        } else {
+            FLog::Log(FLOG_ERROR, "LimeMaster::HandleMessage - Recieved unexpected message, when not connected to slave");
+            //TODO inform control
+        }
+        return;
+    }
 
     //preload a video to be played
     if(type.compare("preloadVideo") == 0){
+        if(!root.isMember("name")){
+            FLog::Log(FLOG_ERROR, "LimeMaster::HandleMessage - Recieved 'preloadVideo' command without a 'name' field");
+            return;
+        }
         const string name = root["name"].asString();
 
         pi.GetClient()->SendMessage(msg->message);
@@ -137,13 +169,23 @@ void LimeMaster::HandleMessage(NetMessage* msg){
 
     } else if (type.compare("playVideo") == 0){
 
-        pi.GetClient()->SendMessage(msg->message);
+        timespec time;
+        clock_gettime(CLOCK_REALTIME, &time);
 
-#ifdef RENDERTEST
-        VideoPlay();
-#else
-        limeGPIO->VideoPlay();
-#endif
+        string format = "{\"type\":\"playVideo\",\"second\":%d,\"nanosecond\":%d}";
+        char formatted[format.length()+10];
+        long nano = time.tv_nsec + VIDEOOFFSETNANO;
+        long sec = time.tv_sec + VIDEOOFFSETSEC;
+        if(nano >= 1000000000){
+            nano -=1000000000;
+            sec += 1;
+        }
+
+        sprintf(formatted, format.c_str(), sec, nano);
+
+        pi.GetClient()->SendMessage(formatted);
+
+        limeTimer->VideoPlay(sec, nano);
     }
 
 }
@@ -212,13 +254,6 @@ void LimeMaster::VideoStop(){
     FLog::Log(FLOG_INFO, "LimeMaster::VideoStop - Recieved");
 #endif
 }
-
-#ifndef RENDERTEST
-bool LimeMaster::LoadGPIO() {
-    limeGPIO = new LimeGPIO(this);
-    return limeGPIO->LoadGPIO();
-}
-#endif
 
 bool LimeMaster::FileExists(const char * filename) {
     if (FILE * file = fopen(filename, "r")) {
