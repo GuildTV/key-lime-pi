@@ -29,7 +29,6 @@ SRCSLAVE=linux/XMemUtils.cpp \
 		net/NetUser.cpp \
 		OMXWrapper.cpp \
 		LimeSlave.cpp \
-		GPIO.cpp \
 		LimeTimer.cpp \
 
 OBJSSLAVE+=$(filter %.s.o,$(SRCSLAVE:.cpp=.s.o))
@@ -58,7 +57,6 @@ SRCMASTER=linux/XMemUtils.cpp \
 		net/NetUser.cpp \
 		OMXWrapper.cpp \
 		LimeMaster.cpp \
-		GPIO.cpp \
 		LimeTimer.cpp \
 
 OBJSMASTER+=$(filter %.m.o,$(SRCMASTER:.cpp=.m.o))
