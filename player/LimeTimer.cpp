@@ -94,12 +94,17 @@ void *LimeTimer::ThreadRun(void *arg)
 void LimeTimer::ThreadProcess() {
     FLog::Log(FLOG_INFO, "LimeTimer::ThreadProcess - Watcher starting");
 
+    //create timespec
     timespec ts;
+    //get time
     clock_gettime(CLOCK_REALTIME, &ts);
+
+    //wait until time is after time specified earlier
     while(ts.tv_sec <= playSec && ts.tv_nsec < playNano){
         clock_gettime(CLOCK_REALTIME, &ts);
     }
 
+    //call back out to play video
 #ifdef LIMEMASTER
     master->VideoPlay();
 #else

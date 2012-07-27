@@ -22,16 +22,19 @@
 #include "NetUser.h"
 
 NetUser::NetUser(){
+    //define as unconnected
     connected = false;
     handshaken = false;
     role = UNDEFINED;
 
+    //define partialMessage as empty
     partialMessage.length = 0;
     partialMessage.complete = true;
     partialMessage.user = this;
     partialMessage.message = "";
 }
 NetUser::~NetUser(){
+    //close connection
     Close();
 }
 
@@ -39,6 +42,7 @@ void NetUser::RecieveMessage() {
     if(!connected)
         return;
 
+    //recieve message
     char buf[MAXDATASIZE+DATAHEADER];
     memset(&buf, 0, MAXDATASIZE+DATAHEADER);
     int numbytes = recv(myfd, &buf, MAXDATASIZE+DATAHEADER-1, 0);
@@ -47,9 +51,11 @@ void NetUser::RecieveMessage() {
     if(numbytes == 0)
         Close();
 
+    //discard message if too short for header
     if(numbytes <= 2)
-        return;  //discard junk message
+        return;
 
+    //send message to appropriate function based upon connection status
     if(handshaken)
         processMessage(buf);
     else
@@ -60,30 +66,38 @@ void NetUser::processMessage(string str){
     if(!connected)
         return;
 
+    //extract the opcode from the header
     int opcode = (str[0] - '0');
     opcode = opcode&7;
 
+    //extract the message length from the header
     int len1 = (str[0] - '0') + 48;
     int len2 = (str[1] - '0') + 48;
     len1 = len1&248;
     int len = len2 + 32*len1;
 
-    string msg = str.substr(2);//add , str.length()-4 when access by telnet
+    //trim header off message  body
+    string msg = str.substr(2);
 
+    //cast the opcode
     NetOpcode op = (NetOpcode)opcode;
     switch(op){
     case OP_COMMAND:
+        //discard partialMessage if it was incomplete
         if(!partialMessage.complete)
             FLog::Log(FLOG_DEBUG, "NetUser::processMessage - Discarded incomplete message");
 
+        //overwrite partialMessage with this new one
         partialMessage.length = len;
         partialMessage.complete = false;
         partialMessage.user = this;
         partialMessage.message = msg;
 
+        //check if we have recieved the whole message
         CheckMessageFinished();
     break;
     case OP_COMMAND_CONT:
+        //discard fragment if partialMessage is complete
         if(partialMessage.complete){
             FLog::Log(FLOG_DEBUG, "NetUser::processMessage - Discarded stray message fragment");
         } else {
@@ -93,14 +107,13 @@ void NetUser::processMessage(string str){
         }
     break;
     default:
+        //log unknown message
         FLog::Log(FLOG_DEBUG, "NetUser::processMessage - Received message with unknown opcode %d", opcode);
     break;
     }
 }
 
 bool NetUser::processHandshake(string str){
-    //str = str.substr(0, str.length()-2);
-
     if(role == SERVER){
         if(str.compare(SHAKECLIENT) == 0){
             handshaken = true;
@@ -128,21 +141,28 @@ bool NetUser::processHandshake(string str){
 }
 
 void NetUser::CheckMessageFinished() {
+    //get actual and desired message lengths
     int desiredLength = partialMessage.length;
     int actualLength = partialMessage.message.length();
 
+    //actual length is too short. stop.
     if(actualLength < desiredLength)
         return;
+    //actual length is correct. message is complete.
     else if (actualLength == desiredLength) {
         partialMessage.complete = true;
         (*messageQueue).Push(&partialMessage);
+    //actual length is too long.
     } else if (actualLength > desiredLength) {
+        //split message
         string complete = partialMessage.message.substr(0, partialMessage.length);
         string next = partialMessage.message.substr(partialMessage.length);
+        //save completed message
         partialMessage.message = complete;
         partialMessage.complete = true;
         (*messageQueue).Push(&partialMessage);
 
+        //process extra message
         processMessage(next);
     }
 }
@@ -165,12 +185,12 @@ bool NetUser::SendMessage(string msg){
     if(!connected)
         return false;
 
+    //fail if message is too long
     if(msg.length() > MAXDATASIZE)
         return false;
 
+    //set as first fragment
     bool first = true;
-
-    //msg += '\0';
 
     while(msg.length() > 0 && connected){
         //determine length bytes
@@ -219,11 +239,13 @@ void NetUser::Create(int sockfd, NetMessageQueue* que, NetRole myrole) {
     if(connected)
         return;
 
+    //save basic data
     myfd = sockfd;
     messageQueue = que;
     connected = true;
     role = myrole;
 
+    //start handshake if i am a client
     if(role == CLIENT){
         //initiate handshake
         FLog::Log(FLOG_INFO, "NetUser::Create(Client) - Starting handshake");
@@ -234,10 +256,13 @@ void NetUser::Create(int sockfd, NetMessageQueue* que, NetRole myrole) {
 void NetUser::Close() {
     if(!connected)
         return;
+    //send null byte
     send(myfd, '\0', 0, 0);
     FLog::Log(FLOG_INFO, "NetUser::Close - Closed connection");
+    //tidy up
     connected = false;
     handshaken = false;
     role = UNDEFINED;
+    //close connection
     close(myfd);
 }

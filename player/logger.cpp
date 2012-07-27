@@ -21,10 +21,13 @@
 
 #include "logger.h"
 
+//file handle of the log file
 static FILE* flogFile = NULL;
 
+//enum to string translation map
 static char levelNames[][8] = {"DEBUG", "INFO", "WARNING", "ERROR", "FATAL"};
 
+//open the log file if one isnt already open
 void FLog::Open(string path) {
     if(!flogFile){
         flogFile = fopen(path.c_str(),"a");
@@ -44,24 +47,27 @@ void FLog::Log(FLogLevels logLevel, const char *format, ... ) {
     if(!flogFile)
         return;
 
-    CStdString strData;
-
-    va_list va;
-    va_start(va, format);
-    strData.FormatV(format,va);
-    va_end(va);
-
+    //stop debug messages from being logged, unless compiler is told to log them
     #ifndef DEBUGLOG
     if(logLevel == FLOG_DEBUG)
         return;
     #endif
 
+    //create formatted string message
+    CStdString strData;
+    va_list va;
+    va_start(va, format);
+    strData.FormatV(format,va);
+    va_end(va);
+
+    //get log level string name
     string levelName = levelNames[logLevel];
 
+    //write to file
     fputs(levelName.c_str(), flogFile);
     fputs(": ", flogFile);
     fputs(strData, flogFile);
     fputs("\n", flogFile);
-
+    //flush write buffer
     fflush(flogFile);
 }

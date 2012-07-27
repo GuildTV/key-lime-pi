@@ -22,6 +22,7 @@
 #include "NetIO.h"
 #include <netdb.h>
 
+//backlog of clients waiting to connect to the server
 #define BACKLOG 5
 
 using namespace std;
@@ -90,16 +91,6 @@ bool NetIO::ThreadCreate()
   return true;
 }
 
-bool NetIO::ThreadRunning()
-{
-  return m_running;
-}
-
-pthread_t NetIO::ThreadHandle()
-{
-  return m_thread;
-}
-
 void *NetIO::ThreadRun(void *arg)
 {
   NetIO *thread = static_cast<NetIO *>(arg);
@@ -111,6 +102,7 @@ void *NetIO::ThreadRun(void *arg)
 
 void NetIO::Close() {
     FLog::Log(FLOG_INFO, "NetIO::Close - Sockets closed");
+    //close and tidy up this
     close(thisSocketFD);
     client.Close();
     role = UNDEFINED;
@@ -122,6 +114,7 @@ int NetIO::CreateServer(string port) {
     int yes=1;
     int rv;
 
+    //setup bind address and port
     memset(&hints, 0, sizeof hints);
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
@@ -178,7 +171,9 @@ int NetIO::CreateServer(string port) {
         return 4;
     }
 
+    //define as server
     role = SERVER;
+    //start listening for clients/messages
     ThreadCreate();
 
     return 0;
@@ -189,6 +184,7 @@ int NetIO::CreateClient(string address, string port) {
     int rv;
     char s[INET6_ADDRSTRLEN];
 
+    //define address and port
     memset(&hints, 0, sizeof hints);
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
@@ -219,15 +215,19 @@ int NetIO::CreateClient(string address, string port) {
         return 2;
     }
 
+    //get and log the server address
     inet_ntop(p->ai_family, get_in_addr((struct sockaddr *)p->ai_addr),
             s, sizeof s);
     FLog::Log(FLOG_INFO, "NetIO::CreateClient - Connecting to %s:", s);
 
     freeaddrinfo(servinfo); // all done with this structure
 
+    //create this client
     client.Create(thisSocketFD, &messageQueue, CLIENT);
 
+    //define role
     role = CLIENT;
+    //start listening for messages
     ThreadCreate();
 
     return 0;

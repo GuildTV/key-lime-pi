@@ -22,8 +22,10 @@
 #ifndef NETOPCODE_H_INCLUDED
 #define NETOPCODE_H_INCLUDED
 
+//define allowed opcodes for messages
 enum NetOpcode {OP_COMMAND = 1, OP_COMMAND_CONT = 2};
 
+//define the role the NetIO instance has
 enum NetRole{UNDEFINED, SERVER, CLIENT};
 
 #endif // NETOPCODE_H_INCLUDED

@@ -19,6 +19,10 @@
  *
  */
 
+/**
+ * Render freetype characters to the screen via OpenGL ES2.0
+**/
+
 #ifndef FREETYPE_H
 #define FREETYPE_H
 
@@ -27,7 +31,6 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
-
 #include "logger.h"
 
 #define MAXCHARVALUE 127
@@ -35,6 +38,7 @@
 
 using namespace std;
 
+//a character of text that has been loaded
 struct TextChar {
     int width;
     int height;
@@ -53,16 +57,24 @@ class OverlayRenderer;
 class Freetype
 {
     public:
+        //setup freetype renderer
         Freetype(OverlayRenderer *render);
         virtual ~Freetype();
+        //load a range of characters into an array
         bool LoadFreetypeRange(string font_file, int height, int start, int end, TextChar *storage);
+        //write a string to screen, using character array
         void WriteString(char * text, TextChar *charSet, int x, int y, float scaleX, float scaleY);
+        //calculate the next power of 2 above num
         unsigned int pow2(unsigned int num);
 
     protected:
+        //load a freetype font
         bool LoadFreetype(string font_file);
+        //load a freetype character
         bool LoadFreetypeChar(int height, int value, TextChar *character);
+        //close freetype font
         void CloseFreetype();
+        //convert a freetype character to opengl texture
         void FreetypeToTexture(FT_GlyphSlot *slot, TextChar* character);
 
     private:

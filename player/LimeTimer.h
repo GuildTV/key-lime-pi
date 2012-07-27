@@ -19,6 +19,10 @@
  *
  */
 
+/**
+ * Time video playback without hogging the message handling thread
+**/
+
 #ifndef LIMETIMER_H
 #define LIMETIMER_H
 
@@ -32,6 +36,7 @@
 #include <cstring>
 #include <unistd.h>
 
+//forward declaration
 #ifdef LIMEMASTER
 class LimeMaster;
 #else
@@ -42,6 +47,7 @@ using namespace std;
 
 class LimeTimer{
 public:
+//save the parent (message handler)
 #ifdef LIMEMASTER
     LimeTimer(LimeMaster *ms);
 #else
@@ -51,8 +57,8 @@ public:
     pthread_t ThreadHandle();
     bool ThreadStop();
     bool ThreadRunning() {return running;};
-    bool LoadGPIO();
 
+    //play video, at specified time
     bool VideoPlay(long sec, long nano);
 
     void Lock();

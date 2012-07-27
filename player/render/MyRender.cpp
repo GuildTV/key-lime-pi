@@ -130,15 +130,19 @@ void *MyRender::Run(void *arg)
 
 
 void MyRender::Process() {
-
+  //create the renderer
   renderer = new OverlayRenderer;
   renderer->Create(filename);
+  //predraw on the video
   renderer->PreDraw();
+  //define the start time of the video
   double startTime = 2840000.0; // currently vid->GetCurrentPTS*1.75??
 
+  //loop until start time is reached
   while(!m_bStop && m_running){
 	  double currentTime = vid->GetCurrentPTS();
 	  if(currentTime > startTime){
+	      //start rendering
 		  renderer->Run();
 		  break;
 

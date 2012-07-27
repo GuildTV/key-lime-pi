@@ -19,6 +19,11 @@
  *
  */
 
+/**
+ * Create a simple test program, so that commands can be sent/received manually with
+ * the main program, to debug it easier.
+**/
+
 #include "net/NetIO.h"
 #include "net/NetMessageQueue.h"
 
@@ -29,27 +34,42 @@
 #include <iostream>
 #include <pthread.h>
 
+/**
+ * Spawn a thread to read and output received messages to the screen
+**/
 class NetTest{
 public:
+    //setup the test class
     NetTest(NetIO* net);
+    //spawn the thread
     bool ThreadCreate();
+    //get the thread handle
     pthread_t ThreadHandle();
+    //stop the thread
     bool ThreadStop();
+    //check if the thread is running
     bool ThreadRunning() {return running;};
 
 protected:
-    pthread_mutex_t     m_queue_lock;
+    //lock for the message queue
     pthread_attr_t      m_tattr;
-    struct sched_param  m_sched_param;
+    //thread handle
     pthread_t           m_thread;
 
 private:
-    static void *ThreadRun(void *arg);
+    //start the thread body
+    static void *ThreadRun(void *arg);#
+    //start executing thread task
     void ThreadProcess();
+    //pointer to the network client/server we are working with
     NetIO* netio;
+    //is thread running
     bool running;
 };
 
+/*
+ * Store the network handle
+ */
 NetTest::NetTest(NetIO* net){
     netio = net;
 }
@@ -104,7 +124,7 @@ void NetTest::ThreadProcess() {
     while(running){
         while(!(*que).isEmpty()) {
             FLog::Log(FLOG_INFO, "NetUser::processMessage - msg");
-            NetMessage* mess = (*que).Pop(true);
+            NetMessage* mess = (*que).Pop(true);//pop next message, wait until a message is available before returning
             cout << "Recieved: " << (*mess).message << endl;
         }
     }
@@ -123,6 +143,7 @@ int main(int argc, char *argv[]){
     cout << "> ";
     cin >> type;
 
+    //create client or server based upon user input
     if(type.substr(0,1).compare("s") == 0){
         string port;
         cout << "Creating server" << endl;
@@ -153,6 +174,7 @@ int main(int argc, char *argv[]){
     cout << endl << endl;
     cout << "Creating message printer" << endl;
 
+    //create message printer thread
     NetTest test(&net);
     test.ThreadCreate();
 
@@ -160,21 +182,24 @@ int main(int argc, char *argv[]){
 
     cout << "Starting input loop. type TERMINATE to exit gracefully" << endl;
     string in;
+    //listen for input from user
     while(run && test.ThreadRunning()){
         cout << "> ";
         cin >> in;
         if(in.compare("TERMINATE") == 0){
+            //terminate application
             run = false;
             break;
         }
 
+        //if client is diconencted, then terminate
         if(!(*net.GetClient()).isConnected())
             break;
         (*net.GetClient()).SendMessage(in);
 
     }
 
-
+    //stop message printer
     test.ThreadStop();
     net.Close();
 

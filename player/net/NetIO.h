@@ -35,21 +35,32 @@
 
 using namespace std;
 
+/**
+ * Create a network client/server and run it
+**/
 class NetIO {
 public:
 	NetIO();
 	~NetIO();
+	//get the FD of the socket
 	int getSocketFD() { return thisSocketFD;};
 
+    //close the socket
 	void Close();
 
-	bool ThreadRunning();
-    pthread_t ThreadHandle();
+    //return if the listening thread is running
+	bool ThreadRunning() {return m_running;};
+	//return the thread handle
+    pthread_t ThreadHandle() {return m_thread;};
 
+    //set this up as a server, and create it
     int CreateServer(string port);
+    //set this up as a client, and create it
     int CreateClient(string address, string port);
 
+    //get the client/server this is connected to
     NetUser* GetClient() {return &client;};
+    //get the message queue
     NetMessageQueue* GetMessageQueue() {return &messageQueue;};
 
 protected:

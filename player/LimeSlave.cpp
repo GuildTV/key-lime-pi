@@ -56,9 +56,9 @@ LimeSlave::~LimeSlave() {
 void LimeSlave::Run() {
     run = true;
 
+    //create server
     int ret = pi.CreateServer(PIPORT);
     if(ret != 0) {
-
         FLog::Log(FLOG_ERROR, "LimeSlave::Run - failed to create server. Closing program");
         Stop();
         return;
@@ -69,8 +69,10 @@ void LimeSlave::Run() {
 }
 
 bool LimeSlave::FinishSetup(){
+    //create the sync timer
     limeTimer = new LimeTimer(this);
 
+    //handle messages, whilst we are running
     while(run && pi.ThreadRunning()){
         //get next message
         NetMessage* msg = pi.GetMessageQueue()->Pop(true);
@@ -83,10 +85,13 @@ bool LimeSlave::FinishSetup(){
 
 void LimeSlave::HandleMessage(NetMessage* msg){
     FLog::Log(FLOG_DEBUG, "LimeSlave::HandleMessage - Handling message");
+
+    //parse json messages
     Json::Value root;
     Json::Reader reader;
     bool parsedSuccess = reader.parse(msg->message, root, false);
     if(!parsedSuccess){
+//dump json, if enabled at compile time
 #ifdef DUMPJSON
         time_t rawtime;
         struct tm * time;
@@ -115,6 +120,7 @@ void LimeSlave::HandleMessage(NetMessage* msg){
         return;
     }
 
+    //check type exists
     if(!root.isMember("type")){
         FLog::Log(FLOG_ERROR, "LimeMaster::HandleMessage - Recieved message without a type");
         return;
@@ -123,32 +129,38 @@ void LimeSlave::HandleMessage(NetMessage* msg){
 
     //preload a video to be played
     if(type.compare("preloadVideo") == 0){
+        //check name exists
         if(!root.isMember("name")){
             FLog::Log(FLOG_ERROR, "LimeMaster::HandleMessage - Recieved 'preloadVideo' command without a 'name' field");
             return;
         }
         const string name = root["name"].asString();
 
+        //load video
         VideoLoad(name);
 
     } else if (type.compare("playVideo") == 0){
-
+        //check second and nanosecond exist
         if(!root.isMember("second") || !root.isMember("nanosecond")){
             FLog::Log(FLOG_ERROR, "LimeMaster::HandleMessage - Recieved 'playVideo' command without complete timings");
             return;
         }
 
+        //get times
         long sec = root["second"].asInt64();
         long nano = root["nanosecond"].asInt64();
 
+        //play video at specified time
         limeTimer->VideoPlay(sec, nano);
     }
 
 }
 
 void LimeSlave::VideoLoad(std::string name){
+    //set as not loaded
     videoLoaded = false;
     FLog::Log(FLOG_INFO, "LimeSlave::VideoLoad - Starting preload of \"%s\"", name.c_str());
+    //generate paths to video and script
     std::string pathVid = DATAFOLDER;
     pathVid += name;
     pathVid += "/video.mp4";
@@ -175,15 +187,16 @@ void LimeSlave::VideoLoad(std::string name){
 
 #else
     //load gl stuff
-
     renderer->Create(pathJson);
 
 #endif
 
+    //set as loaded
     videoLoaded = true;
 }
 
 void LimeSlave::VideoPlay() {
+    //complain if video isnt loaded
     if(!videoLoaded){
         pi.GetClient()->SendMessage("{\"type\":\"playVideo\",\"status\":\"nothing loaded\"}"); //TODO better message to whoever
         return;
@@ -203,6 +216,7 @@ void LimeSlave::VideoPlay() {
 
 void LimeSlave::VideoStop(){
 #ifndef RENDERTEST
+    //stop video
     wrap->Stop();
 #else
     //TODO stop code
@@ -220,17 +234,20 @@ bool LimeSlave::FileExists(const char * filename) {
 
 
 int main(int argc, char *argv[]){
+    //open log
     FLog::Open("Slave.log");
 
     FLog::Log(FLOG_INFO, "Starting render test");
     printf("Starting render test\n");
 
+    //create and run program
     LimeSlave lime;
     lime.Run();
 
     printf("Closing render test\n");
     FLog::Log(FLOG_INFO, "Closing render test\n\n");
 
+    //close log
     FLog::Close();
     return 0;
 }

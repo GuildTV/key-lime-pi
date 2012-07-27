@@ -19,6 +19,10 @@
  *
  */
 
+/**
+ * Simple static class to log messages to a file.
+**/
+
 #ifndef LOGGER_H
 #define LOGGER_H
 
@@ -29,13 +33,17 @@
 
 using namespace std;
 
+//define the types of messages that can be used
 enum FLogLevels {FLOG_DEBUG, FLOG_INFO, FLOG_WARNING, FLOG_ERROR, FLOG_FATAL};
 
 class FLog
 {
     public:
+        //open the log file
         static void Open(string path);
+        //close the log file
         static void Close();
+        //write to the log file
         static void Log(FLogLevels logLevel, const char *format, ... );
     protected:
     private:

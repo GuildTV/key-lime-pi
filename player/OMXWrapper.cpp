@@ -100,10 +100,13 @@ void *OMXWrapper::Run(void *arg)
 }
 
 void OMXWrapper::Load(string file) {
+    //create new omxlink
     omx = new OMXLink;
+    //load video file
     omx->Load(file);
 }
 
 void OMXWrapper::Process() {
+    //play video
     omx->Play();
 }

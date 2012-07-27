@@ -19,6 +19,10 @@
  *
  */
 
+/**
+ * Main program for key-lime-pi slave device
+**/
+
 #ifndef LIMESLAVE_H
 #define LIMESLAVE_H
 
@@ -38,20 +42,34 @@ class LimeSlave
     public:
         LimeSlave();
         virtual ~LimeSlave();
+        //run program
         void Run();
+        //stop program
         void Stop(){run=false;};
+        //stop video playback
         void VideoStop();
+        //start videoplayback
         void VideoPlay();
+        //finish setting up program
         bool FinishSetup();
     protected:
+        //load video
         void VideoLoad(std::string name);
+        //check file exists
         bool FileExists(const char * filename);
     private:
+        //network connection to master pi
         NetIO pi;
+        //is program running?
         bool run;
+        //handle a recieved message
         void HandleMessage(NetMessage* msg);
+        //is a video loaded
         bool videoLoaded;
+        //timer for video start cync
         LimeTimer* limeTimer;
+
+        //pointer to video player/overlayrenderer
 #ifdef RENDERTEST
         OverlayRenderer* renderer;
 #else

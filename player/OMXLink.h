@@ -19,6 +19,10 @@
  *
  */
 
+/**
+ * Load the OMX player, and play the video
+**/
+
 #ifndef OMXLINK_H
 #define OMXLINK_H
 
@@ -65,8 +69,11 @@ class OMXLink
     public:
         OMXLink();
         ~OMXLink();
+        //load the video
         bool Load(std::string m_filename);
+        //play the video
         bool Play();
+        //stop video playback
         bool Exit();
 
     protected:

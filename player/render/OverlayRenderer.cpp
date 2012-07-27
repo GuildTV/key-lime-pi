@@ -25,16 +25,22 @@ OverlayRenderer::OverlayRenderer(){
 #ifdef RENDERTEST
     x_display = NULL;
 #endif
+    //create freetype renderer instance
     ft = new Freetype(this);
 
+    //create window
     esCreateWindow ("Overlay Renderer");
 
+    //setup opengl
     Init();
+
+    //define default timecode position
 #ifdef LIMESLAVE
     timecodePosition = NONE;
 #else
     timecodePosition = CENTER;
 #endif
+    //load the overlay text characters
     LoadOverlayText();
 }
 
@@ -43,6 +49,7 @@ void OverlayRenderer::Create(std::string file){
 }
 
 bool OverlayRenderer::LoadOverlayText() {
+    //load as 100px tall
     int height = 100;
     if(!ft->LoadFreetypeRange("resources/Overlay.ttf", height, 32, 127, overlayText)){
         FLog::Log(FLOG_ERROR, "OverlayRenderer::LoadOverlayText - failed to load overlay text characters");
@@ -60,6 +67,7 @@ void OverlayRenderer::Draw () {
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
 #ifdef RENDERTEST
+    //draw the background png, if on RENDERTEST and it has loaded
     if(bgTexture != TEXTURE_LOAD_ERROR) {
         GLfloat vVertices[] = { -1.0f,  1.0f, 0.0f,  // Position 0
                                 0.0f,  1.0f,        // TexCoord 0
@@ -86,15 +94,19 @@ void OverlayRenderer::Draw () {
     }
 #endif
 
+    //write this string to the screen
     ft->WriteString("Hey there :)",overlayText, 100,100,1,1);
 
+    //draw the timestamp on the screen
     DrawTimeStamp();
 
+    //swap display buffers
     eglSwapBuffers(eglDisplay, eglSurface);
 }
 
 void OverlayRenderer::DrawTimeStamp() {
 
+    //generate string to print
     char str[10];
     int mins, secs, frames;
     frames = (currentRefresh/2)%25;
@@ -102,6 +114,7 @@ void OverlayRenderer::DrawTimeStamp() {
     mins = (currentRefresh/50)/60;
     sprintf(str, "%2.2d:%2.2d.%2.2d", mins, secs, frames);
 
+    //determine x position, based upon timecodePosition
     int x;
     switch(timecodePosition){
     case RIGHT:
@@ -117,6 +130,7 @@ void OverlayRenderer::DrawTimeStamp() {
         return;
     }
 
+    //write timecode to string
     ft->WriteString(str,overlayText, x,540,0.25,0.25);
 }
 
@@ -157,6 +171,7 @@ GLuint OverlayRenderer::CreateSimpleTexture2D( )
 void OverlayRenderer::Run() {
     running = true;
 #ifdef RENDERTEST
+    //load background png if in RENDERTEST
     LoadBG("resources/background.png");
     int frameCount = 0;
 #endif
@@ -164,15 +179,17 @@ void OverlayRenderer::Run() {
     currentRefresh = 0;
 
     while(running){
+        //draw whilst running
         Draw();
         currentRefresh++;
 
 //force max length of 3 seconds for test bed (otherwise currently goes on forever
 #ifdef RENDERTEST
+        //sleep for the rest of the frame, as in RENDERTEST vsync has not been enabled.
         usleep(20000);//20ms (rest of frame)
 
         frameCount++;
-        if(frameCount >= 150)
+        if(frameCount >= 150)//limit to 150 refresh (75 frame, 3 seconds) in RENDERTEST, as currently no other stop mechanism
             break;
 #endif
     }
@@ -188,11 +205,14 @@ void OverlayRenderer::Stop() {
 }
 
 void OverlayRenderer::PreDraw() {
+    //wipe screen
     glClear(GL_COLOR_BUFFER_BIT);
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 #ifdef LIMEMASTER
+    //write to screen if on LIMEMASTER
     ft->WriteString("Video Ready", overlayText, 175,238,1,1);
 #endif
+    //swap buffers
     eglSwapBuffers(eglDisplay, eglSurface);
 }
 

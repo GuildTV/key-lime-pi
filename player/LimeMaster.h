@@ -19,6 +19,10 @@
  *
  */
 
+/**
+ * Main program for key-lime-pi maste device
+**/
+
 #ifndef LIMEMASTER_H
 #define LIMEMASTER_H
 
@@ -38,22 +42,38 @@ class LimeMaster
     public:
         LimeMaster();
         virtual ~LimeMaster();
+        //run program
         void Run();
+        //stop program
         void Stop(){run=false;};
+        //stop video playback
         void VideoStop();
+        //start videoplayback
         void VideoPlay();
+        //finish setting up program
         bool FinishSetup();
     protected:
+        //load video
         void VideoLoad(std::string name);
+        //check file exists
         bool FileExists(const char * filename);
     private:
+        //network connection to controller
         NetIO control;
+        //network connection to slave pi
         NetIO pi;
+        //is program running?
         bool run;
+        //handle a recieved message
         void HandleMessage(NetMessage* msg);
+        //is a video loaded
         bool videoLoaded;
+        //timer for video start cync
         LimeTimer* limeTimer;
+        //is slave pi connected
         bool piConnected;
+
+        //pointer to video player/overlayrenderer
 #ifdef RENDERTEST
         OverlayRenderer* renderer;
 #else

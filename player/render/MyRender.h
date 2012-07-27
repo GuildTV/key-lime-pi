@@ -32,6 +32,9 @@
 
 using namespace std;
 
+/**
+ * Spawn a thread from OMXLink to run the OpenGL renderer
+**/
 class MyRender
 {
 protected:

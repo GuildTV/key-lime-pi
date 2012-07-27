@@ -19,6 +19,10 @@
  *
  */
 
+/**
+ * Create a wrapper for OMXLink, so that OMXLink gets run in a new thread
+**/
+
 #include "OMXLink.h"
 
 using namespace std;
@@ -40,7 +44,9 @@ private:
 public:
   OMXWrapper();
   ~OMXWrapper();
+  //play video in new thread
   bool Play();
+  //load video
   void Load(string f);
 
   bool Running();

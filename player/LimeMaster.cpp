@@ -60,23 +60,26 @@ LimeMaster::~LimeMaster() {
 void LimeMaster::Run() {
     run = true;
 
+    //create server for control
     int ret = control.CreateServer(CONTROLPORT);
     if(ret != 0) {
-
         FLog::Log(FLOG_ERROR, "LimeMaster::Run - failed to create server. Closing program");
         Stop();
         return;
     }
 
+    //connection to slave
     string addr = "192.168.1.2";
     if(pi.CreateClient(addr, PIPORT) != 0) {
         FLog::Log(FLOG_ERROR, "LimeMaster::Run - failed to connect to slave '%s'", addr.c_str());
+        //try to connect with addresses sent from control
         while(!piConnected){
             NetMessage* msg = control.GetMessageQueue()->Pop(true);
             HandleMessage(msg);
         }
     }
 
+    //set as slave connected
     piConnected = true;
 
     //finish setup
@@ -84,8 +87,10 @@ void LimeMaster::Run() {
 }
 
 bool LimeMaster::FinishSetup(){
+    //create the sync timer
     limeTimer = new LimeTimer(this);
 
+    //handle messages, whilst we are running
     while(run && control.ThreadRunning()){
         //get next message
         NetMessage* msg = control.GetMessageQueue()->Pop(true);
@@ -98,10 +103,13 @@ bool LimeMaster::FinishSetup(){
 
 void LimeMaster::HandleMessage(NetMessage* msg){
     FLog::Log(FLOG_DEBUG, "LimeMaster::HandleMessage - Handling message");
+
+    //parse json messages
     Json::Value root;
     Json::Reader reader;
     bool parsedSuccess = reader.parse(msg->message, root, false);
     if(!parsedSuccess){
+//dump json, if enabled at compile time
 #ifdef DUMPJSON
         time_t rawtime;
         struct tm * time;
@@ -130,26 +138,31 @@ void LimeMaster::HandleMessage(NetMessage* msg){
         return;
     }
 
+    //check type exists
     if(!root.isMember("type")){
         FLog::Log(FLOG_ERROR, "LimeMaster::HandleMessage - Recieved message without a type");
         return;
     }
     const string type = root["type"].asString();
 
+    //if slave is not connected
     if(!piConnected) {
         if(type.compare("slaveAddress") == 0){
+            //check address exists
             if(!root.isMember("address")){
                 FLog::Log(FLOG_ERROR, "LimeMaster::HandleMessage - Recieved 'slaveAddress' command without a 'address' field");
                 return;//TODO inform control
             }
             string addr = root["address"].asString();
 
+            //try to connect to new address
             if(pi.CreateClient(addr, PIPORT) == 0){
                 piConnected = true;
             } else {
                 FLog::Log(FLOG_ERROR, "LimeMaster::HandleMessage - failed to connect to slave '%s'", addr.c_str());
             }
         } else {
+            //unexpected message recieved
             FLog::Log(FLOG_ERROR, "LimeMaster::HandleMessage - Recieved unexpected message, when not connected to slave");
             //TODO inform control
         }
@@ -158,22 +171,26 @@ void LimeMaster::HandleMessage(NetMessage* msg){
 
     //preload a video to be played
     if(type.compare("preloadVideo") == 0){
+        //check name exists
         if(!root.isMember("name")){
             FLog::Log(FLOG_ERROR, "LimeMaster::HandleMessage - Recieved 'preloadVideo' command without a 'name' field");
             return;
         }
         const string name = root["name"].asString();
 
+        //forward message to slave
         pi.GetClient()->SendMessage(msg->message);
+
+        //load video
         VideoLoad(name);
 
     } else if (type.compare("playVideo") == 0){
 
+        //get time
         timespec time;
         clock_gettime(CLOCK_REALTIME, &time);
 
-        string format = "{\"type\":\"playVideo\",\"second\":%d,\"nanosecond\":%d}";
-        char formatted[format.length()+10];
+        //calculate start time for video
         long nano = time.tv_nsec + VIDEOOFFSETNANO;
         long sec = time.tv_sec + VIDEOOFFSETSEC;
         if(nano >= 1000000000){
@@ -181,18 +198,24 @@ void LimeMaster::HandleMessage(NetMessage* msg){
             sec += 1;
         }
 
+        //generate json string for slave
+        string format = "{\"type\":\"playVideo\",\"second\":%d,\"nanosecond\":%d}";
+        char formatted[format.length()+10];
         sprintf(formatted, format.c_str(), sec, nano);
 
+        //send message to slave
         pi.GetClient()->SendMessage(formatted);
 
+        //play video at specified time
         limeTimer->VideoPlay(sec, nano);
     }
-
 }
 
-void LimeMaster::VideoLoad(std::string name){
+void LimeSlave::VideoLoad(std::string name){
+    //set as not loaded
     videoLoaded = false;
-    FLog::Log(FLOG_INFO, "LimeMaster::VideoLoad - Starting preload of \"%s\"", name.c_str());
+    FLog::Log(FLOG_INFO, "LimeSlave::VideoLoad - Starting preload of \"%s\"", name.c_str());
+    //generate paths to video and script
     std::string pathVid = DATAFOLDER;
     pathVid += name;
     pathVid += "/video.mp4";
@@ -202,13 +225,13 @@ void LimeMaster::VideoLoad(std::string name){
 
     //verify files exist
     if(!FileExists(pathVid.c_str())){
-        FLog::Log(FLOG_ERROR, "LimeMaster::VideoLoad - Couldnt find video file for \"%s\"", name.c_str());
-        control.GetClient()->SendMessage("{\"type\":\"preloadVideo\",\"status\":\"failed\"}"); //TODO better message to whoever
+        FLog::Log(FLOG_ERROR, "LimeSlave::VideoLoad - Couldnt find video file for \"%s\"", name.c_str());
+        pi.GetClient()->SendMessage("{\"type\":\"preloadVideo\",\"status\":\"failed\"}"); //TODO better message to whoever
         return;
     }
     if(!FileExists(pathJson.c_str())){
-        FLog::Log(FLOG_ERROR, "LimeMaster::VideoLoad - Couldnt find script file for \"%s\"", name.c_str());
-        control.GetClient()->SendMessage("{\"type\":\"preloadVideo\",\"status\":\"failed\"}"); //TODO better message to whoever
+        FLog::Log(FLOG_ERROR, "LimeSlave::VideoLoad - Couldnt find script file for \"%s\"", name.c_str());
+        pi.GetClient()->SendMessage("{\"type\":\"preloadVideo\",\"status\":\"failed\"}"); //TODO better message to whoever
         return;
     }
 
@@ -219,16 +242,16 @@ void LimeMaster::VideoLoad(std::string name){
 
 #else
     //load gl stuff
-
     renderer->Create(pathJson);
 
-    renderer->PreDraw();
 #endif
 
+    //set as loaded
     videoLoaded = true;
 }
 
 void LimeMaster::VideoPlay() {
+    //complain if video isnt loaded
     if(!videoLoaded){
         control.GetClient()->SendMessage("{\"type\":\"playVideo\",\"status\":\"nothing loaded\"}"); //TODO better message to whoever
         return;
@@ -248,6 +271,7 @@ void LimeMaster::VideoPlay() {
 
 void LimeMaster::VideoStop(){
 #ifndef RENDERTEST
+    //stop video
     wrap->Stop();
 #else
     //TODO stop code
@@ -265,17 +289,20 @@ bool LimeMaster::FileExists(const char * filename) {
 
 
 int main(int argc, char *argv[]){
+    //open log
     FLog::Open("Master.log");
 
     FLog::Log(FLOG_INFO, "Starting render test");
     printf("Starting render test\n");
 
+    //create and run program
     LimeMaster lime;
     lime.Run();
 
     printf("Closing render test\n");
     FLog::Log(FLOG_INFO, "Closing render test\n\n");
 
+    //close log
     FLog::Close();
     return 0;
 }

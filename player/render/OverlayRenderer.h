@@ -21,6 +21,10 @@
  *
  */
 
+/**
+ * Render onto the screen via OpenGL ES2.0
+**/
+
 #include <GLES2/gl2.h>
 #include <EGL/egl.h>
 #include <stdio.h>
@@ -44,62 +48,90 @@
 
 #include "logger.h"
 
+//define the position of the timecode
 enum Position {NONE, LEFT, CENTER, RIGHT};
 
 class OverlayRenderer {
 public:
     OverlayRenderer();
+    //setup the renderer to use specified script
     void Create(std::string file);
+    //draw frame
     void Draw();
+    //draw the prevideo frame
     void PreDraw();
+    //run the rendering loop
     void Run();
 
+    //create a simple test texture
     GLuint CreateSimpleTexture2D();
+    //load the textures for the overlay text
     bool LoadOverlayText();
+    //draw the timestamp to the screen
     void DrawTimeStamp();
+    //stop the rendering
     void Stop();
 
+    //get the screen dimensions
     GLint getWidth() {return width;};
     GLint getHeight() {return height;};
+    //get shader values
     GLuint getPosLoc() {return positionLoc;};
     GLuint getTexLoc() {return texCoordLoc;};
     GLuint getSamLoc() {return samplerLoc;};
 
 protected:
+    //create opengl window
     GLboolean esCreateWindow (const char* title);
+    //create egl window
     EGLBoolean WinCreate(const char *title);
+    //create egl context
     EGLBoolean CreateEGLContext();
+    //setup renderer
     int Init();
+    //load shaders
     GLuint LoadShader(GLenum type, const char *shaderSrc);
 
 private:
+    //opengl program object
     GLuint programObject;
+    //window dimensions
     GLint width;
     GLint height;
+    //egl handles
     EGLNativeWindowType hWnd;
     EGLDisplay eglDisplay;
     EGLContext eglContext;
     EGLSurface eglSurface;
 #ifdef RENDERTEST
+    //x11 display
     Display *x_display;
+    //load png texture
     GLuint loadTexture(const string filename, int &width, int &height);
+    //load background
     void LoadBG(string filename);
+    //background texture
     GLuint bgTexture;
 #endif
 
+    //script filename
     std::string filename;
 
+    //opengl shader handles
     GLint positionLoc;
     GLint texCoordLoc;
     GLint samplerLoc;
 
+    //freetype renderer pointer
     Freetype *ft;
+    //overlay text character array
     TextChar overlayText[MAXCHARVALUE+1];
 
+    //current screen refresh count
     long currentRefresh;
+    //timecode position on screen
     Position timecodePosition;
 
+    //is loop running
     bool running;
 };
-
-

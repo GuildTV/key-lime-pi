@@ -34,8 +34,10 @@ NetMessageQueue::~NetMessageQueue() {
 }
 
 NetMessage* NetMessageQueue::Pop(bool wait) {
+    //if there is a message waiting
     if(Size() > 0){
         Lock();
+        //get the message, and remove it from the queue
         NetMessage* msg = messageQueue.front();
         messageQueue.pop();
 
@@ -43,17 +45,21 @@ NetMessage* NetMessageQueue::Pop(bool wait) {
         return msg;
     }
 
+    //if we have been told to wait
     if (wait) {
         Lock();
 
+        //wait for message
         pthread_cond_wait(&m_cond, &m_lock);
 
+        //get the message, and remove it from the queue
         NetMessage* msg = messageQueue.front();
         messageQueue.pop();
 
         Unlock();
         return msg;
     } else {
+        //otherwise return NULL
         return NULL;
     }
 
@@ -82,8 +88,10 @@ bool NetMessageQueue::isEmpty() {
 void NetMessageQueue::Push(NetMessage* msg) {
     Lock();
 
+    //add message to queue
     messageQueue.push(msg);
 
+    //broadcast to any threads waiting in a pop
     pthread_cond_broadcast(&m_cond);
 
     Unlock();

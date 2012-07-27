@@ -19,6 +19,10 @@
  *
  */
 
+/**
+ * Store a queue of recieved messages waiting to be processed
+**/
+
 #ifndef NETMESSAGEQUEUE_H
 #define NETMESSAGEQUEUE_H
 
@@ -28,6 +32,7 @@ using namespace std;
 
 class NetUser;
 
+//struct to store message data
 typedef struct NetMessage {
     NetUser* user;
     int length;
@@ -41,9 +46,13 @@ class NetMessageQueue
         NetMessageQueue();
         ~NetMessageQueue();
 
+        //get next message in queue
         NetMessage* Pop(bool wait);
+        //get number of messages in queue
         int Size();
+        //check if the queue is emtpy
         bool isEmpty();
+        //push a message onto the end of the queue
         void Push(NetMessage* msg);
 
     protected:
@@ -53,6 +62,7 @@ class NetMessageQueue
         pthread_cond_t m_cond;
 
     private:
+        //queue of messages
         queue<NetMessage *> messageQueue;
 };
 

@@ -41,35 +41,52 @@
 #define SHAKECLIENT "I am RGB-PI!! :)"
 #endif
 
-
 using namespace std;
 
+/**
+ * Represents a connected user in a NetIO instance
+**/
 class NetUser {
 public:
     NetUser();
     ~NetUser();
 
+    //setup this NetUser
     void Create(int sockfd, NetMessageQueue* messageQueue, NetRole myrole);
+    //close the connection
     void Close();
 
+    //get the next message from the network stream
     void RecieveMessage();
+    //send a message to the user
     bool SendMessage(string msg);
 
+    //get the FD of the connection
     int getFD(){return myfd;};
+    //returns true if connected
     bool isConnected(){return connected;};
 protected:
 
 private:
+    //file descriptor
     int myfd;
+    //partial recieved message
     NetMessage partialMessage;
+    //recieved message queue
     NetMessageQueue* messageQueue;
+    //role in the network model (client/server)
     NetRole role;
+    //connected status
     bool connected;
     bool handshaken;
 
+    //process recieved string
     void processMessage(string str);
+    //process recieved handshake
     bool processHandshake(string str);
+    //check if the partialMessage is actually complete
     void CheckMessageFinished();
+    //send a raw messge without message wrappers
     bool SendMessageRAW(string msg);
 };
 
