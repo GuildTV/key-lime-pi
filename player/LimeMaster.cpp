@@ -211,10 +211,10 @@ void LimeMaster::HandleMessage(NetMessage* msg){
     }
 }
 
-void LimeSlave::VideoLoad(std::string name){
+void LimeMaster::VideoLoad(std::string name){
     //set as not loaded
     videoLoaded = false;
-    FLog::Log(FLOG_INFO, "LimeSlave::VideoLoad - Starting preload of \"%s\"", name.c_str());
+    FLog::Log(FLOG_INFO, "LimeMaster::VideoLoad - Starting preload of \"%s\"", name.c_str());
     //generate paths to video and script
     std::string pathVid = DATAFOLDER;
     pathVid += name;
@@ -225,13 +225,13 @@ void LimeSlave::VideoLoad(std::string name){
 
     //verify files exist
     if(!FileExists(pathVid.c_str())){
-        FLog::Log(FLOG_ERROR, "LimeSlave::VideoLoad - Couldnt find video file for \"%s\"", name.c_str());
-        pi.GetClient()->SendMessage("{\"type\":\"preloadVideo\",\"status\":\"failed\"}"); //TODO better message to whoever
+        FLog::Log(FLOG_ERROR, "LimeMaster::VideoLoad - Couldnt find video file for \"%s\"", name.c_str());
+        control.GetClient()->SendMessage("{\"type\":\"preloadVideo\",\"status\":\"failed\"}"); //TODO better message to whoever
         return;
     }
     if(!FileExists(pathJson.c_str())){
-        FLog::Log(FLOG_ERROR, "LimeSlave::VideoLoad - Couldnt find script file for \"%s\"", name.c_str());
-        pi.GetClient()->SendMessage("{\"type\":\"preloadVideo\",\"status\":\"failed\"}"); //TODO better message to whoever
+        FLog::Log(FLOG_ERROR, "LimeMaster::VideoLoad - Couldnt find script file for \"%s\"", name.c_str());
+        control.GetClient()->SendMessage("{\"type\":\"preloadVideo\",\"status\":\"failed\"}"); //TODO better message to whoever
         return;
     }
 
@@ -243,6 +243,9 @@ void LimeSlave::VideoLoad(std::string name){
 #else
     //load gl stuff
     renderer->Create(pathJson);
+
+    //draw prevideo frame
+    renderer->PreDraw();
 
 #endif
 
