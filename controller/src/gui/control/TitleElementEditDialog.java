@@ -109,11 +109,8 @@ public class TitleElementEditDialog extends JDialog implements ActionListener {
 		c.insets = new Insets(0, 5, 5, 5);
 		panel.add(scriptNameField, c);
 
-		// JPanel tablePanel = new JPanel(new BorderLayout());
 		tableModel = new TitleElementTableModel(element);
 		dataTable = new JTable(tableModel);
-		// tablePanel.add(dataTable, BorderLayout.CENTER);
-		// tablePanel.add(dataTable.getTableHeader(), BorderLayout.NORTH);
 		c = new GridBagConstraints();
 		c.fill = GridBagConstraints.BOTH;
 		c.gridx = 0;
@@ -198,6 +195,8 @@ public class TitleElementEditDialog extends JDialog implements ActionListener {
 			}
 		} else if (action.equals("Delete Row")) {
 			int row = dataTable.getSelectedRow();
+			if(row >= dataTable.getRowCount() || row < 0)
+				return;
 			element.getListModel().remove(row);
 			dataTable.revalidate();
 			dataTable.repaint();
