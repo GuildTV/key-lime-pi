@@ -8,7 +8,6 @@ import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.SwingUtilities;
 
 public class TitlePanel extends JPanel {
 	private static final long serialVersionUID = 8021157860217699741L;
@@ -32,7 +31,7 @@ public class TitlePanel extends JPanel {
 		this.owner = owner;
 
 		panel = new JPanel();
-		//panel.setLayout(new BoxLayout(panel, BoxLayout.PAGE_AXIS));
+		panel.setLayout(new BoxLayout(panel, BoxLayout.PAGE_AXIS));
 		pane = new JScrollPane(panel, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 		add(pane, BorderLayout.CENTER);
 
@@ -93,12 +92,7 @@ public class TitlePanel extends JPanel {
 		elements = new TitleElement[ARRAY_INCREMENT];
 		panel.removeAll();
 
-		SwingUtilities.invokeLater(new Runnable() {
-			public void run() {
-				create();
-			}
-		});
-		// create();
+		create();
 		// create();
 	}
 }

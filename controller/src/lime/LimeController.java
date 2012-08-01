@@ -1,7 +1,5 @@
 package lime;
 
-import javax.swing.SwingUtilities;
-
 import net.CloseListener;
 import net.NetIO;
 import gui.MainFrame;
@@ -12,14 +10,9 @@ public class LimeController implements CloseListener {
 	NetIO net;
 
 	public LimeController() {
-		final LimeController me = this;
 		net = new NetIO();
-		SwingUtilities.invokeLater(new Runnable() {
-			public void run() {
-				frame = new MainFrame(me);
-				connect("127.0.0.1");
-			}
-		});
+		frame = new MainFrame(this);
+		connect("127.0.0.1");
 	}
 
 	public boolean connect(String addr) {

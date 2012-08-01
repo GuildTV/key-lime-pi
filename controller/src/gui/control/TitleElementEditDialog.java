@@ -193,19 +193,19 @@ public class TitleElementEditDialog extends JDialog implements ActionListener {
 				    options,
 				    options[1]);
 			if(n == JOptionPane.YES_OPTION) {
-				element.getParent().removeElm(element);
+				element.getMyParent().removeElm(element);
 				dispose();
 			}
 		} else if (action.equals("Delete Row")) {
 			int row = dataTable.getSelectedRow();
 			element.getListModel().remove(row);
-			//dataTable.revalidate();
-			//dataTable.repaint();
+			dataTable.revalidate();
+			dataTable.repaint();
 		} else if (action.equals("Add Row")) {
 			element.getListModel().addElement(new TitleData());
-			//dataTable.revalidate();
-			//dataTable.repaint();
+			dataTable.revalidate();
+			dataTable.repaint();
 		}
-		//element.repaint();
+		element.repaint();
 	}
 }

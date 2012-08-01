@@ -110,7 +110,7 @@ public class TitleElement extends JPanel implements ActionListener {
 		addData("Hi", "Boo");
 		addData("Test", "123");
 	}
-/*
+
 	@Override
 	public void paintComponent(Graphics g) {
 		super.paintComponent(g);
@@ -118,7 +118,7 @@ public class TitleElement extends JPanel implements ActionListener {
 		nameLabel.setText(nameValue);
 		scriptLabel.setText(scriptName);
 	}
-*/
+
 	public void addData(String name, String value) {
 		TitleData d = new TitleData(name, value);
 		listModel.addElement(d);
@@ -151,7 +151,7 @@ public class TitleElement extends JPanel implements ActionListener {
 		return listModel;
 	}
 
-	public TitlePanel getParent() {
+	public TitlePanel getMyParent() {
 		return parent;
 	}
 }
