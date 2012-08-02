@@ -117,20 +117,23 @@ public class TitleElement extends JPanel implements MouseListener {
 			addData(d.getName(), d.getValue());
 		}
 	}
-	
+
 	public TitleElement(TitlePanel parent, JSONObject json) throws JSONException {
 		this(parent);
-		
+
 		nameValue = json.getString("name");
 		scriptName = json.getString("script");
-		
+
 		JSONArray data = json.getJSONArray("data");
-		
-		for(int i=0;i<data.length();i++){
-			JSONObject o = data.getJSONObject(i);
-			addData(o.getString("name"), o.getString("value"));
+
+		for (int i = 0; i < data.length(); i++) {
+			try {
+				JSONObject o = data.getJSONObject(i);
+				addData(o.getString("name"), o.getString("value"));
+			} catch (JSONException e) {
+				parent.getOwner().log("Failed to load a data entry for '" + nameValue + "'");
+			}
 		}
-		
 	}
 
 	@Override
@@ -144,6 +147,15 @@ public class TitleElement extends JPanel implements MouseListener {
 
 		nameLabel.setText(nameValue);
 		scriptLabel.setText(scriptName);
+		
+		if(!parent.getOwner().isScriptValid(scriptName)){
+			previewButton.setEnabled(false);
+			playButton.setEnabled(false);
+		} else {
+			previewButton.setEnabled(true);
+			playButton.setEnabled(true);
+		}
+			
 	}
 
 	public void addData(String name, String value) {
@@ -233,15 +245,19 @@ public class TitleElement extends JPanel implements MouseListener {
 		stringer.key("name").value(nameValue);
 		stringer.key("script").value(scriptName);
 		stringer.key("data").array();
-		
+
 		for (int i = 0; i < listModel.getSize(); i++) {
-			TitleData d = listModel.get(i);
-			stringer.object();
-			stringer.key("name").value(d.getName());
-			stringer.key("value").value(d.getValue());
-			stringer.endObject();
+			try {
+				TitleData d = listModel.get(i);
+				stringer.object();
+				stringer.key("name").value(d.getName());
+				stringer.key("value").value(d.getValue());
+				stringer.endObject();
+			} catch (JSONException e) {
+				parent.getOwner().log("Failed to save data entry for '"+nameValue+"'");
+			}
 		}
-		
+
 		stringer.endArray();
 		stringer.endObject();
 	}

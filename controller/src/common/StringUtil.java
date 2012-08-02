@@ -222,7 +222,7 @@ public class StringUtil {
 	 * @return boolean whether str is in array
 	 */
 	public static boolean in_array(String str, String[] array) {
-		return (array_search(str, array)==-1);
+		return (array_search(str, array)!=-1);
 	}
 
 	/**
@@ -235,7 +235,7 @@ public class StringUtil {
 	 * @return boolean whether str is in array
 	 */
 	public static boolean in_array(String str, ArrayList<String> array) {
-		return (array_search(str, array)==-1);
+		return (array_search(str, array)!=-1);
 	}
 
 	/**

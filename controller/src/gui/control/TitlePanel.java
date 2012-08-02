@@ -173,17 +173,21 @@ public class TitlePanel extends JPanel {
 
 			synchronized (arrayLock) {
 				for (int i = 0; i < elmCount; i++) {
-					elements[i].toJSON(stringer);
+					try {
+						elements[i].toJSON(stringer);
+					} catch (JSONException e) {
+						getOwner().log("Failed to save a title element to file");
+					}
 				}
 			}
 			stringer.endArray();
 			stringer.endObject();
 
-			IOUtil.writeFile(path, stringer.toString());
+			if(!IOUtil.writeFile(path, stringer.toString()))
+				getOwner().log("Failed to write to output file");
 
 		} catch (JSONException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			getOwner().log("Failed to save titles to file");
 		}
 	}
 
@@ -195,13 +199,16 @@ public class TitlePanel extends JPanel {
 			JSONArray data = json.getJSONArray("data");
 
 			for (int i = 0; i < data.length(); i++) {
-				JSONObject o = data.getJSONObject(i);
-				addElm(new TitleElement(this, o));
+				try {
+					JSONObject o = data.getJSONObject(i);
+					addElm(new TitleElement(this, o));
+				} catch (JSONException e) {
+					getOwner().log("Failed to load a title from file");
+				}
 			}
 
 		} catch (JSONException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			getOwner().log("Failed to load save");
 		}
 
 		revalidate();
