@@ -8,6 +8,7 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.IllegalComponentStateException;
 import java.awt.Insets;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -34,6 +35,9 @@ public class TitleElement extends JPanel implements MouseListener {
 	private JButton playButton;
 
 	private DefaultListModel<TitleData> listModel;
+
+	private boolean clicked = false;
+	private boolean clickedThisTime = false;
 
 	public TitleElement(TitlePanel parent) {
 		super(new GridBagLayout());
@@ -153,36 +157,54 @@ public class TitleElement extends JPanel implements MouseListener {
 
 	@Override
 	public void mouseClicked(MouseEvent e) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void mousePressed(MouseEvent e) {
-		if (getMyParent().getSelectedElement() == this) {
+		if (getMyParent().getSelectedElement() == this && !clickedThisTime) {
 			getMyParent().setSelectedElement(null);
 			getMyParent().repaint();
 		} else {
 			getMyParent().setSelectedElement(this);
 			getMyParent().repaint();
 		}
+		clickedThisTime = false;
+		clicked = false;
+	}
+
+	@Override
+	public void mousePressed(MouseEvent e) {
+		clicked = true;
+		if (getMyParent().getSelectedElement() != this) {
+			clickedThisTime = true;
+		}
+
+		getMyParent().setSelectedElement(this);
+		getMyParent().repaint();
 	}
 
 	@Override
 	public void mouseReleased(MouseEvent e) {
-		// TODO Auto-generated method stub
-
+		clicked = false;
 	}
 
 	@Override
 	public void mouseEntered(MouseEvent e) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void mouseExited(MouseEvent e) {
-		// TODO Auto-generated method stub
-
+		try {
+			if (clicked) {
+				if (e.getYOnScreen() < getLocationOnScreen().y) {
+					parent.moveUpElm(this);
+					parent.redrawElms();
+					parent.revalidate();
+					parent.repaint();
+				} else if (e.getYOnScreen() >= getLocationOnScreen().y + getHeight()) {
+					parent.moveDownElm(this);
+					parent.redrawElms();
+					parent.revalidate();
+					parent.repaint();
+				}
+			}
+		} catch (IllegalComponentStateException icse) {
+		}
 	}
 }
