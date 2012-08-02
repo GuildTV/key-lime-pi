@@ -37,7 +37,7 @@ public class MainFrame extends JFrame {
 
 		setTitle("key-lime-pi Controller");
 		
-		menuBar = new MenuBar();
+		menuBar = new MenuBar(this);
 		setJMenuBar(menuBar);
 
 		cardPanel = new JPanel(new CardLayout());
@@ -97,6 +97,14 @@ public class MainFrame extends JFrame {
 	
 	public String[] getValidScripts(){
 		return validScripts;
+	}
+	
+	public void saveTitles(String path){
+		controlPanel.saveTitles(path);
+	}
+	
+	public void loadTitles(String path){
+		controlPanel.loadTitles(path);
 	}
 	
 	public boolean isScriptValid(String script) {

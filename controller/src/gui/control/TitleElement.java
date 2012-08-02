@@ -20,6 +20,11 @@ import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.ListSelectionModel;
 
+import JSON.JSONArray;
+import JSON.JSONException;
+import JSON.JSONObject;
+import JSON.JSONStringer;
+
 public class TitleElement extends JPanel implements MouseListener {
 	private static final long serialVersionUID = 3610843924974947348L;
 
@@ -111,6 +116,21 @@ public class TitleElement extends JPanel implements MouseListener {
 			TitleData d = model.get(i);
 			addData(d.getName(), d.getValue());
 		}
+	}
+	
+	public TitleElement(TitlePanel parent, JSONObject json) throws JSONException {
+		this(parent);
+		
+		nameValue = json.getString("name");
+		scriptName = json.getString("script");
+		
+		JSONArray data = json.getJSONArray("data");
+		
+		for(int i=0;i<data.length();i++){
+			JSONObject o = data.getJSONObject(i);
+			addData(o.getString("name"), o.getString("value"));
+		}
+		
 	}
 
 	@Override
@@ -206,5 +226,23 @@ public class TitleElement extends JPanel implements MouseListener {
 			}
 		} catch (IllegalComponentStateException icse) {
 		}
+	}
+
+	public void toJSON(JSONStringer stringer) throws JSONException {
+		stringer.object();
+		stringer.key("name").value(nameValue);
+		stringer.key("script").value(scriptName);
+		stringer.key("data").array();
+		
+		for (int i = 0; i < listModel.getSize(); i++) {
+			TitleData d = listModel.get(i);
+			stringer.object();
+			stringer.key("name").value(d.getName());
+			stringer.key("value").value(d.getValue());
+			stringer.endObject();
+		}
+		
+		stringer.endArray();
+		stringer.endObject();
 	}
 }

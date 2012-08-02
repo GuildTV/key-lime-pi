@@ -1,27 +1,28 @@
 package JSON;
 
 /**
- * Exception for JSON thingy :)
- * 
- * @author Julus
+ * The JSONException is thrown by the JSON.org classes when things are amiss.
+ * @author JSON.org
+ * @version 2010-12-24
  */
 public class JSONException extends Exception {
-	private static final long serialVersionUID = -1291927002537339284L;
+    private static final long serialVersionUID = 0;
+    private Throwable cause;
 
-	/**
-	 * Create instance of this exception
-	 */
-	JSONException() {
-		super("Unknown JSON Exception!");
-	}
+    /**
+     * Constructs a JSONException with an explanatory message.
+     * @param message Detail about the reason for the exception.
+     */
+    public JSONException(String message) {
+        super(message);
+    }
 
-	/**
-	 * Create isntance of this exception with custom message
-	 * 
-	 * @param msg
-	 *            String message to save
-	 */
-	JSONException(String msg) {
-		super(msg);
-	}
+    public JSONException(Throwable cause) {
+        super(cause.getMessage());
+        this.cause = cause;
+    }
+
+    public Throwable getCause() {
+        return this.cause;
+    }
 }

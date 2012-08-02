@@ -1,179 +1,327 @@
 package JSON;
 
-import java.io.File;
 import java.io.IOException;
+import java.io.Writer;
 
-import common.*;
+/*
+Copyright (c) 2006 JSON.org
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+The Software shall be used for Good, not Evil.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+*/
 
 /**
- * Write JSONNode to a file or string
- * 
- * @author Julus
- * 
+ * JSONWriter provides a quick and convenient way of producing JSON text.
+ * The texts produced strictly conform to JSON syntax rules. No whitespace is
+ * added, so the results are ready for transmission or storage. Each instance of
+ * JSONWriter can produce one JSON text.
+ * <p>
+ * A JSONWriter instance provides a <code>value</code> method for appending
+ * values to the
+ * text, and a <code>key</code>
+ * method for adding keys before values in objects. There are <code>array</code>
+ * and <code>endArray</code> methods that make and bound array values, and
+ * <code>object</code> and <code>endObject</code> methods which make and bound
+ * object values. All of these methods return the JSONWriter instance,
+ * permitting a cascade style. For example, <pre>
+ * new JSONWriter(myWriter)
+ *     .object()
+ *         .key("JSON")
+ *         .value("Hello, World!")
+ *     .endObject();</pre> which writes <pre>
+ * {"JSON":"Hello, World!"}</pre>
+ * <p>
+ * The first method called must be <code>array</code> or <code>object</code>.
+ * There are no methods for adding commas or colons. JSONWriter adds them for
+ * you. Objects and arrays can be nested up to 20 levels deep.
+ * <p>
+ * This can sometimes be easier than using a JSONObject to build a string.
+ * @author JSON.org
+ * @version 2011-11-24
  */
 public class JSONWriter {
+    private static final int maxdepth = 200;
 
-	/**
-	 * Convert JSONNode to a String
-	 * 
-	 * @param node
-	 *            JSONNode tree to convert
-	 * @return String of JSON
-	 * @throws JSONException
-	 */
-	public static String JSONtoString(JSONNode node) throws JSONException {
-		// parse to string
-		String s = JSONNodeParse(node, "", 0, false).trim();
-		// trim trailing comma
-		s = s.substring(0, s.length() - 1);
-		// return string
-		return s;
-	}
+    /**
+     * The comma flag determines if a comma should be output before the next
+     * value.
+     */
+    private boolean comma;
 
-	/**
-	 * Write JSONNode to a file
-	 * 
-	 * @param node
-	 *            JSONNode tree to convert
-	 * @param filename
-	 *            String filename of file to save to
-	 * @return Boolean success
-	 * @throws JSONException
-	 */
-	public static boolean JSONtoFile(JSONNode node, String filename) throws JSONException {
-		return JSONtoFile(node, new File(filename));
-	}
+    /**
+     * The current mode. Values:
+     * 'a' (array),
+     * 'd' (done),
+     * 'i' (initial),
+     * 'k' (key),
+     * 'o' (object).
+     */
+    protected char mode;
 
-	/**
-	 * Write JSONNode to a file
-	 * 
-	 * @param node
-	 *            JSONNode tree to convert
-	 * @param file
-	 *            File handle of file to save to
-	 * @return Boolean success
-	 * @throws JSONException
-	 */
-	public static boolean JSONtoFile(JSONNode node, File file) throws JSONException {
-		try {
-			// check if file exists
-			if (!file.exists())
-				// create file
-				file.createNewFile();
-			// check if it is a file
-			if (!file.isFile())
-				return false;
+    /**
+     * The object/array stack.
+     */
+    private final JSONObject stack[];
 
-			// parse to string
-			String s = JSONNodeParse(node, "\t", 0, true).trim();
-			// trim trailing comma
-			s = s.substring(0, s.length() - 1);
+    /**
+     * The stack top index. A value of 0 indicates that the stack is empty.
+     */
+    private int top;
 
-			// write to file
-			IOUtil.writeFile(file, s);
+    /**
+     * The writer that will receive the output.
+     */
+    protected Writer writer;
 
-			return true;
-		} catch (IOException e) {
-			// report error
-			System.out.println("Failed to create json file");
-			return false;
-		}
-	}
+    /**
+     * Make a fresh JSONWriter. It can be used to build one JSON text.
+     */
+    public JSONWriter(Writer w) {
+        this.comma = false;
+        this.mode = 'i';
+        this.stack = new JSONObject[maxdepth];
+        this.top = 0;
+        this.writer = w;
+    }
 
-	/**
-	 * Convert JSONNode to a string
-	 * 
-	 * @param node
-	 *            JSONNode to convert
-	 * @param offsetChar
-	 *            Indent character
-	 * @param offsetCount
-	 *            Indent character count
-	 * @param newLine
-	 *            Boolean whether to put in newline characters
-	 * @return String representing JSONNode and any children
-	 * @throws JSONException
-	 */
-	private static String JSONNodeParse(JSONNode node, String offsetChar, int offsetCount, boolean newLine)
-			throws JSONException {
-		// if has no children, then is simple
-		if (!node.hasChildren()) {
-			if (node.getName() == null)
-				return "\"" + node.getValue() + "\",";
-			else
-				return (node.parent.getChildCount() > 1 ? StringUtil.str_pad_l("", offsetChar,
-						offsetCount * offsetChar.length()) : "")
-						+ "\""
-						+ node.getName()
-						+ "\":\""
-						+ StringUtil.addSlashes(node.getValue())
-						+ "\","
-						+ (node.parent.getChildCount() > 1 && newLine ? "\n" : "");
-		}
+    /**
+     * Append a value.
+     * @param string A string value.
+     * @return this
+     * @throws JSONException If the value is out of sequence.
+     */
+    private JSONWriter append(String string) throws JSONException {
+        if (string == null) {
+            throw new JSONException("Null pointer");
+        }
+        if (this.mode == 'o' || this.mode == 'a') {
+            try {
+                if (this.comma && this.mode == 'a') {
+                    this.writer.write(',');
+                }
+                this.writer.write(string);
+            } catch (IOException e) {
+                throw new JSONException(e);
+            }
+            if (this.mode == 'o') {
+                this.mode = 'k';
+            }
+            this.comma = true;
+            return this;
+        }
+        throw new JSONException("Value out of sequence.");
+    }
 
-		// has children
-		String compiled = "";
-		// get number of children
-		int childCount = node.getChildCount();
+    /**
+     * Begin appending a new array. All values until the balancing
+     * <code>endArray</code> will be appended to this array. The
+     * <code>endArray</code> method must be called to mark the array's end.
+     * @return this
+     * @throws JSONException If the nesting is too deep, or if the object is
+     * started in the wrong place (for example as a key or after the end of the
+     * outermost array or object).
+     */
+    public JSONWriter array() throws JSONException {
+        if (this.mode == 'i' || this.mode == 'o' || this.mode == 'a') {
+            this.push(null);
+            this.append("[");
+            this.comma = false;
+            return this;
+        }
+        throw new JSONException("Misplaced array.");
+    }
 
-		// if(newLine && childCount>1) compiled += "\n";
+    /**
+     * End something.
+     * @param mode Mode
+     * @param c Closing character
+     * @return this
+     * @throws JSONException If unbalanced.
+     */
+    private JSONWriter end(char mode, char c) throws JSONException {
+        if (this.mode != mode) {
+            throw new JSONException(mode == 'a'
+                ? "Misplaced endArray."
+                : "Misplaced endObject.");
+        }
+        this.pop(mode);
+        try {
+            this.writer.write(c);
+        } catch (IOException e) {
+            throw new JSONException(e);
+        }
+        this.comma = true;
+        return this;
+    }
 
-		// loop through children
-		for (int i = 0; i < childCount; i++) {
-			if (node.getName() != null && node.getChild(i).getName() != null) {
-				String add = JSONNodeParse(node.getChild(i), offsetChar, offsetCount + 1, newLine);
-				add = add.substring(0, add.length() - 1);
-				if (add.lastIndexOf(",") == add.length() - 1)
-					add = add.substring(0, add.length() - 1);
-				compiled += "{" + add + "},";
-			} else
-				compiled += JSONNodeParse(node.getChild(i), offsetChar, offsetCount + 1, newLine);
-		}
-		compiled = compiled.substring(0, compiled.length() - 1);
+    /**
+     * End an array. This method most be called to balance calls to
+     * <code>array</code>.
+     * @return this
+     * @throws JSONException If incorrectly nested.
+     */
+    public JSONWriter endArray() throws JSONException {
+        return this.end('a', ']');
+    }
 
-		// if has multiple children and has a name, then wrap with []
-		if (childCount > 1 && node.getName() != null) {
-			if (compiled.lastIndexOf(",") == compiled.length() - 1)
-				compiled = compiled.substring(0, compiled.length() - 1);
-			compiled = "["
-					+ compiled
-					+ (compiled.lastIndexOf("}") == compiled.length() - 1 ? (newLine ? "\n" : "")
-							+ StringUtil.str_pad_l("", offsetChar, offsetCount * offsetChar.length()) : "") + "]";
-		} else if (compiled.indexOf("{") == 0
-				&& (compiled.lastIndexOf("}") == compiled.length() - 1 || compiled.lastIndexOf("}") == compiled
-						.length() - 2)) {
-			compiled = "[" + compiled + "]";
-		}
+    /**
+     * End an object. This method most be called to balance calls to
+     * <code>object</code>.
+     * @return this
+     * @throws JSONException If incorrectly nested.
+     */
+    public JSONWriter endObject() throws JSONException {
+        return this.end('k', '}');
+    }
 
-		// if parent has no name and this has no name and last isnt a comma,
-		// then give a comma
-		if (node.parent != null && node.parent.getName() == null && node.getName() != null
-				&& compiled.lastIndexOf(",") != compiled.length() - 1)
-			compiled += ",";
+    /**
+     * Append a key. The key will be associated with the next value. In an
+     * object, every value must be preceded by a key.
+     * @param string A key string.
+     * @return this
+     * @throws JSONException If the key is out of place. For example, keys
+     *  do not belong in arrays or if the key is null.
+     */
+    public JSONWriter key(String string) throws JSONException {
+        if (string == null) {
+            throw new JSONException("Null key.");
+        }
+        if (this.mode == 'k') {
+            try {
+                this.stack[this.top - 1].putOnce(string, Boolean.TRUE);
+                if (this.comma) {
+                    this.writer.write(',');
+                }
+                this.writer.write(JSONObject.quote(string));
+                this.writer.write(':');
+                this.comma = false;
+                this.mode = 'o';
+                return this;
+            } catch (IOException e) {
+                throw new JSONException(e);
+            }
+        }
+        throw new JSONException("Misplaced key.");
+    }
 
-		// if has no name, then return only value
-		if (node.getName() != null)
-			compiled = StringUtil.str_pad_l("", offsetChar, offsetCount * offsetChar.length()) + "\"" + node.getName()
-					+ "\":" + compiled + (newLine ? "\n" : "");
-		else {
-			if (compiled.lastIndexOf(",") == compiled.length() - 1)
-				compiled = compiled.substring(0, compiled.length() - 1);
-			// has name, check if has children
-			if (node.getChildCount() > 1)
-				compiled = (newLine ? "\n" : "")
-						+ StringUtil.str_pad_l("", offsetChar, (offsetCount + 1) * offsetChar.length()) + "{"
-						+ (newLine ? "\n" : "") + compiled + (newLine ? "\n" : "")
-						+ StringUtil.str_pad_l("", offsetChar, offsetCount * offsetChar.length()) + "},";
-			else if (node.parent != null && node.parent.getChildCount() > 1) {
-				compiled = (newLine ? "\n" : "")
-						+ StringUtil.str_pad_l("", offsetChar, offsetCount * offsetChar.length()) + "{" + compiled
-						+ "},";
-			} else {
-				compiled = "{" + compiled + "},";
-			}
-		}
 
-		// return
-		return compiled;
-	}
+    /**
+     * Begin appending a new object. All keys and values until the balancing
+     * <code>endObject</code> will be appended to this object. The
+     * <code>endObject</code> method must be called to mark the object's end.
+     * @return this
+     * @throws JSONException If the nesting is too deep, or if the object is
+     * started in the wrong place (for example as a key or after the end of the
+     * outermost array or object).
+     */
+    public JSONWriter object() throws JSONException {
+        if (this.mode == 'i') {
+            this.mode = 'o';
+        }
+        if (this.mode == 'o' || this.mode == 'a') {
+            this.append("{");
+            this.push(new JSONObject());
+            this.comma = false;
+            return this;
+        }
+        throw new JSONException("Misplaced object.");
+
+    }
+
+
+    /**
+     * Pop an array or object scope.
+     * @param c The scope to close.
+     * @throws JSONException If nesting is wrong.
+     */
+    private void pop(char c) throws JSONException {
+        if (this.top <= 0) {
+            throw new JSONException("Nesting error.");
+        }
+        char m = this.stack[this.top - 1] == null ? 'a' : 'k';
+        if (m != c) {
+            throw new JSONException("Nesting error.");
+        }
+        this.top -= 1;
+        this.mode = this.top == 0
+            ? 'd'
+            : this.stack[this.top - 1] == null
+            ? 'a'
+            : 'k';
+    }
+
+    /**
+     * Push an array or object scope.
+     * @param c The scope to open.
+     * @throws JSONException If nesting is too deep.
+     */
+    private void push(JSONObject jo) throws JSONException {
+        if (this.top >= maxdepth) {
+            throw new JSONException("Nesting too deep.");
+        }
+        this.stack[this.top] = jo;
+        this.mode = jo == null ? 'a' : 'k';
+        this.top += 1;
+    }
+
+
+    /**
+     * Append either the value <code>true</code> or the value
+     * <code>false</code>.
+     * @param b A boolean.
+     * @return this
+     * @throws JSONException
+     */
+    public JSONWriter value(boolean b) throws JSONException {
+        return this.append(b ? "true" : "false");
+    }
+
+    /**
+     * Append a double value.
+     * @param d A double.
+     * @return this
+     * @throws JSONException If the number is not finite.
+     */
+    public JSONWriter value(double d) throws JSONException {
+        return this.value(new Double(d));
+    }
+
+    /**
+     * Append a long value.
+     * @param l A long.
+     * @return this
+     * @throws JSONException
+     */
+    public JSONWriter value(long l) throws JSONException {
+        return this.append(Long.toString(l));
+    }
+
+
+    /**
+     * Append an object value.
+     * @param object The object to append. It can be null, or a Boolean, Number,
+     *   String, JSONObject, or JSONArray, or an object that implements JSONString.
+     * @return this
+     * @throws JSONException If the value is out of sequence.
+     */
+    public JSONWriter value(Object object) throws JSONException {
+        return this.append(JSONObject.valueToString(object));
+    }
 }

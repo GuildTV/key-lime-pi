@@ -60,6 +60,14 @@ public class ControlPanel extends JPanel {
 		log.log(str);
 	}
 	
+	public void saveTitles(String path){
+		title.saveTitles(path);
+	}
+	
+	public void loadTitles(String path){
+		title.loadTitles(path);
+	}
+	
 	public void reset() {
 		rss.reset();
 		log.reset();

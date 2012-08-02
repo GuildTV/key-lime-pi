@@ -9,6 +9,13 @@ import javax.swing.BoxLayout;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 
+import common.IOUtil;
+
+import JSON.JSONArray;
+import JSON.JSONException;
+import JSON.JSONObject;
+import JSON.JSONStringer;
+
 public class TitlePanel extends JPanel {
 	private static final long serialVersionUID = 8021157860217699741L;
 
@@ -156,5 +163,48 @@ public class TitlePanel extends JPanel {
 
 	public TitleElement getSelectedElement() {
 		return selected;
+	}
+
+	public void saveTitles(String path) {
+		JSONStringer stringer = new JSONStringer();
+		try {
+			stringer.object();
+			stringer.key("data").array();
+
+			synchronized (arrayLock) {
+				for (int i = 0; i < elmCount; i++) {
+					elements[i].toJSON(stringer);
+				}
+			}
+			stringer.endArray();
+			stringer.endObject();
+
+			IOUtil.writeFile(path, stringer.toString());
+
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	public void loadTitles(String path) {
+		reset();
+
+		try {
+			JSONObject json = new JSONObject(IOUtil.readFile(path));
+			JSONArray data = json.getJSONArray("data");
+
+			for (int i = 0; i < data.length(); i++) {
+				JSONObject o = data.getJSONObject(i);
+				addElm(new TitleElement(this, o));
+			}
+
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		revalidate();
+		repaint();
 	}
 }

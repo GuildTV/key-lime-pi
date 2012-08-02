@@ -48,13 +48,14 @@ public class MessageHandler implements Runnable {
 	 */
 	private void handle(NetMessage msg) {
 		//try to parse json
+		/*
 		JSONNode json = JSONReader.generateFromString(msg.getMessage(), false);
 		
 		if(json == null){
 			//TODO handle bad json
 			return;
 		}
-		
+		*/
 		
 		
 	}
