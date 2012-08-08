@@ -10,6 +10,8 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.IllegalComponentStateException;
 import java.awt.Insets;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 
@@ -20,12 +22,14 @@ import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.ListSelectionModel;
 
+import lime.CommandBuilder;
+
 import JSON.JSONArray;
 import JSON.JSONException;
 import JSON.JSONObject;
 import JSON.JSONStringer;
 
-public class TitleElement extends JPanel implements MouseListener {
+public class TitleElement extends JPanel implements MouseListener, ActionListener {
 	private static final long serialVersionUID = 3610843924974947348L;
 
 	private String nameValue = "";
@@ -85,6 +89,8 @@ public class TitleElement extends JPanel implements MouseListener {
 		add(dataList, c);
 
 		previewButton = new JButton("Preview");
+		previewButton.setActionCommand("preview");
+		previewButton.addActionListener(this);
 		c = new GridBagConstraints();
 		c.fill = GridBagConstraints.NONE;
 		c.gridx = 2;
@@ -95,6 +101,8 @@ public class TitleElement extends JPanel implements MouseListener {
 		add(previewButton, c);
 
 		playButton = new JButton("Load");
+		playButton.setActionCommand("load-play");
+		playButton.addActionListener(this);
 		c = new GridBagConstraints();
 		c.fill = GridBagConstraints.NONE;
 		c.gridx = 3;
@@ -147,15 +155,20 @@ public class TitleElement extends JPanel implements MouseListener {
 
 		nameLabel.setText(nameValue);
 		scriptLabel.setText(scriptName);
-		
-		if(!parent.getOwner().isScriptValid(scriptName)){
+
+		if (!parent.getOwner().isScriptValid(scriptName)) {
 			previewButton.setEnabled(false);
 			playButton.setEnabled(false);
 		} else {
 			previewButton.setEnabled(true);
 			playButton.setEnabled(true);
 		}
-			
+		
+		if(parent.getLoaded() == this) {
+			playButton.setText("Play");
+		} else {
+			playButton.setText("Load");
+		}
 	}
 
 	public void addData(String name, String value) {
@@ -254,11 +267,35 @@ public class TitleElement extends JPanel implements MouseListener {
 				stringer.key("value").value(d.getValue());
 				stringer.endObject();
 			} catch (JSONException e) {
-				parent.getOwner().log("Failed to save data entry for '"+nameValue+"'");
+				parent.getOwner().log("Failed to save data entry for '" + nameValue + "'");
 			}
 		}
 
 		stringer.endArray();
 		stringer.endObject();
+	}
+
+	@Override
+	public void actionPerformed(ActionEvent e) {
+		if (e.getActionCommand().equals("preview")) {
+			//unload previously loaded
+			String str = CommandBuilder.createPreview(this);
+			parent.getOwner().getControl().sendMessage(str);
+			System.out.println(str);
+		} else if(e.getActionCommand().equals("load-play")){
+			//if loaded
+			if(parent.getLoaded() == this) {
+				//play
+				String str = CommandBuilder.createPlay(this);
+				parent.getOwner().getControl().sendMessage(str);
+				
+			} else {
+				//unload previously loaded
+				String str = CommandBuilder.createPreload(this);
+				parent.getOwner().getControl().sendMessage(str);
+				
+			}
+		}
+
 	}
 }

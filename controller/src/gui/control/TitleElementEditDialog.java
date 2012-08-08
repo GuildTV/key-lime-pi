@@ -42,7 +42,7 @@ public class TitleElementEditDialog extends JDialog implements ActionListener {
 
 		setTitle("Edit Selected Title");
 		setModal(true);
-		setSize(500, 200);
+		setSize(500, 250);
 		setResizable(false);
 		JPanel panel = new JPanel(new GridBagLayout());
 		add(panel);
@@ -174,28 +174,24 @@ public class TitleElementEditDialog extends JDialog implements ActionListener {
 	public void actionPerformed(ActionEvent e) {
 		String action = e.getActionCommand();
 		if (action.equals("Set Name")) {
-			element.setNameValue(nameField.getText());
+			int count = element.getMyParent().countElmName(nameField.getText());
+			if (count == 0 || (count == 1 && element.getNameValue().equals(nameField.getText())))
+				element.setNameValue(nameField.getText());
 		} else if (action.equals("Set Script")) {
 			element.setScriptName((String) scriptNameField.getSelectedItem());
 		} else if (action.equals("Close"))
 			dispose();
 		else if (action.equals("Delete")) {
-			Object[] options = {"Yes", "No"};
-			int n = JOptionPane.showOptionDialog(owner,
-				    "Are you sure you want to delete this?",
-				    "Confirm Deletion",
-				    JOptionPane.YES_NO_OPTION,
-				    JOptionPane.WARNING_MESSAGE,
-				    null,
-				    options,
-				    options[1]);
-			if(n == JOptionPane.YES_OPTION) {
+			Object[] options = { "Yes", "No" };
+			int n = JOptionPane.showOptionDialog(owner, "Are you sure you want to delete this?", "Confirm Deletion",
+					JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, options, options[1]);
+			if (n == JOptionPane.YES_OPTION) {
 				element.getMyParent().removeElm(element);
 				dispose();
 			}
 		} else if (action.equals("Delete Row")) {
 			int row = dataTable.getSelectedRow();
-			if(row >= dataTable.getRowCount() || row < 0)
+			if (row >= dataTable.getRowCount() || row < 0)
 				return;
 			element.getListModel().remove(row);
 			dataTable.revalidate();

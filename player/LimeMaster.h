@@ -49,12 +49,16 @@ class LimeMaster
         //stop video playback
         void VideoStop();
         //start videoplayback
-        void VideoPlay();
+        void VideoPlay() {VideoPlay(false);};
+        void VideoPlay(bool preview);
         //finish setting up program
         bool FinishSetup();
+        //get netio
+        NetIO getControl(){return control;};
     protected:
         //load video
-        void VideoLoad(std::string name);
+        void VideoLoad(std::string name, std::string script) {VideoLoad(name, script, false);};
+        void VideoLoad(std::string name, std::string script, bool preview);
         //check file exists
         bool FileExists(const char * filename);
     private:

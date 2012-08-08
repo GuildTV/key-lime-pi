@@ -65,6 +65,12 @@ void LimeTimer::UnLock(){
 
 bool LimeTimer::VideoPlay(long sec, long nano)
 {
+#ifdef LIMEMASTER
+  master->getControl().GetClient()->SendMessage("{\"type\":\"playVideo\",\"status\":\"waiting for playback\"}");
+#else
+  slave->getControl().GetClient()->SendMessage("{\"type\":\"playVideo\",\"status\":\"waiting for playback\"}");
+#endif
+
   pthread_attr_init(&m_tattr);
   pthread_create(&m_thread, &m_tattr, &LimeTimer::ThreadRun, this);
 
@@ -103,7 +109,6 @@ void LimeTimer::ThreadProcess() {
     while(ts.tv_sec <= playSec && ts.tv_nsec < playNano){
         clock_gettime(CLOCK_REALTIME, &ts);
     }
-
     //call back out to play video
 #ifdef LIMEMASTER
     master->VideoPlay();

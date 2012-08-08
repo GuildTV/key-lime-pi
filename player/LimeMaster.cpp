@@ -69,7 +69,7 @@ void LimeMaster::Run() {
     }
 
     //connection to slave
-    string addr = "192.168.1.2";
+    string addr = "192.168.1.99";
     if(pi.CreateClient(addr, PIPORT) != 0) {
         FLog::Log(FLOG_ERROR, "LimeMaster::Run - failed to connect to slave '%s'", addr.c_str());
         //try to connect with addresses sent from control
@@ -172,19 +172,33 @@ void LimeMaster::HandleMessage(NetMessage* msg){
     //preload a video to be played
     if(type.compare("preloadVideo") == 0){
         //check name exists
-        if(!root.isMember("name")){
-            FLog::Log(FLOG_ERROR, "LimeMaster::HandleMessage - Recieved 'preloadVideo' command without a 'name' field");
+        if(!root.isMember("data")){
+            FLog::Log(FLOG_ERROR, "LimeMaster::HandleMessage - Recieved 'preloadVideo' command without a 'data' field");
             return;
         }
-        const string name = root["name"].asString();
+        Json::Value data = root["data"];
+        if(!data.isMember("script")){
+            FLog::Log(FLOG_ERROR, "LimeMaster::HandleMessage - Recieved 'preloadVideo' command without a 'data::script' field");
+            return;
+        }
+        const string script = data["script"].asString();
+        if(!data.isMember("name")){
+            FLog::Log(FLOG_ERROR, "LimeMaster::HandleMessage - Recieved 'preloadVideo' command without a 'data::name' field");
+            return;
+        }
+        const string name = data["name"].asString();
 
         //forward message to slave
         pi.GetClient()->SendMessage(msg->message);
 
         //load video
-        VideoLoad(name);
+        VideoLoad(name, script);//TODO pass data
 
     } else if (type.compare("playVideo") == 0){
+        if(!videoLoaded){
+            control.GetClient()->SendMessage("{\"type\":\"playVideo\",\"status\":\"nothing loaded\"}");
+            return;
+        }
 
         //get time
         timespec time;
@@ -203,35 +217,63 @@ void LimeMaster::HandleMessage(NetMessage* msg){
         char formatted[format.length()+10];
         sprintf(formatted, format.c_str(), sec, nano);
 
+
         //send message to slave
         pi.GetClient()->SendMessage(formatted);
 
         //play video at specified time
         limeTimer->VideoPlay(sec, nano);
+    } else if (type.compare("previewVideo") == 0){
+        //check name exists
+        if(!root.isMember("data")){
+            FLog::Log(FLOG_ERROR, "LimeMaster::HandleMessage - Recieved 'previewVideo' command without a 'data' field");
+            return;
+        }
+        Json::Value data = root["data"];
+        if(!data.isMember("script")){
+            FLog::Log(FLOG_ERROR, "LimeMaster::HandleMessage - Recieved 'previewVideo' command without a 'data::script' field");
+            return;
+        }
+        const string script = data["script"].asString();
+        if(!data.isMember("name")){
+            FLog::Log(FLOG_ERROR, "LimeMaster::HandleMessage - Recieved 'previewVideo' command without a 'data::name' field");
+            return;
+        }
+        const string name = data["name"].asString();
+
+        //play video at specified time
+        VideoLoad(name, script, true);
+        VideoPlay(true);
     }
 }
 
-void LimeMaster::VideoLoad(std::string name){
+void LimeMaster::VideoLoad(std::string name, std::string script, bool preview){
     //set as not loaded
     videoLoaded = false;
-    FLog::Log(FLOG_INFO, "LimeMaster::VideoLoad - Starting preload of \"%s\"", name.c_str());
+    FLog::Log(FLOG_INFO, "LimeMaster::VideoLoad - Starting %s of \"%s\"", preview?"preview":"preload", script.c_str());
     //generate paths to video and script
     std::string pathVid = DATAFOLDER;
-    pathVid += name;
+    pathVid += script;
     pathVid += "/video.mp4";
     std::string pathJson = DATAFOLDER;
-    pathJson += name;
+    pathJson += script;
     pathJson += "/script.json";
 
     //verify files exist
     if(!FileExists(pathVid.c_str())){
-        FLog::Log(FLOG_ERROR, "LimeMaster::VideoLoad - Couldnt find video file for \"%s\"", name.c_str());
-        control.GetClient()->SendMessage("{\"type\":\"preloadVideo\",\"status\":\"failed\"}"); //TODO better message to whoever
+        FLog::Log(FLOG_ERROR, "LimeMaster::VideoLoad - Couldnt find video file for \"%s\"", script.c_str());
+        if(preview)
+            control.GetClient()->SendMessage("{\"type\":\"previewVideo\",\"status\":\"video doesnt exist\"}");
+        else
+            control.GetClient()->SendMessage("{\"type\":\"preloadVideo\",\"status\":\"video doesnt exist\"}");
         return;
     }
     if(!FileExists(pathJson.c_str())){
-        FLog::Log(FLOG_ERROR, "LimeMaster::VideoLoad - Couldnt find script file for \"%s\"", name.c_str());
-        control.GetClient()->SendMessage("{\"type\":\"preloadVideo\",\"status\":\"failed\"}"); //TODO better message to whoever
+        FLog::Log(FLOG_ERROR, "LimeMaster::VideoLoad - Couldnt find script file for \"%s\"", script.c_str());
+        if(preview)
+            control.GetClient()->SendMessage("{\"type\":\"previewVideo\",\"status\":\"script doesnt exist\"}");
+        else
+            control.GetClient()->SendMessage("{\"type\":\"preloadVideo\",\"status\":\"script doesnt exist\"}");
         return;
     }
 
@@ -249,17 +291,26 @@ void LimeMaster::VideoLoad(std::string name){
 
 #endif
 
+    if(!preview){
+        std::string msg = "{\"type\":\"preloadVideo\",\"name\":\"";
+        msg += name;
+        msg += "\",\"status\":\"video loaded\"}";
+        control.GetClient()->SendMessage(msg);
+    }
+
     //set as loaded
     videoLoaded = true;
 }
 
-void LimeMaster::VideoPlay() {
+void LimeMaster::VideoPlay(bool preview) {
     //complain if video isnt loaded
     if(!videoLoaded){
-        control.GetClient()->SendMessage("{\"type\":\"playVideo\",\"status\":\"nothing loaded\"}"); //TODO better message to whoever
+        if(!preview)
+            control.GetClient()->SendMessage("{\"type\":\"playVideo\",\"status\":\"nothing loaded\"}");
         return;
     }
-    videoLoaded = false;
+
+    control.GetClient()->SendMessage("{\"type\":\"playVideo\",\"status\":\"starting playback\"}");
 
 #ifndef RENDERTEST
     //play video

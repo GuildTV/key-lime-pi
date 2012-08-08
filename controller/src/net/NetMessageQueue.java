@@ -13,8 +13,6 @@ import java.util.Queue;
 public class NetMessageQueue {
 	//queue lock
 	private Object messageLock = new Object();
-	//pop wait object
-	private Object popWait = new Object();
 	
 	//message queue
 	private Queue<NetMessage> queue = new LinkedList<NetMessage>();
@@ -32,6 +30,7 @@ public class NetMessageQueue {
 		//get lock, then add message
 		synchronized (messageLock) {
 			queue.add(msg);
+			messageLock.notify();
 		}
 
 		return true;
@@ -58,7 +57,7 @@ public class NetMessageQueue {
 
 			try {
 				//wait to be told there is a message waiting
-				popWait.wait();
+				messageLock.wait();
 			} catch (InterruptedException e) {
 			}
 

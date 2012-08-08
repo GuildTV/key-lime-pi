@@ -15,7 +15,9 @@ import javax.swing.JPanel;
  */
 public class ControlPanel extends JPanel {
 	private static final long serialVersionUID = -2342321883822171371L;
-	
+
+	//connection status panel
+	private ConnectionPanel connection;
 	// rss panel
 	private RSSPanel rss;
 	// title panel
@@ -25,52 +27,70 @@ public class ControlPanel extends JPanel {
 
 	ControlPanel(MainFrame owner) {
 		super(new GridBagLayout());
-		
+
+		// create connection panel
+		GridBagConstraints c = new GridBagConstraints();
+		connection = new ConnectionPanel(owner);
+		c.fill = GridBagConstraints.HORIZONTAL;
+		c.gridx = 0;
+		c.weightx = 1.0;
+		c.gridy = 0;
+		add(connection, c);
+
 		// create rss panel
-		GridBagConstraints c1 = new GridBagConstraints();
+		c = new GridBagConstraints();
 		rss = new RSSPanel();
-		c1.fill = GridBagConstraints.HORIZONTAL;
-		c1.gridx = 0;
-		c1.weightx = 1.0;
-		c1.gridy = 0;
-		add(rss, c1);
+		c.fill = GridBagConstraints.HORIZONTAL;
+		c.gridx = 0;
+		c.weightx = 1.0;
+		c.gridy = 1;
+		add(rss, c);
 
 		// create log panel
-		GridBagConstraints c2 = new GridBagConstraints();
+		c = new GridBagConstraints();
 		log = new LogPanel();
-		c2.fill = GridBagConstraints.BOTH;
-		c2.gridx = 0;
-		c2.weightx = 1.0;
-		c2.weighty = 0.2;
-		c2.gridy = 1;
-		add(log, c2);
+		c.fill = GridBagConstraints.BOTH;
+		c.gridx = 0;
+		c.weightx = 1.0;
+		c.weighty = 0.2;
+		c.gridy = 2;
+		add(log, c);
 
 		// create title panel
-		GridBagConstraints c3 = new GridBagConstraints();
+		c = new GridBagConstraints();
 		title = new TitlePanel(owner);
-		c3.fill = GridBagConstraints.BOTH;
-		c3.gridx = 0;
-		c3.weightx = 1.0;
-		c3.weighty = 1.0;
-		c3.gridy = 2;
-		add(title, c3);
+		c.fill = GridBagConstraints.BOTH;
+		c.gridx = 0;
+		c.weightx = 1.0;
+		c.weighty = 1.0;
+		c.gridy = 3;
+		add(title, c);
 	}
-	
-	public void log(String str){
+
+	public void log(String str) {
 		log.log(str);
 	}
-	
-	public void saveTitles(String path){
+
+	public void saveTitles(String path) {
 		title.saveTitles(path);
 	}
-	
-	public void loadTitles(String path){
+
+	public void loadTitles(String path) {
 		title.loadTitles(path);
 	}
-	
+
 	public void reset() {
+		connection.reset();
 		rss.reset();
 		log.reset();
 		title.reset();
+	}
+	
+	public ConnectionPanel getConnectionPanel() {
+		return connection;
+	}
+	
+	public TitlePanel getTitlePanel() {
+		return title;
 	}
 }

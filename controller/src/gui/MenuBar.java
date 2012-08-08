@@ -1,5 +1,6 @@
 package gui;
 
+import java.awt.Graphics;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
@@ -16,6 +17,13 @@ public class MenuBar extends JMenuBar implements ActionListener {
 	private JMenu fileMenu;
 	private JMenu helpMenu;
 
+	private JMenuItem newShow;
+	private JMenuItem save;
+	private JMenuItem load;
+	private JMenuItem connect;
+	private JMenuItem disconnect;
+	private JMenuItem close;
+
 	public MenuBar(MainFrame owner) {
 		this.owner = owner;
 
@@ -28,21 +36,48 @@ public class MenuBar extends JMenuBar implements ActionListener {
 		fileMenu = new JMenu("File");
 		add(fileMenu);
 
-		JMenuItem save = new JMenuItem("Save Titles");
+		
+		newShow = new JMenuItem("New Show");
+		newShow.addActionListener(this);
+		newShow.setActionCommand("New");
+		fileMenu.add(newShow);
+		
+		save = new JMenuItem("Save Show");
 		save.addActionListener(this);
 		save.setActionCommand("Save");
 		fileMenu.add(save);
 
-		JMenuItem load = new JMenuItem("Load Titles");
+		load = new JMenuItem("Load Show");
 		load.addActionListener(this);
 		load.setActionCommand("Load");
 		fileMenu.add(load);
 
-		JMenuItem disconnect = new JMenuItem("Disconnect");
+		connect = new JMenuItem("Connect");
+		connect.addActionListener(this);
+		connect.setActionCommand("Connect");
+		fileMenu.add(connect);
+		
+		disconnect = new JMenuItem("Disconnect");
 		fileMenu.add(disconnect);
 
-		JMenuItem close = new JMenuItem("Close");
+		close = new JMenuItem("Close");
 		fileMenu.add(close);
+	}
+
+	protected void paintComponent(Graphics g) {
+		super.paintComponent(g);
+
+		if (owner.getControl().isLive()) {
+			save.setEnabled(false);
+			load.setEnabled(false);
+			disconnect.setEnabled(false);
+			close.setEnabled(false);
+		} else {
+			save.setEnabled(true);
+			load.setEnabled(true);
+			disconnect.setEnabled(true);
+			close.setEnabled(true);
+		}
 	}
 
 	private void buildHelpMenu() {
@@ -59,6 +94,12 @@ public class MenuBar extends JMenuBar implements ActionListener {
 			saveDialog();
 		} else if (e.getActionCommand().equals("Load")) {
 			loadDialog();
+		} else if (e.getActionCommand().equals("Connect")){
+			owner.getControl().showConnect();
+		} else if (e.getActionCommand().equals("New")){
+			owner.resetControl();
+			owner.revalidate();
+			owner.repaint();
 		}
 
 	}

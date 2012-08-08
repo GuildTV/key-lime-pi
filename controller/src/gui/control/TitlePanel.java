@@ -3,6 +3,7 @@ package gui.control;
 import gui.MainFrame;
 
 import java.awt.BorderLayout;
+import java.awt.Graphics;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
@@ -34,6 +35,7 @@ public class TitlePanel extends JPanel {
 	private int elmCount = 0;
 
 	private TitleElement selected;
+	private TitleElement loaded;
 
 	public TitlePanel(MainFrame owner) {
 		super(new BorderLayout());
@@ -51,6 +53,7 @@ public class TitlePanel extends JPanel {
 		add(pane, BorderLayout.CENTER);
 
 		elements = new TitleElement[ARRAY_INCREMENT];
+		loaded = null;
 
 	}
 
@@ -183,7 +186,7 @@ public class TitlePanel extends JPanel {
 			stringer.endArray();
 			stringer.endObject();
 
-			if(!IOUtil.writeFile(path, stringer.toString()))
+			if (!IOUtil.writeFile(path, stringer.toString()))
 				getOwner().log("Failed to write to output file");
 
 		} catch (JSONException e) {
@@ -213,5 +216,48 @@ public class TitlePanel extends JPanel {
 
 		revalidate();
 		repaint();
+	}
+
+	protected void paintComponent(Graphics g) {
+		super.paintComponent(g);
+
+		if (owner.getControl().isLive())
+			buttonPanel.setVisible(false);
+		else
+			buttonPanel.setVisible(true);
+
+	}
+
+	public void setLoaded(TitleElement elm) {
+		loaded = elm;
+		repaint();
+	}
+
+	public TitleElement getLoaded() {
+		return loaded;
+	}
+
+	public void setLoadedByName(String name) {
+		synchronized (arrayLock) {
+			for (int i = 0; i < elmCount; i++) {
+				TitleElement elm = elements[i];
+				if (elm.getNameValue().equals(name)) {
+					setLoaded(elm);
+				}
+			}
+		}
+	}
+
+	public int countElmName(String name) {
+		int count = 0;
+		synchronized (arrayLock) {
+			for (int i = 0; i < elmCount; i++) {
+				TitleElement elm = elements[i];
+				if (elm.getNameValue().equals(name)) {
+					count++;
+				}
+			}
+		}
+		return count;
 	}
 }
