@@ -145,6 +145,14 @@ void LimeMaster::HandleMessage(NetMessage* msg){
     }
     const string type = root["type"].asString();
 
+    if(type.compare("slaveConnected") == 0){
+        if(piConnected)
+            control.GetClient()->SendMessage("{\"type\":\"slaveConnected\",\"status\":\"true\"}");
+        else
+            control.GetClient()->SendMessage("{\"type\":\"slaveConnected\",\"status\":\"false\"}");
+        return;
+    }
+
     //if slave is not connected
     if(!piConnected) {
         if(type.compare("slaveAddress") == 0){

@@ -43,14 +43,14 @@ public class ConnectDialog extends JDialog implements ActionListener {
 
 		this.owner = owner;
 		destination = dest;
-		
+
 		String name = "";
 		if (destination == Connect.SLAVE)
 			name = "slave-pi";
 		else if (destination == Connect.MASTER)
 			name = "master-pi";
-		
-		setTitle("Connect to "+name);
+
+		setTitle("Connect to " + name);
 
 		setSize(500, 200);
 		setModal(true);
@@ -62,7 +62,7 @@ public class ConnectDialog extends JDialog implements ActionListener {
 		c.ipady = 5;
 
 		// create title
-		title = new JLabel("Connect to "+name);
+		title = new JLabel("Connect to " + name);
 		title.setFont(new Font("Dialog", 1, 20));
 		c.fill = GridBagConstraints.VERTICAL;
 		c.gridx = 0;
@@ -86,7 +86,7 @@ public class ConnectDialog extends JDialog implements ActionListener {
 		c.gridx = 1;
 		c.gridy = 1;
 		add(address, c);
-		address.setText("127.0.0.1");//TODO remove later
+		address.setText("127.0.0.1");// TODO remove later
 
 		JPanel bPan = new JPanel();
 		c = new GridBagConstraints();

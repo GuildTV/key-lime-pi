@@ -125,7 +125,7 @@ public class ConnectionPanel extends JPanel implements ActionListener {
 	public void actionPerformed(ActionEvent e) {
 		if(e.getActionCommand().equals("master-button")){
 			if(owner.getControl().isMasterConnected()){
-				
+				owner.getControl().disconnect();
 			} else 
 				owner.getControl().showConnect();
 		} else if(e.getActionCommand().equals("slave-button")){
@@ -140,10 +140,13 @@ public class ConnectionPanel extends JPanel implements ActionListener {
 			masterStatus.setText("connected");
 			masterButton.setText("Disconnect");
 			currentAction.setText("waiting");
+			pollSlave();
+			slaveButton.setEnabled(true);
 		} else {
 			masterStatus.setText("disconnected");
 			masterButton.setText("Connect");
 			currentAction.setText("disconnected");
+			slaveButton.setEnabled(false);
 			setSlaveConnected(false);
 		}
 	}
@@ -160,5 +163,20 @@ public class ConnectionPanel extends JPanel implements ActionListener {
 	
 	public void setAction(String text){
 		currentAction.setText(text);
+	}
+	
+	public void closed() {
+		setMasterConnected(false);
+	}
+	
+	public void pollSlave() {
+		owner.getControl().sendMessage("{\"type\":\"slaveConnected\"}");
+	}
+	
+	public void pollSlaveResponse(String str) {
+		boolean response = str.equals("true");
+		if(!response)
+			setAction("waiting for connection to slave-pi");
+		setSlaveConnected(response);
 	}
 }

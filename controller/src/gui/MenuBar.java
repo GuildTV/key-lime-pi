@@ -58,6 +58,8 @@ public class MenuBar extends JMenuBar implements ActionListener {
 		fileMenu.add(connect);
 		
 		disconnect = new JMenuItem("Disconnect");
+		disconnect.addActionListener(this);
+		disconnect.setActionCommand("Disconnect");
 		fileMenu.add(disconnect);
 
 		close = new JMenuItem("Close");
@@ -96,6 +98,8 @@ public class MenuBar extends JMenuBar implements ActionListener {
 			loadDialog();
 		} else if (e.getActionCommand().equals("Connect")){
 			owner.getControl().showConnect();
+		} else if (e.getActionCommand().equals("Disconnect")){
+			owner.getControl().disconnect();
 		} else if (e.getActionCommand().equals("New")){
 			owner.resetControl();
 			owner.revalidate();
@@ -138,5 +142,12 @@ public class MenuBar extends JMenuBar implements ActionListener {
 			owner.loadTitles(fileName);
 		}
 
+	}
+	
+	public void setVisConnect(boolean b) {
+		connect.setEnabled(b);
+	}
+	public void setVisDisconnect(boolean b) {
+		disconnect.setEnabled(b);
 	}
 }

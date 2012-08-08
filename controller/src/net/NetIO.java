@@ -5,7 +5,6 @@ import java.net.*;
 
 import common.StringUtil;
 
-import lime.LimeController;
 import lime.Logger;
 import lime.NetHandler;
 
@@ -121,7 +120,7 @@ public class NetIO implements Runnable {
 		try {
 			read = inStream.read(data);
 		} catch (IOException e) {
-			log("Failed to read message from server");
+			close();
 			return null;
 		}
 
@@ -141,7 +140,7 @@ public class NetIO implements Runnable {
 
 		if (msg.compareTo(SHAKESERVER) == 0) {
 			handshaken = true;
-			log("Successfully handshaken");
+			handle.handshaken();
 			return true;
 		}
 
@@ -197,7 +196,9 @@ public class NetIO implements Runnable {
 			return;
 
 		running = false;
+		connected = false;
 		
+		log("Disconnected from master-pi");
 		handle.closed();
 
 		try {

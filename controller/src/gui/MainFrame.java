@@ -73,4 +73,8 @@ public class MainFrame extends JFrame {
 	public ControlPanel getControlPanel() {
 		return controlPanel;
 	}
+	
+	public MenuBar getMyMenu() {
+		return menuBar;
+	}
 }
