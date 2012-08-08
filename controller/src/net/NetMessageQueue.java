@@ -30,6 +30,7 @@ public class NetMessageQueue {
 		//get lock, then add message
 		synchronized (messageLock) {
 			queue.add(msg);
+			//notify any waiting threads
 			messageLock.notify();
 		}
 

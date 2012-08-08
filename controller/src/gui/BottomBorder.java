@@ -7,6 +7,12 @@ import java.awt.Insets;
 
 import javax.swing.border.AbstractBorder;
 
+/**
+ * Custom border only on bottom of a panel
+ * 
+ * @author julus
+ * 
+ */
 public class BottomBorder extends AbstractBorder {
 	private static final long serialVersionUID = -6059320628247720179L;
 

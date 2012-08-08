@@ -16,7 +16,7 @@ import javax.swing.JPanel;
 public class ControlPanel extends JPanel {
 	private static final long serialVersionUID = -2342321883822171371L;
 
-	//connection status panel
+	// connection status panel
 	private ConnectionPanel connection;
 	// rss panel
 	private RSSPanel rss;
@@ -25,6 +25,12 @@ public class ControlPanel extends JPanel {
 	// log panel
 	private LogPanel log;
 
+	/**
+	 * Create the control panel
+	 * 
+	 * @param owner
+	 *            Frame parent
+	 */
 	ControlPanel(MainFrame owner) {
 		super(new GridBagLayout());
 
@@ -67,29 +73,64 @@ public class ControlPanel extends JPanel {
 		add(title, c);
 	}
 
+	/**
+	 * Write message to log
+	 * 
+	 * @param str
+	 *            Message to log
+	 */
 	public void log(String str) {
 		log.log(str);
 	}
 
+	/**
+	 * Save titles to file
+	 * 
+	 * @param path
+	 *            filename
+	 */
 	public void saveTitles(String path) {
 		title.saveTitles(path);
 	}
 
+	/**
+	 * Load titles from file
+	 * 
+	 * @param path
+	 *            filename
+	 */
 	public void loadTitles(String path) {
 		title.loadTitles(path);
 	}
 
+	/**
+	 * Reset this control pane
+	 */
 	public void reset() {
+		// reset connect
 		connection.reset();
+		// reset rss
 		rss.reset();
+		// reset log
 		log.reset();
+		// reset title
 		title.reset();
 	}
-	
+
+	/**
+	 * Get the connection panel
+	 * 
+	 * @return Connection panel
+	 */
 	public ConnectionPanel getConnectionPanel() {
 		return connection;
 	}
-	
+
+	/**
+	 * Get the title panel
+	 * 
+	 * @return Title panel
+	 */
 	public TitlePanel getTitlePanel() {
 		return title;
 	}

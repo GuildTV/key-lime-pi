@@ -14,35 +14,54 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
+/**
+ * Panel to manage connection status
+ * 
+ * @author julus
+ * 
+ */
 public class ConnectionPanel extends JPanel implements ActionListener {
 	private static final long serialVersionUID = -1682827000691560614L;
 
+	// frame owner
 	private MainFrame owner;
-	
-	private JTextField masterStatus; 
+
+	// text field status messages
+	private JTextField masterStatus;
 	private JTextField slaveStatus;
-	
-	private JButton masterButton; 
+
+	// connect/disconnect buttons
+	private JButton masterButton;
 	private JButton slaveButton;
-	
+
+	// current action
 	private JTextField currentAction;
-	
+
+	// live button
 	private JButton liveButton;
-	
+
+	/**
+	 * Create this panel
+	 * 
+	 * @param owner
+	 *            Panel owner
+	 */
 	public ConnectionPanel(MainFrame owner) {
 		super(new GridBagLayout());
 		setBorder(BorderFactory.createTitledBorder("Pi/Connection Status"));
-		
+
 		this.owner = owner;
-		
+
+		// master label
 		JLabel masterLabel = new JLabel("master: ");
 		GridBagConstraints c = new GridBagConstraints();
 		c.fill = GridBagConstraints.BOTH;
 		c.gridx = 0;
 		c.gridy = 0;
-		c.insets = new Insets(0,0,2,0);
+		c.insets = new Insets(0, 0, 2, 0);
 		add(masterLabel, c);
-		
+
+		// master status
 		masterStatus = new JTextField(10);
 		masterStatus.setText("disconnected");
 		masterStatus.setEditable(false);
@@ -50,9 +69,10 @@ public class ConnectionPanel extends JPanel implements ActionListener {
 		c.fill = GridBagConstraints.BOTH;
 		c.gridx = 1;
 		c.gridy = 0;
-		c.insets = new Insets(0,0,2,0);
+		c.insets = new Insets(0, 0, 2, 0);
 		add(masterStatus, c);
-		
+
+		// master button
 		masterButton = new JButton("Connect");
 		masterButton.setActionCommand("master-button");
 		masterButton.addActionListener(this);
@@ -60,17 +80,19 @@ public class ConnectionPanel extends JPanel implements ActionListener {
 		c.fill = GridBagConstraints.BOTH;
 		c.gridx = 2;
 		c.gridy = 0;
-		c.insets = new Insets(0,4,2,0);
+		c.insets = new Insets(0, 4, 2, 0);
 		add(masterButton, c);
-		
+
+		// slave label
 		JLabel slaveLabel = new JLabel("slave: ");
 		c = new GridBagConstraints();
 		c.fill = GridBagConstraints.BOTH;
 		c.gridx = 0;
 		c.gridy = 1;
-		c.insets = new Insets(2,0,0,0);
+		c.insets = new Insets(2, 0, 0, 0);
 		add(slaveLabel, c);
-		
+
+		// slave status
 		slaveStatus = new JTextField(10);
 		slaveStatus.setText("disconnected");
 		slaveStatus.setEditable(false);
@@ -78,9 +100,10 @@ public class ConnectionPanel extends JPanel implements ActionListener {
 		c.fill = GridBagConstraints.BOTH;
 		c.gridx = 1;
 		c.gridy = 1;
-		c.insets = new Insets(2,0,0,0);
+		c.insets = new Insets(2, 0, 0, 0);
 		add(slaveStatus, c);
-		
+
+		// slave button
 		slaveButton = new JButton("Connect");
 		slaveButton.setActionCommand("slave-button");
 		slaveButton.addActionListener(this);
@@ -89,9 +112,10 @@ public class ConnectionPanel extends JPanel implements ActionListener {
 		c.fill = GridBagConstraints.BOTH;
 		c.gridx = 2;
 		c.gridy = 1;
-		c.insets = new Insets(2,4,0,0);
+		c.insets = new Insets(2, 4, 0, 0);
 		add(slaveButton, c);
-		
+
+		// action text
 		currentAction = new JTextField(20);
 		currentAction.setText("disconnected");
 		currentAction.setEditable(false);
@@ -102,9 +126,10 @@ public class ConnectionPanel extends JPanel implements ActionListener {
 		c.gridheight = 2;
 		c.weightx = 1.0;
 		c.weighty = 1.0;
-		c.insets = new Insets(1,10,1,10);
+		c.insets = new Insets(1, 10, 1, 10);
 		add(currentAction, c);
-		
+
+		// live button
 		liveButton = new JButton("Go Live");
 		liveButton.setEnabled(false);
 		liveButton.setActionCommand("live-button");
@@ -114,34 +139,50 @@ public class ConnectionPanel extends JPanel implements ActionListener {
 		c.gridx = 4;
 		c.gridy = 0;
 		c.gridheight = 2;
-		c.insets = new Insets(1,1,1,1);
+		c.insets = new Insets(1, 1, 1, 1);
 		add(liveButton, c);
 	}
-	
-	public void reset(){
+
+	/**
+	 * Reset this panel
+	 */
+	public void reset() {
 	}
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
-		if(e.getActionCommand().equals("master-button")){
-			if(owner.getControl().isMasterConnected()){
+		// master-button clock
+		if (e.getActionCommand().equals("master-button")) {
+			// connect or disconnect
+			if (owner.getControl().isMasterConnected()) {
 				owner.getControl().disconnect();
-			} else 
+			} else
 				owner.getControl().showConnect();
-		} else if(e.getActionCommand().equals("slave-button")){
-			
-		} else if(e.getActionCommand().equals("live-button")){
-			
+
+			// slave-button click
+		} else if (e.getActionCommand().equals("slave-button")) {
+
+			// live-button click
+		} else if (e.getActionCommand().equals("live-button")) {
 		}
 	}
-	
+
+	/**
+	 * Set master as connected
+	 * 
+	 * @param state
+	 *            Boolean connected
+	 */
 	public void setMasterConnected(boolean state) {
-		if(state){
+		// set master connected
+		if (state) {
 			masterStatus.setText("connected");
 			masterButton.setText("Disconnect");
 			currentAction.setText("waiting");
 			pollSlave();
 			slaveButton.setEnabled(true);
+
+			// set master disconnected
 		} else {
 			masterStatus.setText("disconnected");
 			masterButton.setText("Connect");
@@ -150,33 +191,62 @@ public class ConnectionPanel extends JPanel implements ActionListener {
 			setSlaveConnected(false);
 		}
 	}
-	
+
+	/**
+	 * Set slave as connected
+	 * 
+	 * @param state
+	 *            Boolean connected
+	 */
 	public void setSlaveConnected(boolean state) {
-		if(state){
+		// set slave connected
+		if (state) {
 			slaveStatus.setText("connected");
 			slaveButton.setText("Disconnect");
+
+			// set slave disconnected
 		} else {
 			slaveStatus.setText("disconnected");
 			slaveButton.setText("Connect");
 		}
 	}
-	
-	public void setAction(String text){
+
+	/**
+	 * Set action text
+	 * 
+	 * @param text
+	 *            String text
+	 */
+	public void setAction(String text) {
 		currentAction.setText(text);
 	}
-	
+
+	/**
+	 * Handle server connection closed
+	 */
 	public void closed() {
 		setMasterConnected(false);
 	}
-	
+
+	/**
+	 * Poll for slave status
+	 */
 	public void pollSlave() {
 		owner.getControl().sendMessage("{\"type\":\"slaveConnected\"}");
 	}
-	
+
+	/**
+	 * Slave status response
+	 * 
+	 * @param str
+	 *            String response
+	 */
 	public void pollSlaveResponse(String str) {
 		boolean response = str.equals("true");
-		if(!response)
+		// set action text
+		if (!response)
 			setAction("waiting for connection to slave-pi");
+		// set slave connected status
 		setSlaveConnected(response);
 	}
 }
