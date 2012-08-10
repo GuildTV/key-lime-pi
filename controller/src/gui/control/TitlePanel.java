@@ -1,4 +1,5 @@
 package gui.control;
+
 /*
  *      Copyright (C) 2012 GuildTV
  *      http://www.guildtv.co.uk
@@ -24,6 +25,8 @@ import gui.MainFrame;
 
 import java.awt.BorderLayout;
 import java.awt.Graphics;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
@@ -43,7 +46,7 @@ import JSON.JSONStringer;
  * @author julus
  * 
  */
-public class TitlePanel extends JPanel {
+public class TitlePanel extends JPanel implements MouseListener {
 	private static final long serialVersionUID = 8021157860217699741L;
 
 	// amount to increase storage array by
@@ -95,6 +98,9 @@ public class TitlePanel extends JPanel {
 		pane = new JScrollPane(panel, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 		pane.setBorder(BorderFactory.createEmptyBorder());
 		add(pane, BorderLayout.CENTER);
+
+		// add mouse listener to panel
+		panel.addMouseListener(this);
 
 		// create new element storages
 		elements = new TitleElement[ARRAY_INCREMENT];
@@ -457,5 +463,29 @@ public class TitlePanel extends JPanel {
 		}
 		// return matched count
 		return count;
+	}
+
+	@Override
+	public void mouseClicked(MouseEvent e) {
+		setSelectedElement(null);
+		panel.repaint();
+	}
+
+	@Override
+	public void mousePressed(MouseEvent e) {
+		setSelectedElement(null);
+		panel.repaint();
+	}
+
+	@Override
+	public void mouseReleased(MouseEvent e) {
+	}
+
+	@Override
+	public void mouseEntered(MouseEvent e) {
+	}
+
+	@Override
+	public void mouseExited(MouseEvent e) {
 	}
 }

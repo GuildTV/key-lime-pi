@@ -133,6 +133,10 @@ public class MessageHandler implements Runnable {
 					// set text in action window
 					control.getFrame().getControlPanel().getConnectionPanel().setAction("waiting");
 					return;
+				} else if (status.equals("waiting for playback")) {
+					// set text in action window
+					control.getFrame().getControlPanel().getConnectionPanel().setAction("starting playback");
+					return;
 				}
 				
 				// log error

@@ -226,7 +226,7 @@ public class TitleElement extends JPanel implements MouseListener, ActionListene
 		scriptLabel.setText(scriptName);
 
 		// check if the script is valid, and enable/disable buttons
-		if (!parent.getOwner().isScriptValid(scriptName)) {
+		if (!parent.getOwner().isScriptValid(scriptName) || !parent.getOwner().getControl().isMasterConnected()) {
 			previewButton.setEnabled(false);
 			playButton.setEnabled(false);
 		} else {

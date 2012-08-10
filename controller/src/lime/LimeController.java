@@ -1,4 +1,5 @@
 package lime;
+
 /*
  *      Copyright (C) 2012 GuildTV
  *      http://www.guildtv.co.uk
@@ -97,6 +98,9 @@ public class LimeController implements Logger, NetHandler {
 		frame.getControlPanel().getConnectionPanel().setMasterConnected(true);
 		// log
 		frame.log("Connected");
+
+		// force title panel repaint
+		frame.getControlPanel().getTitlePanel().repaint();
 	}
 
 	/**
@@ -189,6 +193,12 @@ public class LimeController implements Logger, NetHandler {
 		// toggle menu buttons
 		frame.getMyMenu().setVisDisconnect(false);
 		frame.getMyMenu().setVisConnect(true);
+
+		// clear currently loaded element
+		frame.getControlPanel().getTitlePanel().setLoaded(null);
+
+		// force title panel repaint
+		frame.getControlPanel().getTitlePanel().repaint();
 	}
 
 	/**
