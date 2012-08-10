@@ -72,6 +72,8 @@ class LimeMaster
         void HandleMessage(NetMessage* msg);
         //is a video loaded
         bool videoLoaded;
+        //is a video playing
+        bool videoPlaying;
         //timer for video start cync
         LimeTimer* limeTimer;
         //is slave pi connected

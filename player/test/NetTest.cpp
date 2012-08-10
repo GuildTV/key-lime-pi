@@ -58,7 +58,7 @@ protected:
 
 private:
     //start the thread body
-    static void *ThreadRun(void *arg);#
+    static void *ThreadRun(void *arg);
     //start executing thread task
     void ThreadProcess();
     //pointer to the network client/server we are working with

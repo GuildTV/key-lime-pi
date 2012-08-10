@@ -68,6 +68,8 @@ class LimeSlave
         void HandleMessage(NetMessage* msg);
         //is a video loaded
         bool videoLoaded;
+        //is a video playing
+        bool videoPlaying;
         //timer for video start cync
         LimeTimer* limeTimer;
 

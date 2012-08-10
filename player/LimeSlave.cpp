@@ -44,6 +44,7 @@
 LimeSlave::LimeSlave() {
     run = false;
     videoLoaded = false;
+    videoPlaying = false;
 #ifdef RENDERTEST
     renderer = new OverlayRenderer;
 #endif
@@ -157,6 +158,12 @@ void LimeSlave::HandleMessage(NetMessage* msg){
 }
 
 void LimeSlave::VideoLoad(std::string name){
+    //complain if already playing
+    if(videoPlaying){
+        pi.GetClient()->SendMessage("{\"type\":\"playVideo\",\"status\":\"already playing\"}");
+        return;
+    }
+
     //set as not loaded
     videoLoaded = false;
     FLog::Log(FLOG_INFO, "LimeSlave::VideoLoad - Starting preload of \"%s\"", name.c_str());
@@ -182,7 +189,7 @@ void LimeSlave::VideoLoad(std::string name){
 
 #ifndef RENDERTEST
     //load video
-    wrap = new OMXWrapper(&pi);
+    wrap = new OMXWrapper(&pi, &videoPlaying);
     wrap->Load(pathVid);//convert to bool or int?
 
 #else
@@ -201,6 +208,14 @@ void LimeSlave::VideoPlay() {
         pi.GetClient()->SendMessage("{\"type\":\"playVideo\",\"status\":\"nothing loaded\"}"); //TODO better message to whoever
         return;
     }
+
+    //complain if already playing
+    if(videoPlaying){
+        pi.GetClient()->SendMessage("{\"type\":\"playVideo\",\"status\":\"already playing\"}");
+        return;
+    }
+
+    videoPlaying = true;
     videoLoaded = false;
 
 #ifndef RENDERTEST

@@ -47,6 +47,7 @@
 LimeMaster::LimeMaster() {
     run = false;
     videoLoaded = false;
+    videoPlaying = false;
     piConnected = false;
 #ifdef RENDERTEST
     renderer = new OverlayRenderer(&control);
@@ -256,6 +257,16 @@ void LimeMaster::HandleMessage(NetMessage* msg){
 }
 
 void LimeMaster::VideoLoad(std::string name, std::string script, bool preview){
+    //complain if already playing
+    if(videoPlaying){
+        if(preview)
+            control.GetClient()->SendMessage("{\"type\":\"previewVideo\",\"status\":\"already playing\"}");
+
+        else
+            control.GetClient()->SendMessage("{\"type\":\"preloadVideo\",\"status\":\"already playing\"}");
+        return;
+    }
+
     //set as not loaded
     videoLoaded = false;
     FLog::Log(FLOG_INFO, "LimeMaster::VideoLoad - Starting %s of \"%s\"", preview?"preview":"preload", script.c_str());
@@ -287,7 +298,7 @@ void LimeMaster::VideoLoad(std::string name, std::string script, bool preview){
 
 #ifndef RENDERTEST
     //load video
-    wrap = new OMXWrapper(&control);
+    wrap = new OMXWrapper(&control, &videoPlaying);
     wrap->Load(pathVid);//convert to bool or int?
 
 #else
@@ -317,6 +328,18 @@ void LimeMaster::VideoPlay(bool preview) {
             control.GetClient()->SendMessage("{\"type\":\"playVideo\",\"status\":\"nothing loaded\"}");
         return;
     }
+
+    //complain if already playing
+    if(videoPlaying){
+        if(preview)
+            control.GetClient()->SendMessage("{\"type\":\"previewVideo\",\"status\":\"already playing\"}");
+
+        else
+            control.GetClient()->SendMessage("{\"type\":\"playVideo\",\"status\":\"already playing\"}");
+        return;
+    }
+
+    videoPlaying = true;
 
     control.GetClient()->SendMessage("{\"type\":\"playVideo\",\"status\":\"starting playback\"}");
 

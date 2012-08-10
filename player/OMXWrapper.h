@@ -39,13 +39,16 @@ protected:
 
   NetIO *netIO;
 
+  bool *videoPlaying;
+
 private:
   static void *Run(void *arg);
   OMXLink* omx;
   void Process();
 
 public:
-  OMXWrapper(NetIO *net);
+  OMXWrapper(NetIO *net, bool *playing);
+
   ~OMXWrapper();
   //play video in new thread
   bool Play();
@@ -55,5 +58,7 @@ public:
   bool Running();
   pthread_t ThreadHandle();
   bool Stop();
+
+
 };
 
