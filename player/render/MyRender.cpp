@@ -56,7 +56,7 @@ void MyRender::UnLock()
 }
 
 
-bool MyRender::Open(OMXClock *av_clock, bool use_thread, OMXPlayerVideo *m_player_video, std::string file)
+bool MyRender::Open(NetIO *net, OMXClock *av_clock, bool use_thread, OMXPlayerVideo *m_player_video, std::string file)
 {
   if (!av_clock)
     return false;
@@ -68,6 +68,7 @@ bool MyRender::Open(OMXClock *av_clock, bool use_thread, OMXPlayerVideo *m_playe
   m_use_thread  = use_thread;
   vid = m_player_video;
   filename = file;
+  netIO = net;
 
   //m_FlipTimeStamp = m_av_clock->GetAbsoluteClock();
   printf("start?");
@@ -131,7 +132,7 @@ void *MyRender::Run(void *arg)
 
 void MyRender::Process() {
   //create the renderer
-  renderer = new OverlayRenderer;
+  renderer = new OverlayRenderer(netIO);
   renderer->Create(filename);
   //predraw on the video
   renderer->PreDraw();

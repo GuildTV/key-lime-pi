@@ -45,6 +45,7 @@
 #endif
 
 #include "render/Freetype.h"
+#include "net/NetIO.h"
 
 #include "logger.h"
 
@@ -53,7 +54,7 @@ enum Position {NONE, LEFT, CENTER, RIGHT};
 
 class OverlayRenderer {
 public:
-    OverlayRenderer();
+    OverlayRenderer(NetIO *net);
     //setup the renderer to use specified script
     void Create(std::string file);
     //draw frame
@@ -134,4 +135,7 @@ private:
 
     //is loop running
     bool running;
+
+    //network handler
+    NetIO *netIO;
 };

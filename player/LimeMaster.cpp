@@ -49,7 +49,7 @@ LimeMaster::LimeMaster() {
     videoLoaded = false;
     piConnected = false;
 #ifdef RENDERTEST
-    renderer = new OverlayRenderer;
+    renderer = new OverlayRenderer(&control);
 #endif
 }
 
@@ -287,7 +287,7 @@ void LimeMaster::VideoLoad(std::string name, std::string script, bool preview){
 
 #ifndef RENDERTEST
     //load video
-    wrap = new OMXWrapper;
+    wrap = new OMXWrapper(&control);
     wrap->Load(pathVid);//convert to bool or int?
 
 #else

@@ -24,6 +24,7 @@
 **/
 
 #include "OMXLink.h"
+#include "net/NetIO.h"
 
 using namespace std;
 
@@ -36,13 +37,15 @@ protected:
   pthread_t           m_thread;
   volatile bool       m_running;
 
+  NetIO *netIO;
+
 private:
   static void *Run(void *arg);
   OMXLink* omx;
   void Process();
 
 public:
-  OMXWrapper();
+  OMXWrapper(NetIO *net);
   ~OMXWrapper();
   //play video in new thread
   bool Play();

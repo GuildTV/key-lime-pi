@@ -123,8 +123,20 @@ public class MessageHandler implements Runnable {
 
 				// check if response about playing video
 			} else if (type.equals("playVideo")) {
+				String status = json.getString("status");
+				// check status response
+				if (status.equals("starting playback")) {
+					// set text in action window
+					control.getFrame().getControlPanel().getConnectionPanel().setAction("playing video");
+					return;
+				} else if (status.equals("playback finished")) {
+					// set text in action window
+					control.getFrame().getControlPanel().getConnectionPanel().setAction("waiting");
+					return;
+				}
+				
 				// log error
-				control.log("Failed to play video with error '" + json.getString("status") + "'");
+				control.log("Failed to play video with error '" + status + "'");
 				// set text in action window
 				control.getFrame().getControlPanel().getConnectionPanel().setAction("waiting");
 				return;

@@ -61,13 +61,14 @@ extern "C" {
 #include "OMX/DllOMX.h"
 
 #include "render/MyRender.h"
+#include "net/NetIO.h"
 
 #include <string>
 
 class OMXLink
 {
     public:
-        OMXLink();
+        OMXLink(NetIO *net);
         ~OMXLink();
         //load the video
         bool Load(std::string m_filename);
@@ -100,6 +101,8 @@ class OMXLink
 
         CRBP                  *g_RBP;
         COMXCore              *g_OMX;
+
+        NetIO   *netIO;
 };
 
 #endif // OMXLINK_H

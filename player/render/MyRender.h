@@ -56,11 +56,12 @@ private:
   OMXPlayerVideo *vid;
   std::string filename;
   OverlayRenderer *renderer;
+  NetIO *netIO;
 
 public:
   MyRender();
   ~MyRender();
-  bool Open(OMXClock *av_clock, bool use_thread, OMXPlayerVideo *m_player_video, std::string file);
+  bool Open(NetIO *net, OMXClock *av_clock, bool use_thread, OMXPlayerVideo *m_player_video, std::string file);
   void Process();
 
   bool Create();

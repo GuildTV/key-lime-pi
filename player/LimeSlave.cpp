@@ -182,7 +182,7 @@ void LimeSlave::VideoLoad(std::string name){
 
 #ifndef RENDERTEST
     //load video
-    wrap = new OMXWrapper;
+    wrap = new OMXWrapper(&pi);
     wrap->Load(pathVid);//convert to bool or int?
 
 #else

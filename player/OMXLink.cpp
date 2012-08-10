@@ -21,7 +21,7 @@
 
 #include "OMXLink.h"
 
-OMXLink::OMXLink() {
+OMXLink::OMXLink(NetIO *net) {
     g_abort               = false;
     m_bMpeg               = false;
     m_Deinterlace         = false;
@@ -32,6 +32,8 @@ OMXLink::OMXLink() {
     m_omx_pkt            = NULL;
     m_stop                = false;
     m_has_video           = false;
+
+    netIO = net;
 }
 
 OMXLink::~OMXLink()
@@ -128,7 +130,7 @@ bool OMXLink::Load(std::string m_filename) {
   }
 
   //open renderer
-  m_my_render.Open(m_av_clock, m_thread_player, &m_player_video, m_filename);
+  m_my_render.Open(netIO, m_av_clock, m_thread_player, &m_player_video, m_filename);
 
   //set speed
   m_av_clock->SetSpeed(DVD_PLAYSPEED_NORMAL);

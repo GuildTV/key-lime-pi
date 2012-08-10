@@ -21,10 +21,13 @@
 
 #include "OverlayRenderer.h"
 
-OverlayRenderer::OverlayRenderer(){
+OverlayRenderer::OverlayRenderer(NetIO *net){
 #ifdef RENDERTEST
     x_display = NULL;
 #endif
+    //save network handler
+    netIO = net;
+
     //create freetype renderer instance
     ft = new Freetype(this);
 
@@ -198,10 +201,13 @@ void OverlayRenderer::Run() {
     glClear(GL_COLOR_BUFFER_BIT);
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     eglSwapBuffers(eglDisplay, eglSurface);
+
+    netIO->GetClient()->SendMessage("{\"type\":\"playVideo\",\"status\":\"playback finished\"}");
 }
 
 void OverlayRenderer::Stop() {
     running = false;
+    netIO->GetClient()->SendMessage("{\"type\":\"playVideo\",\"status\":\"aborting video\"}");
 }
 
 void OverlayRenderer::PreDraw() {

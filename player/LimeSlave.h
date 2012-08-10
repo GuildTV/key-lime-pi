@@ -52,6 +52,8 @@ class LimeSlave
         void VideoPlay();
         //finish setting up program
         bool FinishSetup();
+        //get netio
+        NetIO getPi(){return pi;};
     protected:
         //load video
         void VideoLoad(std::string name);

@@ -68,7 +68,7 @@ bool LimeTimer::VideoPlay(long sec, long nano)
 #ifdef LIMEMASTER
   master->getControl().GetClient()->SendMessage("{\"type\":\"playVideo\",\"status\":\"waiting for playback\"}");
 #else
-  slave->getControl().GetClient()->SendMessage("{\"type\":\"playVideo\",\"status\":\"waiting for playback\"}");
+  slave->getPi().GetClient()->SendMessage("{\"type\":\"playVideo\",\"status\":\"waiting for playback\"}");
 #endif
 
   pthread_attr_init(&m_tattr);
