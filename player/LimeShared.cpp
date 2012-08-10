@@ -111,6 +111,7 @@ void LimeShared::VideoPlay() {
 
     //play gl stuff
     renderer->Run();
+    videoPlaying = false;
 #endif
 }
 

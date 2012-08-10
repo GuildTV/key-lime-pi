@@ -172,6 +172,7 @@ void LimeMaster::VideoPreview(std::string name, std::string script) {
 
     //play gl stuff
     renderer->Run();
+    videoPlaying = false;
 #endif
 }
 

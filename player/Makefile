@@ -29,6 +29,7 @@ SRC=linux/XMemUtils.cpp \
 		net/NetUser.cpp \
 		OMXWrapper.cpp \
 		LimeTimer.cpp \
+		LimeShared.cpp \
 
 OBJSMASTER+=$(filter %.m.o,$(SRC:.cpp=.m.o))
 OBJSSLAVE+=$(filter %.s.o,$(SRC:.cpp=.s.o))
