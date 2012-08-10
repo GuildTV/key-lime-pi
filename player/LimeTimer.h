@@ -37,22 +37,14 @@
 #include <unistd.h>
 
 //forward declaration
-#ifdef LIMEMASTER
-class LimeMaster;
-#else
-class LimeSlave;
-#endif
+class LimeShared;
 
 using namespace std;
 
 class LimeTimer{
 public:
 //save the parent (message handler)
-#ifdef LIMEMASTER
-    LimeTimer(LimeMaster *ms);
-#else
-    LimeTimer(LimeSlave *sl);
-#endif
+    LimeTimer(LimeShared *sh);
     virtual ~LimeTimer();
     pthread_t ThreadHandle();
     bool ThreadStop();
@@ -77,11 +69,7 @@ private:
     long playSec;
     long playNano;
 
-#ifdef LIMEMASTER
-    LimeMaster *master;
-#else
-    LimeSlave  *slave;
-#endif
+    LimeShared  *lime;
 };
 
 #endif // LIMETIMER_H

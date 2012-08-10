@@ -26,59 +26,17 @@
 #ifndef LIMESLAVE_H
 #define LIMESLAVE_H
 
-#include "net/NetIO.h"
-#include <string>
-#include "logger.h"
-#include "LimeTimer.h"
+#include "LimeShared.h"
 
-#ifdef RENDERTEST
-#include "render/OverlayRenderer.h"
-#else
-#include "OMXWrapper.h"
-#endif
-
-class LimeSlave
+class LimeSlave: public LimeShared
 {
     public:
-        LimeSlave();
-        virtual ~LimeSlave();
         //run program
         void Run();
-        //stop program
-        void Stop(){run=false;};
-        //stop video playback
-        void VideoStop();
-        //start videoplayback
-        void VideoPlay();
-        //finish setting up program
-        bool FinishSetup();
-        //get netio
-        NetIO getPi(){return pi;};
     protected:
-        //load video
-        void VideoLoad(std::string name);
-        //check file exists
-        bool FileExists(const char * filename);
+        //determine play start time
+        void playProcess(Json::Value *root, long *sec, long *nano);
     private:
-        //network connection to master pi
-        NetIO pi;
-        //is program running?
-        bool run;
-        //handle a recieved message
-        void HandleMessage(NetMessage* msg);
-        //is a video loaded
-        bool videoLoaded;
-        //is a video playing
-        bool videoPlaying;
-        //timer for video start cync
-        LimeTimer* limeTimer;
-
-        //pointer to video player/overlayrenderer
-#ifdef RENDERTEST
-        OverlayRenderer* renderer;
-#else
-        OMXWrapper* wrap;
-#endif
 };
 
 #endif // LIMESLAVE_H

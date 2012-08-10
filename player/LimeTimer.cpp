@@ -20,24 +20,12 @@
  */
 
 #include "LimeTimer.h"
+#include "LimeShared.h"
 
-#ifdef LIMEMASTER
-#include "LimeMaster.h"
-#else
-#include "LimeSlave.h"
-#endif
-
-#ifdef LIMEMASTER
-LimeTimer::LimeTimer(LimeMaster *ms){
-    master = ms;
+LimeTimer::LimeTimer(LimeShared *sh){
+    lime = sh;
     pthread_mutex_init(&m_lock, NULL);
 }
-#else
-LimeTimer::LimeTimer(LimeSlave *sl){
-    slave = sl;
-    pthread_mutex_init(&m_lock, NULL);
-}
-#endif
 
 LimeTimer::~LimeTimer(){
     pthread_mutex_destroy(&m_lock);
@@ -65,11 +53,7 @@ void LimeTimer::UnLock(){
 
 bool LimeTimer::VideoPlay(long sec, long nano)
 {
-#ifdef LIMEMASTER
-  master->getControl().GetClient()->SendMessage("{\"type\":\"playVideo\",\"status\":\"waiting for playback\"}");
-#else
-  slave->getPi().GetClient()->SendMessage("{\"type\":\"playVideo\",\"status\":\"waiting for playback\"}");
-#endif
+  lime->getNetUp().GetClient()->SendMessage("{\"type\":\"playVideo\",\"status\":\"waiting for playback\"}");
 
   pthread_attr_init(&m_tattr);
   pthread_create(&m_thread, &m_tattr, &LimeTimer::ThreadRun, this);
@@ -110,11 +94,7 @@ void LimeTimer::ThreadProcess() {
         clock_gettime(CLOCK_REALTIME, &ts);
     }
     //call back out to play video
-#ifdef LIMEMASTER
-    master->VideoPlay();
-#else
-    slave->VideoPlay();
-#endif
+    lime->VideoPlay();
     running = false;
     FLog::Log(FLOG_INFO, "LimeTimer::ThreadProcess - Watcher stopped");
 }

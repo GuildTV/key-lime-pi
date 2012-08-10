@@ -20,71 +20,40 @@
  */
 
 /**
- * Main program for key-lime-pi maste device
+ * Main program for key-lime-pi master device
 **/
 
 #ifndef LIMEMASTER_H
 #define LIMEMASTER_H
 
-#include "net/NetIO.h"
-#include <string>
-#include "logger.h"
-#include "LimeTimer.h"
+#include "LimeShared.h"
 
-#ifdef RENDERTEST
-#include "render/OverlayRenderer.h"
-#else
-#include "OMXWrapper.h"
-#endif
-
-class LimeMaster
+class LimeMaster: public LimeShared
 {
     public:
         LimeMaster();
-        virtual ~LimeMaster();
         //run program
         void Run();
-        //stop program
-        void Stop(){run=false;};
-        //stop video playback
-        void VideoStop();
-        //start videoplayback
-        void VideoPlay() {VideoPlay(false);};
-        void VideoPlay(bool preview);
-        //finish setting up program
-        bool FinishSetup();
-        //get netio
-        NetIO getControl(){return control;};
     protected:
         //load video
-        void VideoLoad(std::string name, std::string script) {VideoLoad(name, script, false);};
-        void VideoLoad(std::string name, std::string script, bool preview);
-        //check file exists
-        bool FileExists(const char * filename);
+        void VideoPreview(std::string name, std::string script);
+
+        //process preload command beyond scope of LimeShared
+        void preloadProcess(NetMessage *msg);
+        //determine play start time
+        void playProcess(Json::Value *root, long *sec, long *nano);
+
     private:
-        //network connection to controller
-        NetIO control;
         //network connection to slave pi
         NetIO pi;
-        //is program running?
-        bool run;
-        //handle a recieved message
-        void HandleMessage(NetMessage* msg);
-        //is a video loaded
-        bool videoLoaded;
-        //is a video playing
-        bool videoPlaying;
-        //timer for video start cync
-        LimeTimer* limeTimer;
+
+        //handle more commands
+        void HandleMessageMore(NetMessage *msg, Json::Value* root);
+        //handle commands before LimeShared
+        bool HandleMessageEarly(NetMessage *msg, Json::Value* root);
+
         //is slave pi connected
         bool piConnected;
-
-        //pointer to video player/overlayrenderer
-#ifdef RENDERTEST
-        OverlayRenderer* renderer;
-#else
-        OMXWrapper* wrap;
-#endif
 };
 
 #endif // LIMEMASTER_H
