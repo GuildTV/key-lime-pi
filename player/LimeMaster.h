@@ -42,6 +42,8 @@ class LimeMaster: public LimeShared
         void preloadProcess(NetMessage *msg);
         //determine play start time
         void playProcess(Json::Value *root, long *sec, long *nano);
+        //process data list request
+        void dataListProcess(Json::Value *root);
 
     private:
         //network connection to slave pi

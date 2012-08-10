@@ -160,6 +160,22 @@ bool LimeShared::FileExists(const char * filename) {
     return false;
 }
 
+vector<string> LimeShared::ListFiles(const char * path){
+    vector<string> vec;
+    DIR* dirp = opendir(path);
+    dirent* dp;
+    while ((dp = readdir(dirp)) != NULL){
+        if(strcmp(dp->d_name, "..") != 0 && strcmp(dp->d_name, ".") != 0)
+            vec.push_back(dp->d_name);
+    }
+    closedir(dirp);
+
+    return vec;
+}
+
+Json::Value LimeShared::VectorToJSON(vector<string> vec){
+}
+
 bool LimeShared::parseJSON(std::string *msg, Json::Value *root){
     //parse json messages
     Json::Reader reader;
@@ -223,6 +239,9 @@ void LimeShared::HandleMessage(NetMessage* msg){
     } else if (type.compare("playVideo") == 0){
         HandleMessagePlay(msg, &root);
 
+    } else if (type.compare("dataList") == 0){
+        dataListProcess(&root);
+
     }
 
     HandleMessageMore(msg, &root);
@@ -266,3 +285,4 @@ void LimeShared::HandleMessagePlay(NetMessage *msg, Json::Value *root){
     //play video at specified time
     limeTimer->VideoPlay(sec, nano);
 }
+

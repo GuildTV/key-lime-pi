@@ -36,6 +36,7 @@ class LimeSlave: public LimeShared
     protected:
         //determine play start time
         void playProcess(Json::Value *root, long *sec, long *nano);
+        void dataListProcess(Json::Value *root);
     private:
 };
 

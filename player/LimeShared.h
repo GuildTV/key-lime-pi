@@ -40,12 +40,14 @@
 #endif
 
 #include "net/NetIO.h"
+#include <vector>
 #include <string>
 #include "logger.h"
 #include "LimeTimer.h"
 #include <jsoncpp/json/json.h>
 #include <time.h>
 #include <stdio.h>
+#include <dirent.h>
 
 #ifdef RENDERTEST
 #include "render/OverlayRenderer.h"
@@ -67,6 +69,9 @@ class LimeShared
         void Stop(){run=false;};
         //check file exists
         bool FileExists(const char * filename);
+        //get list of all the files in a folder
+        vector<string> ListFiles(const char * path);
+        Json::Value VectorToJSON(vector<string> vec);
         //get netio
         NetIO getNetUp(){return up;};
         //create server
@@ -96,6 +101,7 @@ class LimeShared
 
         virtual void preloadProcess(NetMessage *msg){};
         virtual void playProcess(Json::Value *root, long *sec, long *nano) = 0;
+        virtual void dataListProcess(Json::Value *root) = 0;
 
         void HandleMessagePreload(NetMessage *msg, Json::Value* root);
         void HandleMessagePlay(NetMessage *msg, Json::Value* root);

@@ -202,6 +202,24 @@ void LimeMaster::playProcess(Json::Value *root, long *sec, long *nano){
     pi.GetClient()->SendMessage(formatted);
 }
 
+void LimeMaster::dataListProcess(Json::Value *root){
+    if(piConnected){
+        pi.GetClient()->SendMessage("{\"type\":\"dataList\"}");
+
+    } else {
+        vector<string> vec = ListFiles(DATAFOLDER);
+        Json::Value list = VectorToJSON(vec);
+
+        Json::FastWriter writer;
+
+        std::string json = "{\"type\":\"dataList\",\"data\":";
+        json += writer.write(list);
+        json.resize(json.size()-1);
+        json += "}";
+        up.GetClient()->SendMessage(json);
+    }
+}
+
 int main(int argc, char *argv[]){
     //open log
     FLog::Open("Master.log");
