@@ -41,13 +41,7 @@ SRCNETTEST=net/NetIO.cpp \
 
 OBJSNETTEST+=$(filter %.o,$(SRCNETTEST:.cpp=.o))
 
-SRCGPIOTEST=GPIO.cpp \
-		logger.cpp \
-		test/GPIOtest.cpp \
-
-OBJSGPIOTEST+=$(filter %.o,$(SRCGPIOTEST:.cpp=.o))
-
-all: nettest.bin gpiotest.bin master.bin slave.bin
+all: nettest.bin master.bin slave.bin
 
 %.m.o: %.cpp
 	@rm -f $@
@@ -56,6 +50,10 @@ all: nettest.bin gpiotest.bin master.bin slave.bin
 %.s.o: %.cpp
 	@rm -f $@
 	$(CXX) $(CFLAGS) -DLIMESLAVE $(INCLUDES) -c $< -o $@ -Wno-deprecated-declarations
+
+%.o: %.cpp
+	@rm -f $@
+	$(CXX) $(CFLAGS) $(INCLUDES) -c $< -o $@ -Wno-deprecated-declarations
 
 slave.bin: $(OBJSSLAVE) LimeSlave.s.o
 	$(CXX) $(LDFLAGS) -o slave.bin $(OBJSSLAVE) LimeSlave.s.o -lvchiq_arm -lvcos -lrt -lpthread -lavutil -lavcodec -lavformat -lswscale -lpcre -l bcm2835
@@ -68,7 +66,3 @@ master.bin: $(OBJSMASTER) LimeMaster.m.o
 nettest.bin: $(OBJSNETTEST)
 	$(CXX) $(LDFLAGS) -o nettest.bin $(OBJSNETTEST) -lvchiq_arm -lvcos -lrt -lpthread
 	#arm-unknown-linux-gnueabi-strip nettest.bin
-
-gpiotest.bin: $(OBJSGPIOTEST)
-	$(CXX) $(LDFLAGS) -o gpiotest.bin $(OBJSGPIOTEST) -lvchiq_arm -lvcos -lrt -lpthread -DGPIOTEST
-	#arm-unknown-linux-gnueabi-strip gpiotest.bin
