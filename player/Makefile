@@ -8,7 +8,6 @@ INCLUDES+=-I./ -Ilinux -Iffmpeg_compiled/include/ -I/opt/vc/include. -I/usr/incl
 SRC=linux/XMemUtils.cpp \
 		utils/log.cpp \
 		OMX/DynamicDll.cpp \
-		utils/RegExp.cpp \
 		OMX/BitstreamConverter.cpp \
 		render/Freetype.cpp \
 		render/OverlayRenderer.cpp \
@@ -60,8 +59,8 @@ slave.bin: $(OBJSSLAVE) LimeSlave.s.o
 	$(CXX) $(LDFLAGS) -o slave.bin $(OBJSSLAVE) LimeSlave.s.o -lvchiq_arm -lvcos -lrt -lpthread -lavutil -lavcodec -lavformat -lswscale -lpcre -l bcm2835
 	#arm-unknown-linux-gnueabi-strip slave.bin
 
-master.bin: $(OBJSMASTER) LimeMaster.m.o
-	$(CXX) $(LDFLAGS) -o master.bin $(OBJSMASTER) LimeMaster.m.o -lvchiq_arm -lvcos -lrt -lpthread -lavutil -lavcodec -lavformat -lswscale -lpcre -l bcm2835
+master.bin: $(OBJSMASTER) LimeMasterDownStream.m.o LimeMaster.m.o
+	$(CXX) $(LDFLAGS) -o master.bin $(OBJSMASTER) LimeMasterDownStream.m.o LimeMaster.m.o -lvchiq_arm -lvcos -lrt -lpthread -lavutil -lavcodec -lavformat -lswscale -lpcre -l bcm2835
 	#arm-unknown-linux-gnueabi-strip master.bin
 
 nettest.bin: $(OBJSNETTEST)

@@ -174,6 +174,24 @@ vector<string> LimeShared::ListFiles(const char * path){
 }
 
 Json::Value LimeShared::VectorToJSON(vector<string> vec){
+    Json::Value arr(Json::arrayValue);
+    for(auto it = vec.begin(); it < vec.end(); it++){
+        arr.append(Json::Value(*it));
+    }
+    return arr;
+}
+
+vector<string> LimeShared::JSONToVector(Json::Value data){
+    vector<string> vec;
+
+    if(!data.isArray())
+        return vec;
+
+    for(int i=0;i<data.size();i++){
+        vec.push_back(data[i].asString());
+    }
+
+    return vec;
 }
 
 bool LimeShared::parseJSON(std::string *msg, Json::Value *root){

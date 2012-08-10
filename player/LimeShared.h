@@ -72,6 +72,7 @@ class LimeShared
         //get list of all the files in a folder
         vector<string> ListFiles(const char * path);
         Json::Value VectorToJSON(vector<string> vec);
+        vector<string> JSONToVector(Json::Value data);
         //get netio
         NetIO getNetUp(){return up;};
         //create server

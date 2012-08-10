@@ -27,6 +27,7 @@
 #define LIMEMASTER_H
 
 #include "LimeShared.h"
+#include "LimeMasterDownStream.h"
 
 class LimeMaster: public LimeShared
 {
@@ -34,6 +35,9 @@ class LimeMaster: public LimeShared
         LimeMaster();
         //run program
         void Run();
+        //handle a recieved message
+        void HandleMessageDown(NetMessage* msg);
+
     protected:
         //load video
         void VideoPreview(std::string name, std::string script);
@@ -48,6 +52,8 @@ class LimeMaster: public LimeShared
     private:
         //network connection to slave pi
         NetIO pi;
+        //message handler for slave pi connection
+        LimeMasterDownStream *downstream;
 
         //handle more commands
         void HandleMessageMore(NetMessage *msg, Json::Value* root);

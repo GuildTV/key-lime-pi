@@ -52,7 +52,7 @@ NetMessage* NetMessageQueue::Pop(bool wait) {
         //wait for message
         pthread_cond_wait(&m_cond, &m_lock);
 
-        if(Size() > 0){
+        if(messageQueue.size() > 0){
             //get the message, and remove it from the queue
             NetMessage* msg = messageQueue.front();
             messageQueue.pop();

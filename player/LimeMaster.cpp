@@ -48,8 +48,65 @@ void LimeMaster::Run() {
     //set as slave connected
     piConnected = true;
 
+    //start listening to whatever pi is saying to us
+    downstream = new LimeMasterDownStream(this, &pi);
+    downstream->Start();
+
     //finish setup
     FinishSetup();
+}
+
+void LimeMaster::HandleMessageDown(NetMessage* msg){
+    FLog::Log(FLOG_DEBUG, "LimeMaster::HandleMessageDown - Handling message from slave-pi");
+
+    //parse json messages
+    Json::Value root;
+    if(!parseJSON(&msg->message, &root))
+        return;
+
+    //check type exists
+    if(!root.isMember("type")){
+        FLog::Log(FLOG_ERROR, "LimeMaster::HandleMessageDown - Recieved message without a type");
+        return;
+    }
+
+    const string type = root["type"].asString();
+
+    if (type.compare("dataList") == 0){
+        //check type exists
+        if(!root.isMember("data")){
+            FLog::Log(FLOG_ERROR, "LimeMaster::HandleMessageDown - Recieved dataList command without a data array");
+            return;
+        }
+
+        vector<string> dat1 = ListFiles(DATAFOLDER);
+        vector<string> dat2 = JSONToVector(root["data"]);
+
+        vector<string> overlap;
+
+        for(int o = 0; o < dat1.size(); o++){
+            for(int i = 0; i < dat2.size(); i++){
+                printf("%s %s ok\n", dat1[o].c_str(), dat2[i].c_str());
+                if(dat1[o] == dat2[i]){
+                    printf("push\n");
+                    overlap.push_back(dat2[i]);
+                    goto cont;
+                }
+            }
+
+            cont:
+                continue;
+        }
+
+        Json::Value list = VectorToJSON(overlap);
+        Json::FastWriter writer;
+
+        std::string json = "{\"type\":\"dataList\",\"data\":";
+        json += writer.write(list);
+        json.resize(json.size()-1);
+        json += "}";
+        up.GetClient()->SendMessage(json);
+    }
 }
 
 void LimeMaster::HandleMessageMore(NetMessage *msg, Json::Value* root){
