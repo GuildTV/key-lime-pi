@@ -54,6 +54,8 @@ class NetMessageQueue
         bool isEmpty();
         //push a message onto the end of the queue
         void Push(NetMessage* msg);
+        //interupt any waiting threads
+        void Interrupt();
 
     protected:
         void Lock();

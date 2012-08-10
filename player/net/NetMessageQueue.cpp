@@ -52,17 +52,31 @@ NetMessage* NetMessageQueue::Pop(bool wait) {
         //wait for message
         pthread_cond_wait(&m_cond, &m_lock);
 
-        //get the message, and remove it from the queue
-        NetMessage* msg = messageQueue.front();
-        messageQueue.pop();
+        if(Size() > 0){
+            //get the message, and remove it from the queue
+            NetMessage* msg = messageQueue.front();
+            messageQueue.pop();
 
-        Unlock();
-        return msg;
+            Unlock();
+            return msg;
+        } else {
+            Unlock();
+            return NULL;
+        }
     } else {
         //otherwise return NULL
         return NULL;
     }
 
+}
+
+void NetMessageQueue::Interrupt() {
+    Lock();
+
+    //broadcast to any threads waiting in a pop
+    pthread_cond_broadcast(&m_cond);
+
+    Unlock();
 }
 
 int NetMessageQueue::Size() {
