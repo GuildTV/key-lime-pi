@@ -21,18 +21,28 @@
 
 #include "TextureRender.h"
 
+#include "render/OverlayRenderer.h"
+
 TextureRender::TextureRender(OverlayRenderer* render) {
     renderer = render;
+    hasParent = false;
+}
+
+TextureRender::TextureRender(OverlayRenderer* render, TextureRender* rent) {
+    renderer = render;
+    parent = rent;
+    hasParent = true;
+}
+
+TextureRender::~TextureRender() {
+    glDeleteFramebuffers(1, &frame_buffer);
+    glDeleteProgram(programObject);
 }
 
 GLuint TextureRender::Setup(const char *vShaderStr, const char *fShaderStr){
 
-    if(renderer->CreateProgram(vShaderStr, fShaderStr, &programObject, &positionLoc, &texCoordLoc, &samplerLoc) == GL_FALSE)
+    if(renderer->CreateProgram(vShaderStr, fShaderStr, &programObject) == GL_FALSE)
         return GL_FALSE;
-
-    positionLoc = glGetAttribLocation (programObject, "a_position" );
-    texCoordLoc = glGetAttribLocation (programObject, "a_texCoord" );
-    samplerLoc =  glGetUniformLocation(programObject, "s_texture" );
 
     // Use the program object
     glUseProgram(programObject);
@@ -60,14 +70,15 @@ GLuint TextureRender::Setup(const char *vShaderStr, const char *fShaderStr){
         return GL_FALSE;
 }
 
-GLuint TextureRender::GetTexture() {
-    return frame_texture;
+void TextureRender::SwitchTo() {
+    glUseProgram(programObject);
+    glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer);
 }
 
 void TextureRender::RenderToTexture(){
+    if(hasParent)
+        parent->RenderToTexture();
 
-    glUseProgram(programObject);
-    glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer);
-
+    SwitchTo();
     Render();
 }

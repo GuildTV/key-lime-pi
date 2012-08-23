@@ -19,12 +19,11 @@
  *
  */
 
-#include "TextTexture.h"
+#include "ColourTexture.h"
 
 #include "OverlayRenderer.h"
 
-TextTexture::TextTexture(OverlayRenderer* render): TextureRender(render)  {
-    defined = false;
+ColourTexture::ColourTexture(OverlayRenderer* render, TextureRender* parent): TextureRender(render, parent) {
     const char *vShaderStr =
       "attribute vec4 a_position;   \n"
       "attribute vec2 a_texCoord;   \n"
@@ -35,38 +34,47 @@ TextTexture::TextTexture(OverlayRenderer* render): TextureRender(render)  {
       "   v_texCoord = a_texCoord;  \n"
       "}                            \n";
 
-   const char *fShaderStr =
+    const char *fShaderStr =
       "precision mediump float;                            \n"
       "varying vec2 v_texCoord;                            \n"
       "uniform sampler2D s_texture;                        \n"
+      "uniform float red;                                  \n"
+      "uniform float green;                                \n"
+      "uniform float blue;                                 \n"
+      "uniform float alpha;                                \n"
       "void main()                                         \n"
       "{                                                   \n"
-      "  gl_FragColor = vec4(1, 1, 1, texture2D( s_texture, v_texCoord ).a);\n"
+      "  gl_FragColor = vec4(red * texture2D( s_texture, v_texCoord ).r, green * texture2D( s_texture, v_texCoord ).g, blue * texture2D( s_texture, v_texCoord ).b, alpha * texture2D( s_texture, v_texCoord ).a);\n"
       "}                                            \n";
 
     Setup(vShaderStr, fShaderStr);
 
-    positionLoc = glGetAttribLocation(programObject, "a_position");
-    texCoordLoc = glGetAttribLocation(programObject, "a_texCoord");
+    positionLoc = glGetAttribLocation (programObject, "a_position");
+    texCoordLoc = glGetAttribLocation (programObject, "a_texCoord");
     samplerLoc = glGetUniformLocation(programObject, "s_texture");
+    redLoc = glGetUniformLocation(programObject, "red");
+    greenLoc = glGetUniformLocation(programObject, "green");
+    blueLoc = glGetUniformLocation(programObject, "blue");
+    alphaLoc = glGetUniformLocation(programObject, "alpha");
+
+    red = 1.0f;
+    green = 1.0f;
+    blue = 1.0f;
+    alpha = 1.0f;
 }
 
-void TextTexture::setText(char* s, TextChar* chars, int x, int y, int xs, int ys){
-    text = s;
-    charset = chars;
-    xPos = x;
-    yPos = y;
-    xScale = xs;
-    yScale = ys;
-    defined = true;
-
-    SwitchTo();
-
-    getRenderer()->getFT()->WriteString(text, charset, xPos, yPos, xScale, yScale);
+void ColourTexture::SetColour(float r, float g, float b, float a){
+    red = r;
+    green = g;
+    blue = b;
+    alpha = a;
 }
 
-void TextTexture::Render() {
-    if(defined)
-        getRenderer()->getFT()->WriteString(text, charset, xPos, yPos, xScale, yScale);
-    //TODO remove this, with edges still nicely alphad
+void ColourTexture::Render() {
+    glUniform1f(redLoc, red);
+    glUniform1f(greenLoc, green);
+    glUniform1f(blueLoc, blue);
+    glUniform1f(alphaLoc, alpha);
+
+    getRenderer()->RenderTexture(getParent()->getTexture());
 }

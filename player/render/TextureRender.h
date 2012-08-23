@@ -22,30 +22,48 @@
 #ifndef TEXTURERENDER_H
 #define TEXTURERENDER_H
 
-#include "render/OverlayRenderer.h"
+#include <GLES2/gl2.h>
+#include "render/Freetype.h"
+
+class OverlayRenderer;
 
 class TextureRender
 {
     public:
         TextureRender(OverlayRenderer* render);
+        TextureRender(OverlayRenderer* render, TextureRender* rent);
+        ~TextureRender();
+        //render this to its texture
         void RenderToTexture();
+        //setup this with specified shaders
         GLuint Setup(const char *vShaderStr, const char *fShaderStr);
-        GLuint GetTexture();
+        //get the texture handle
+        GLuint getTexture(){return frame_texture;};
+        //get the parent
+        TextureRender* getParent(){return parent;};
 
     protected:
+        //render the next frame of this
         virtual void Render() = 0;
+        //get the overlay renderer
         OverlayRenderer* getRenderer() {return renderer;};
 
+        //switch to this program and framebuffer
+        void SwitchTo();
+
+        //opengl program object
+        GLuint programObject;
+
     private:
+        //renderer handle
         OverlayRenderer* renderer;
+        //opengl framebuffer handles
         GLuint frame_buffer;
         GLuint frame_texture;
 
-        GLuint programObject;
-        //opengl shader handles
-        GLint positionLoc;
-        GLint texCoordLoc;
-        GLint samplerLoc;
+        //store parent render
+        TextureRender* parent;
+        bool hasParent;
 };
 
 #endif // TEXTURERENDER_H

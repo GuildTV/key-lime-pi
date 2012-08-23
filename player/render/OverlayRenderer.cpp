@@ -20,8 +20,6 @@
  */
 
 #include "OverlayRenderer.h"
-#include "render/TextTexture.h"
-#include "render/TextureRender.h"
 
 OverlayRenderer::OverlayRenderer(NetIO *net){
 #ifdef RENDERTEST
@@ -63,7 +61,10 @@ void OverlayRenderer::Create(std::string file){
 
     TextTexture *t2 = new TextTexture(this);
     t2->setText("It Works XD",overlayText, 100,100,1,1);
-    renderElms.push_back(t2);
+
+    ColourTexture *c = new ColourTexture(this, t2);
+    c->SetColour(1.0f, 0.0f, 0.5f, 0.5f);
+    renderElms.push_back(c);
 }
 
 bool OverlayRenderer::LoadOverlayText() {
@@ -124,7 +125,7 @@ void OverlayRenderer::Draw () {
 #endif
 
     for (vector<TextureRender*>::iterator  it=renderElms.begin() ; it < renderElms.end(); ++it){
-        RenderTexture((*it)->GetTexture());
+        RenderTexture((*it)->getTexture());
     }
 
     //draw the timestamp on the screen
@@ -416,7 +417,7 @@ int OverlayRenderer::Init () {
       "  gl_FragColor = texture2D( s_texture, v_texCoord );\n"
       "}                                            \n";
 
-    if(CreateProgram(vShaderStr, fShaderStr, &programObject, &positionLoc, &texCoordLoc, &samplerLoc) == GL_FALSE)
+    if(CreateProgram(vShaderStr, fShaderStr, &programObject) == GL_FALSE)
         return GL_FALSE;
 
     positionLoc = glGetAttribLocation (programObject, "a_position" );
@@ -434,7 +435,7 @@ int OverlayRenderer::Init () {
     return GL_TRUE;
 }
 
-GLuint OverlayRenderer::CreateProgram(const char *vShaderStr, const char *fShaderStr, GLuint *programObject, GLint *positionLoc, GLint *texCoordLoc, GLint *samplerLoc){
+GLuint OverlayRenderer::CreateProgram(const char *vShaderStr, const char *fShaderStr, GLuint *programObject){
     // Load the vertex/fragment shaders
     GLuint vertexShader = LoadShader(GL_VERTEX_SHADER, vShaderStr);
     GLuint fragmentShader = LoadShader(GL_FRAGMENT_SHADER, fShaderStr);

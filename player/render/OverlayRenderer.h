@@ -47,8 +47,9 @@
 #include "render/Freetype.h"
 #include "net/NetIO.h"
 
-class TextTexture;
-class TextureRender;
+#include "render/TextTexture.h"
+#include "render/TextureRender.h"
+#include "render/ColourTexture.h"
 
 #include "logger.h"
 
@@ -93,7 +94,7 @@ public:
     void RenderTexture(GLuint texture);
 
     //create a new program object
-    GLuint CreateProgram(const char *vShaderStr, const char *fShaderStr, GLuint *programObject, GLint *positionLoc, GLint *texCoordLoc, GLint *samplerLoc);
+    GLuint CreateProgram(const char *vShaderStr, const char *fShaderStr, GLuint *programObject);
 
 protected:
     //create opengl window

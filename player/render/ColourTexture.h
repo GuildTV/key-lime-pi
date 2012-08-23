@@ -19,33 +19,33 @@
  *
  */
 
-#ifndef TEXTTEXTURE_H
-#define TEXTTEXTURE_H
+#ifndef COLOURTEXTURE_H
+#define COLOURTEXTURE_H
 
 #include "render/TextureRender.h"
 
-class TextTexture: public TextureRender {
+class ColourTexture: public TextureRender {
     public:
-        TextTexture(OverlayRenderer* render);
-        //set the text to be rendered
-        void setText(char* s, TextChar* chars, int x, int y, int xs, int ys);
+        ColourTexture(OverlayRenderer* render, TextureRender* parent);
+        void SetColour(float r, float g, float b, float a);
     protected:
         //render this
         void Render();
     private:
-        //text data values
-        char* text;
-        TextChar* charset;
-        int xPos;
-        int yPos;
-        int xScale;
-        int yScale;
-        bool defined;
+        float red;
+        float green;
+        float blue;
+        float alpha;
 
         //opengl shader handles
         GLint positionLoc;
         GLint texCoordLoc;
         GLint samplerLoc;
+
+        GLint redLoc;
+        GLint greenLoc;
+        GLint blueLoc;
+        GLint alphaLoc;
 };
 
-#endif // TEXTTEXTURE_H
+#endif // COLOURTEXTURE_H
