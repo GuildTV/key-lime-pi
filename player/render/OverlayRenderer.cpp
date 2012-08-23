@@ -20,6 +20,8 @@
  */
 
 #include "OverlayRenderer.h"
+#include "render/TextTexture.h"
+#include "render/TextureRender.h"
 
 OverlayRenderer::OverlayRenderer(NetIO *net){
 #ifdef RENDERTEST
@@ -45,10 +47,23 @@ OverlayRenderer::OverlayRenderer(NetIO *net){
 #endif
     //load the overlay text characters
     LoadOverlayText();
+
+    //create empty vector
+    renderElms = vector<TextureRender*>();
 }
 
 void OverlayRenderer::Create(std::string file){
     filename = file;
+
+    renderElms.clear();
+
+    TextTexture *t = new TextTexture(this);
+    t->setText("Hi you ;P",overlayText, 100,300,1,1);
+    renderElms.push_back(t);
+
+    TextTexture *t2 = new TextTexture(this);
+    t2->setText("It Works XD",overlayText, 100,100,1,1);
+    renderElms.push_back(t2);
 }
 
 bool OverlayRenderer::LoadOverlayText() {
@@ -63,16 +78,8 @@ bool OverlayRenderer::LoadOverlayText() {
     return true;
 }
 
-
-void OverlayRenderer::Draw () {
-    // Clear the color buffer
-    glClear(GL_COLOR_BUFFER_BIT);
-    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-
-#ifdef RENDERTEST
-    //draw the background png, if on RENDERTEST and it has loaded
-    if(bgTexture != TEXTURE_LOAD_ERROR) {
-        GLfloat vVertices[] = { -1.0f,  1.0f, 0.0f,  // Position 0
+void OverlayRenderer::RenderTexture(GLuint texture) {
+    GLfloat vVertices[] = { -1.0f,  1.0f, 0.0f,  // Position 0
                                 0.0f,  1.0f,        // TexCoord 0
                                -1.0f, -1.0f, 0.0f,  // Position 1
                                 0.0f,  0.0f,        // TexCoord 1
@@ -81,7 +88,7 @@ void OverlayRenderer::Draw () {
                                 1.0f,  1.0f, 0.0f,  // Position 3
                                 1.0f,  1.0f         // TexCoord 3
                             };
-        GLushort indices[] = { 0, 1, 2, 0, 2, 3 };
+        GLushort indices[] = { 0, 1, 2, 0, 2, 3};
 
         glVertexAttribPointer (positionLoc, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), vVertices );
         glVertexAttribPointer (texCoordLoc, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), &vVertices[3] );
@@ -90,15 +97,35 @@ void OverlayRenderer::Draw () {
         glEnableVertexAttribArray ( texCoordLoc );
 
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, bgTexture);
+        glBindTexture(GL_TEXTURE_2D, texture);
         glUniform1i ( samplerLoc, 0 );
         glDrawElements ( GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, indices );
+}
 
+void OverlayRenderer::Draw () {
+
+    for (vector<TextureRender*>::iterator  it=renderElms.begin() ; it < renderElms.end(); ++it){
+        (*it)->RenderToTexture();
+    }
+
+    //reset to output program and buffer
+    glUseProgram(programObject);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    // Clear the color buffer
+    glClear(GL_COLOR_BUFFER_BIT);
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+
+#ifdef RENDERTEST
+    //draw the background png, if on RENDERTEST and it has loaded
+    if(bgTexture != TEXTURE_LOAD_ERROR) {
+        RenderTexture(bgTexture);
     }
 #endif
 
-    //write this string to the screen
-    ft->WriteString("Hey there :)",overlayText, 100,100,1,1);
+    for (vector<TextureRender*>::iterator  it=renderElms.begin() ; it < renderElms.end(); ++it){
+        RenderTexture((*it)->GetTexture());
+    }
 
     //draw the timestamp on the screen
     DrawTimeStamp();
@@ -202,15 +229,21 @@ void OverlayRenderer::Run() {
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     eglSwapBuffers(eglDisplay, eglSurface);
 
+#ifndef TESTPLAY
     netIO->GetClient()->SendMessage("{\"type\":\"playVideo\",\"status\":\"playback finished\"}");
+#endif
 }
 
 void OverlayRenderer::Stop() {
     running = false;
+#ifndef TESTPLAY
     netIO->GetClient()->SendMessage("{\"type\":\"playVideo\",\"status\":\"aborting video\"}");
+#endif
 }
 
 void OverlayRenderer::PreDraw() {
+    glUseProgram(programObject);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
     //wipe screen
     glClear(GL_COLOR_BUFFER_BIT);
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
@@ -224,9 +257,8 @@ void OverlayRenderer::PreDraw() {
 
 #ifdef RENDERTEST
 void OverlayRenderer::LoadBG(string filename) {
-    string s = "resources/background.png";
     int w, h;
-    bgTexture = loadTexture(s, w, h);
+    bgTexture = loadTexture(filename, w, h);
     if(bgTexture == TEXTURE_LOAD_ERROR)
         FLog::Log(FLOG_ERROR, "OverlayRenderer::LoadBG - Failed to load BG image");
 }
@@ -382,47 +414,58 @@ int OverlayRenderer::Init () {
       "void main()                                         \n"
       "{                                                   \n"
       "  gl_FragColor = texture2D( s_texture, v_texCoord );\n"
-      //"  gl_FragColor = vec4(1, 1, 1, texture2D( s_texture, v_texCoord ).a);\n"
       "}                                            \n";
 
-    GLuint vertexShader;
-    GLuint fragmentShader;
-    GLint linked;
+    if(CreateProgram(vShaderStr, fShaderStr, &programObject, &positionLoc, &texCoordLoc, &samplerLoc) == GL_FALSE)
+        return GL_FALSE;
 
+    positionLoc = glGetAttribLocation (programObject, "a_position" );
+    texCoordLoc = glGetAttribLocation (programObject, "a_texCoord" );
+    samplerLoc =  glGetUniformLocation(programObject, "s_texture" );
+
+    // Use the program object
+    glUseProgram(programObject);
+
+    //ensure display starts off clean
+    glClear(GL_COLOR_BUFFER_BIT);
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    eglSwapBuffers(eglDisplay, eglSurface);
+
+    return GL_TRUE;
+}
+
+GLuint OverlayRenderer::CreateProgram(const char *vShaderStr, const char *fShaderStr, GLuint *programObject, GLint *positionLoc, GLint *texCoordLoc, GLint *samplerLoc){
     // Load the vertex/fragment shaders
-    vertexShader = LoadShader(GL_VERTEX_SHADER, vShaderStr);
-    fragmentShader = LoadShader(GL_FRAGMENT_SHADER, fShaderStr);
+    GLuint vertexShader = LoadShader(GL_VERTEX_SHADER, vShaderStr);
+    GLuint fragmentShader = LoadShader(GL_FRAGMENT_SHADER, fShaderStr);
 
     // Create the program object
-    programObject = glCreateProgram();
+    *programObject = glCreateProgram();
 
     if (programObject == 0)
-        return 0;
+        return GL_FALSE;
 
-    glAttachShader(programObject, vertexShader);
-    glAttachShader(programObject, fragmentShader);
-
+    glAttachShader(*programObject, vertexShader);
+    glAttachShader(*programObject, fragmentShader);
 
     // Link the program
-    glLinkProgram(programObject);
+    glLinkProgram(*programObject);
 
-    positionLoc = glGetAttribLocation ( programObject, "a_position" );
-    texCoordLoc = glGetAttribLocation ( programObject, "a_texCoord" );
-    samplerLoc =  glGetUniformLocation( programObject, "s_texture" );
+    GLint linked;
 
     // Check the link status
-    glGetProgramiv(programObject, GL_LINK_STATUS, &linked);
+    glGetProgramiv(*programObject, GL_LINK_STATUS, &linked);
 
     GLint infoLen = 0;
     if (!linked) {
 
-        glGetProgramiv(programObject, GL_INFO_LOG_LENGTH, &infoLen);
+        glGetProgramiv(*programObject, GL_INFO_LOG_LENGTH, &infoLen);
 
         if (infoLen > 1) {
             printf ( "Error linking program:\n");
         }
 
-        glDeleteProgram(programObject);
+        glDeleteProgram(*programObject);
         return GL_FALSE;
     }
 
@@ -438,9 +481,8 @@ int OverlayRenderer::Init () {
                         0.0f, 0.0f, 0.0f, 1.0f };
 
     GLint i32Location;
-    i32Location = glGetUniformLocation(programObject, "WorldViewProjection");
+    i32Location = glGetUniformLocation(*programObject, "WorldViewProjection");
     glUniformMatrix4fv(i32Location, 1, GL_FALSE, ortho);
-
 
     // Set the viewport
     glViewport(0, 0, width, height);
@@ -449,14 +491,6 @@ int OverlayRenderer::Init () {
     glDisable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
-
-    // Use the program object
-    glUseProgram(programObject);
-
-    //ensure display starts off clean
-    glClear(GL_COLOR_BUFFER_BIT);
-    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-    eglSwapBuffers(eglDisplay, eglSurface);
 
     return GL_TRUE;
 }

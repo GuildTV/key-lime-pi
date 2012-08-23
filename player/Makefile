@@ -19,6 +19,8 @@ SRC=linux/XMemUtils.cpp \
 		OMX/OMXVideo.cpp \
 		OMX/OMXClock.cpp \
 		render/MyRender.cpp \
+		render/TextTexture.cpp \
+		render/TextureRender.cpp \
 		OMX/File.cpp \
 		OMX/OMXPlayerVideo.cpp \
 		OMXLink.cpp \

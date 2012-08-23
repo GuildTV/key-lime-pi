@@ -253,7 +253,7 @@ void LimeMaster::playProcess(Json::Value *root, long *sec, long *nano){
     //generate json string for slave
     string format = "{\"type\":\"playVideo\",\"second\":%d,\"nanosecond\":%d}";
     char formatted[format.length()+10];
-    sprintf(formatted, format.c_str(), sec, nano);
+    sprintf(formatted, format.c_str(), *sec, *nano);
 
     //send message to slave
     pi.GetClient()->SendMessage(formatted);

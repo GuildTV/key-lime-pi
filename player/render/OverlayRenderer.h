@@ -47,6 +47,9 @@
 #include "render/Freetype.h"
 #include "net/NetIO.h"
 
+class TextTexture;
+class TextureRender;
+
 #include "logger.h"
 
 //define the position of the timecode
@@ -81,6 +84,17 @@ public:
     GLuint getTexLoc() {return texCoordLoc;};
     GLuint getSamLoc() {return samplerLoc;};
 
+    //get handle to freetype
+    Freetype* getFT() {return ft;};
+    //get the default charset
+    TextChar* getDefaultCharSet() {return overlayText;};
+
+    //render a texture to the screen
+    void RenderTexture(GLuint texture);
+
+    //create a new program object
+    GLuint CreateProgram(const char *vShaderStr, const char *fShaderStr, GLuint *programObject, GLint *positionLoc, GLint *texCoordLoc, GLint *samplerLoc);
+
 protected:
     //create opengl window
     GLboolean esCreateWindow (const char* title);
@@ -114,6 +128,9 @@ private:
     //background texture
     GLuint bgTexture;
 #endif
+
+    //vector of render elements
+    vector<TextureRender*> renderElms;
 
     //script filename
     std::string filename;
