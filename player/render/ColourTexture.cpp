@@ -73,7 +73,7 @@ ColourTexture::ColourTexture(OverlayRenderer* render, TextureRender* parent): Te
       "    float dx = colour2Pos[0] - colour1Pos[0];       \n"
       "    float dy = colour2Pos[1] - colour1Pos[1];       \n"
       "    float len = dx+dy;                              \n"
-      "    gl_FragColor = xCol()*dx/len + yCol()*dy/len;   \n"
+      "    gl_FragColor = (xCol()*dx/len + yCol()*dy/len)*texture2D( s_texture, v_texCoord );   \n"
       "                                                    \n"
       "                                                    \n"
       "                                                    \n"
