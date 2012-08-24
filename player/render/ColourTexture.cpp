@@ -38,13 +38,10 @@ ColourTexture::ColourTexture(OverlayRenderer* render, TextureRender* parent): Te
       "precision mediump float;                            \n"
       "varying vec2 v_texCoord;                            \n"
       "uniform sampler2D s_texture;                        \n"
-      "uniform float red;                                  \n"
-      "uniform float green;                                \n"
-      "uniform float blue;                                 \n"
-      "uniform float alpha;                                \n"
+      "uniform vec4 colour;                                \n"
       "void main()                                         \n"
       "{                                                   \n"
-      "  gl_FragColor = vec4(red * texture2D( s_texture, v_texCoord ).r, green * texture2D( s_texture, v_texCoord ).g, blue * texture2D( s_texture, v_texCoord ).b, alpha * texture2D( s_texture, v_texCoord ).a);\n"
+      "  gl_FragColor = colour * texture2D( s_texture, v_texCoord );\n"
       "}                                            \n";
 
     Setup(vShaderStr, fShaderStr);
@@ -52,29 +49,25 @@ ColourTexture::ColourTexture(OverlayRenderer* render, TextureRender* parent): Te
     positionLoc = glGetAttribLocation (programObject, "a_position");
     texCoordLoc = glGetAttribLocation (programObject, "a_texCoord");
     samplerLoc = glGetUniformLocation(programObject, "s_texture");
-    redLoc = glGetUniformLocation(programObject, "red");
-    greenLoc = glGetUniformLocation(programObject, "green");
-    blueLoc = glGetUniformLocation(programObject, "blue");
-    alphaLoc = glGetUniformLocation(programObject, "alpha");
+    colourLoc = glGetUniformLocation(programObject, "colour");
 
-    red = 1.0f;
-    green = 1.0f;
-    blue = 1.0f;
-    alpha = 1.0f;
+    colour[0] = 1.0f;
+    colour[1] = 1.0f;
+    colour[2] = 1.0f;
+    colour[3] = 1.0f;
 }
 
 void ColourTexture::SetColour(float r, float g, float b, float a){
-    red = r;
-    green = g;
-    blue = b;
-    alpha = a;
+    colour[0] = r;
+    colour[1] = g;
+    colour[2] = b;
+    colour[3] = a;
 }
 
 void ColourTexture::Render() {
-    glUniform1f(redLoc, red);
-    glUniform1f(greenLoc, green);
-    glUniform1f(blueLoc, blue);
-    glUniform1f(alphaLoc, alpha);
+
+    glUniform4fv(colourLoc, 1, colour);
+    glEnableVertexAttribArray ( positionLoc );
 
     getRenderer()->RenderTexture(getParent()->getTexture());
 }

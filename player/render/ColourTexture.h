@@ -32,20 +32,14 @@ class ColourTexture: public TextureRender {
         //render this
         void Render();
     private:
-        float red;
-        float green;
-        float blue;
-        float alpha;
+        GLfloat colour[4];
 
         //opengl shader handles
         GLint positionLoc;
         GLint texCoordLoc;
         GLint samplerLoc;
 
-        GLint redLoc;
-        GLint greenLoc;
-        GLint blueLoc;
-        GLint alphaLoc;
+        GLint colourLoc;
 };
 
 #endif // COLOURTEXTURE_H

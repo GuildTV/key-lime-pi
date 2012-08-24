@@ -414,7 +414,13 @@ int OverlayRenderer::Init () {
       "uniform sampler2D s_texture;                        \n"
       "void main()                                         \n"
       "{                                                   \n"
+#ifdef TESTPLAY
       "  gl_FragColor = texture2D( s_texture, v_texCoord );\n"
+#elif defined LIMEMASTER
+      "  gl_FragColor = vec4(texture2D( s_texture, v_texCoord ).r, texture2D( s_texture, v_texCoord ).g, texture2D( s_texture, v_texCoord ).b, 1);\n"
+#else
+      "  gl_FragColor = vec4(1, 1, 1, texture2D( s_texture, v_texCoord ).a);\n"
+#endif
       "}                                            \n";
 
     if(CreateProgram(vShaderStr, fShaderStr, &programObject) == GL_FALSE)
