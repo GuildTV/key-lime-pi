@@ -50,6 +50,7 @@
 #include "render/TextTexture.h"
 #include "render/TextureRender.h"
 #include "render/ColourTexture.h"
+#include "render/FadeTexture.h"
 
 #include "logger.h"
 

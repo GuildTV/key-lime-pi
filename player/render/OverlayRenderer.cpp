@@ -57,7 +57,9 @@ void OverlayRenderer::Create(std::string file){
 
     TextTexture *t = new TextTexture(this);
     t->setText("Hi you ;P",overlayText, 100,300,1,1);
-    renderElms.push_back(t);
+
+    FadeTexture *f = new FadeTexture(this, t);
+    renderElms.push_back(f);
 
     TextTexture *t2 = new TextTexture(this);
     t2->setText("It Works XD",overlayText, 100,100,1,1);
