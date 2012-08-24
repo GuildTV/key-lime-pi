@@ -63,7 +63,8 @@ void OverlayRenderer::Create(std::string file){
     t2->setText("It Works XD",overlayText, 100,100,1,1);
 
     ColourTexture *c = new ColourTexture(this, t2);
-    c->SetColour(1.0f, 0.0f, 0.5f, 0.5f);
+    c->SetColour1(0.1f, 0.6f, 1.0f, 0.0f, 1.0f, 1.0f);//purple
+    c->SetColour2(0.9f, 0.9f, 0.0f, 1.0f, 0.5f, 1.0f);//green
     renderElms.push_back(c);
 }
 
