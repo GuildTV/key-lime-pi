@@ -61,12 +61,9 @@ void TextTexture::setText(char* s, TextChar* chars, int x, int y, int xs, int ys
     defined = true;
 
     SwitchTo();
-
-    getRenderer()->getFT()->WriteString(text, charset, xPos, yPos, xScale, yScale);
 }
 
 void TextTexture::Render() {
     if(defined)
         getRenderer()->getFT()->WriteString(text, charset, xPos, yPos, xScale, yScale);
-    //TODO remove this, with edges still nicely alphad
 }

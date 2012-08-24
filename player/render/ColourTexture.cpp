@@ -103,7 +103,7 @@ void ColourTexture::SetColour1(float x, float y, float r, float g, float b, floa
     colour1.colour[2] = b;
     colour1.colour[3] = a;
 }
-
+/*
 void ColourTexture::SetColour2(float x, float y, float r, float g, float b, float a){
     colour2.position[0] = x;
     colour2.position[1] = y;
@@ -115,7 +115,7 @@ void ColourTexture::SetColour2(float x, float y, float r, float g, float b, floa
 
     useColour2 = true;
 }
-
+*/
 void ColourTexture::Render() {
     glUniform4fv(colour1Loc, 1, colour1.colour);
     glUniform2fv(colour1PosLoc, 1, colour1.position);

@@ -41,7 +41,7 @@ class ColourTexture: public TextureRender {
     public:
         ColourTexture(OverlayRenderer* render, TextureRender* parent);
         void SetColour1(float x, float y, float r, float g, float b, float a);
-        void SetColour2(float x, float y, float r, float g, float b, float a);
+        //void SetColour2(float x, float y, float r, float g, float b, float a);
     protected:
         //render this
         void Render();

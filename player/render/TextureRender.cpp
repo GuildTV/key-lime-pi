@@ -73,6 +73,8 @@ GLuint TextureRender::Setup(const char *vShaderStr, const char *fShaderStr){
 void TextureRender::SwitchTo() {
     glUseProgram(programObject);
     glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer);
+    glClear(GL_COLOR_BUFFER_BIT);
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 }
 
 void TextureRender::RenderToTexture(){

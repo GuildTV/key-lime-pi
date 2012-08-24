@@ -63,8 +63,7 @@ void OverlayRenderer::Create(std::string file){
     t2->setText("It Works XD",overlayText, 100,100,1,1);
 
     ColourTexture *c = new ColourTexture(this, t2);
-    c->SetColour1(0.1f, 0.6f, 1.0f, 0.0f, 1.0f, 1.0f);//purple
-    c->SetColour2(0.9f, 0.9f, 0.0f, 1.0f, 0.5f, 1.0f);//green
+    c->SetColour1(0.1f, 0.6f, 1.0f, 0.0f, 1.0f, 0.8f);//purple
     renderElms.push_back(c);
 }
 
@@ -221,7 +220,7 @@ void OverlayRenderer::Run() {
         usleep(20000);//20ms (rest of frame)
 
         frameCount++;
-        if(frameCount >= 150)//limit to 150 refresh (75 frame, 3 seconds) in RENDERTEST, as currently no other stop mechanism
+        if(frameCount >= 500)//limit to 150 refresh (75 frame, 3 seconds) in RENDERTEST, as currently no other stop mechanism
             break;
 #endif
     }
