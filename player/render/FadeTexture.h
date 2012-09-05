@@ -29,7 +29,7 @@ class FadeTexture: public TextureRender {
         FadeTexture(OverlayRenderer* render, TextureRender* parent);
     protected:
         //render this
-        void Render();
+        void Render(int field);
     private:
 
         //opengl shader handles

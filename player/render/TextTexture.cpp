@@ -63,7 +63,7 @@ void TextTexture::setText(char* s, TextChar* chars, int x, int y, int xs, int ys
     SwitchTo();
 }
 
-void TextTexture::Render() {
+void TextTexture::Render(int field) {
     if(defined)
         getRenderer()->getFT()->WriteString(text, charset, xPos, yPos, xScale, yScale);
 }

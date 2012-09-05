@@ -77,10 +77,10 @@ void TextureRender::SwitchTo() {
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 }
 
-void TextureRender::RenderToTexture(){
+void TextureRender::RenderToTexture(int field){
     if(hasParent)
-        parent->RenderToTexture();
+        parent->RenderToTexture(field);
 
     SwitchTo();
-    Render();
+    Render(field);
 }

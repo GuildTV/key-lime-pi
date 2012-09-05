@@ -44,7 +44,7 @@ class ColourTexture: public TextureRender {
         //void SetColour2(float x, float y, float r, float g, float b, float a);
     protected:
         //render this
-        void Render();
+        void Render(int field);
     private:
         ColourPoint colour1;
         ColourPoint colour2;

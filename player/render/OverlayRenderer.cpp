@@ -108,7 +108,7 @@ void OverlayRenderer::RenderTexture(GLuint texture) {
 void OverlayRenderer::Draw () {
 
     for (vector<TextureRender*>::iterator  it=renderElms.begin() ; it < renderElms.end(); ++it){
-        (*it)->RenderToTexture();
+        (*it)->RenderToTexture(currentRefresh);
     }
 
     //reset to output program and buffer

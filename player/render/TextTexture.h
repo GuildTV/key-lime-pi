@@ -31,7 +31,7 @@ class TextTexture: public TextureRender {
         void setText(char* s, TextChar* chars, int x, int y, int xs, int ys);
     protected:
         //render this
-        void Render();
+        void Render(int field);
     private:
         //text data values
         char* text;

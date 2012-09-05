@@ -51,7 +51,7 @@ FadeTexture::FadeTexture(OverlayRenderer* render, TextureRender* parent): Textur
     alphaLoc = glGetUniformLocation(programObject, "alpha");
 }
 
-void FadeTexture::Render() {
+void FadeTexture::Render(int field) {
     float currentAlpha = 0.9f;
     glUniform1f(alphaLoc, currentAlpha);
 

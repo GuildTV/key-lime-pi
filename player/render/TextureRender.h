@@ -34,7 +34,7 @@ class TextureRender
         TextureRender(OverlayRenderer* render, TextureRender* rent);
         ~TextureRender();
         //render this to its texture
-        void RenderToTexture();
+        void RenderToTexture(int field);
         //setup this with specified shaders
         GLuint Setup(const char *vShaderStr, const char *fShaderStr);
         //get the texture handle
@@ -44,7 +44,7 @@ class TextureRender
 
     protected:
         //render the next frame of this
-        virtual void Render() = 0;
+        virtual void Render(int field) = 0;
         //get the overlay renderer
         OverlayRenderer* getRenderer() {return renderer;};
 

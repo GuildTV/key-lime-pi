@@ -116,7 +116,7 @@ void ColourTexture::SetColour2(float x, float y, float r, float g, float b, floa
     useColour2 = true;
 }
 */
-void ColourTexture::Render() {
+void ColourTexture::Render(int field) {
     glUniform4fv(colour1Loc, 1, colour1.colour);
     glUniform2fv(colour1PosLoc, 1, colour1.position);
     glUniform4fv(colour2Loc, 1, colour2.colour);
