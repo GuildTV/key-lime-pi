@@ -39,9 +39,6 @@
 #include  <X11/Xlib.h>
 #include  <X11/Xatom.h>
 #include  <X11/Xutil.h>
-#define PNG_SKIP_SETJMP_CHECK
-#include <png.h>
-#define TEXTURE_LOAD_ERROR 0
 #endif
 
 #include "render/Freetype.h"
@@ -51,6 +48,7 @@
 #include "render/TextureRender.h"
 #include "render/ColourTexture.h"
 #include "render/FadeTexture.h"
+#include "render/PNGTexture.h"
 
 #include "logger.h"
 
@@ -123,12 +121,6 @@ private:
 #ifdef RENDERTEST
     //x11 display
     Display *x_display;
-    //load png texture
-    GLuint loadTexture(const string filename, int &width, int &height);
-    //load background
-    void LoadBG(string filename);
-    //background texture
-    GLuint bgTexture;
 #endif
 
     //vector of render elements

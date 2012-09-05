@@ -49,10 +49,47 @@ FadeTexture::FadeTexture(OverlayRenderer* render, TextureRender* parent): Textur
     texCoordLoc = glGetAttribLocation (programObject, "a_texCoord");
     samplerLoc = glGetUniformLocation(programObject, "s_texture");
     alphaLoc = glGetUniformLocation(programObject, "alpha");
+
+    points = new queue<FadePoint>;
+    prevPoint = new FadePoint(-1, 1.0f);
+}
+
+void FadeTexture::addPoint(FadePoint *p){
+    points->push(*p);
+
+    if(prevPoint->fieldNum == -1)
+        prevPoint = p;
 }
 
 void FadeTexture::Render(int field) {
-    float currentAlpha = 0.9f;
+    float currentAlpha = prevPoint->alpha;
+
+    if(!points->empty()){
+        FadePoint next = points->front();
+        if(next.fieldNum <= field){
+            prevPoint = &points->front();
+            points->pop();
+
+            Render(field);
+            return;
+        }
+
+        int prevF = prevPoint->fieldNum;
+        int nextF = next.fieldNum;
+        int deltaF = nextF - prevF;
+        int relF = field - prevF;
+        float ratioF = ((float) relF)/((float) deltaF);
+
+        if(deltaF <= 0){
+            currentAlpha = prevPoint->alpha;
+        } else {
+            float baseA = prevPoint->alpha;
+            float deltaA = next.alpha - baseA;
+
+            currentAlpha = baseA + deltaA*ratioF;
+        }
+    }
+
     glUniform1f(alphaLoc, currentAlpha);
 
     getRenderer()->RenderTexture(getParent()->getTexture());

@@ -19,39 +19,32 @@
  *
  */
 
-#ifndef FADETEXTURE_H
-#define FADETEXTURE_H
+#ifndef PNGTEXTURE_H
+#define PNGTEXTURE_H
+
+#define PNG_SKIP_SETJMP_CHECK
+#include <png.h>
+#define TEXTURE_LOAD_ERROR 0
 
 #include "render/TextureRender.h"
-#include <queue>
 
-struct FadePoint{
-    int fieldNum;
-    float alpha;
-    FadePoint(int field, float a){
-        fieldNum = field;
-        alpha = a;
-    }
-};
-
-class FadeTexture: public TextureRender {
+class PNGTexture: public TextureRender {
     public:
-        FadeTexture(OverlayRenderer* render, TextureRender* parent);
-        //add a point/keyframe to the fade
-        void addPoint(FadePoint *p);
+        PNGTexture(OverlayRenderer* render);
+
+        void LoadPNG(string filename);
     protected:
         //render this
         void Render(int field);
-    private:
-        queue<FadePoint> *points;
-        FadePoint *prevPoint;
 
+        GLuint loadTexture(const string filename, int &width, int &height);
+    private:
         //opengl shader handles
         GLint positionLoc;
         GLint texCoordLoc;
         GLint samplerLoc;
 
-        GLint alphaLoc;
+        GLuint pngTex;
 };
 
-#endif // FADETEXTURE_H
+#endif // PNGTEXTURE_H
