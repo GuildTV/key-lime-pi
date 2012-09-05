@@ -67,8 +67,6 @@ public:
     //run the rendering loop
     void Run();
 
-    //create a simple test texture
-    GLuint CreateSimpleTexture2D();
     //load the textures for the overlay text
     bool LoadOverlayText();
     //draw the timestamp to the screen

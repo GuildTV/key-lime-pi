@@ -24,42 +24,22 @@
 
 #include "render/TextureRender.h"
 
-struct ColourPoint {
-    ColourPoint() {
-        position[0] = 0;
-        position[1] = 0;
-        colour[0] = 1;
-        colour[1] = 1;
-        colour[2] = 1;
-        colour[3] = 1;
-    }
-    GLfloat colour[4];
-    GLfloat position[2];
-};
-
 class ColourTexture: public TextureRender {
     public:
         ColourTexture(OverlayRenderer* render, TextureRender* parent);
-        void SetColour1(float x, float y, float r, float g, float b, float a);
-        //void SetColour2(float x, float y, float r, float g, float b, float a);
+        void SetColour(float r, float g, float b, float a);
     protected:
         //render this
         void Render(int field);
     private:
-        ColourPoint colour1;
-        ColourPoint colour2;
-        bool useColour2;
+        GLfloat colour[4];
 
         //opengl shader handles
         GLint positionLoc;
         GLint texCoordLoc;
         GLint samplerLoc;
 
-        GLint colour1Loc;
-        GLint colour1PosLoc;
-        GLint colour2Loc;
-        GLint colour2PosLoc;
-        GLint useCol2Loc;
+        GLint colourLoc;
 };
 
 #endif // COLOURTEXTURE_H
