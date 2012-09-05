@@ -28,7 +28,7 @@ class TextTexture: public TextureRender {
     public:
         TextTexture(OverlayRenderer* render);
         //set the text to be rendered
-        void setText(char* s, TextChar* chars, int x, int y, int xs, int ys);
+        void setText(char* s, TextChar* chars, int x, int y, float xs, float ys);
     protected:
         //render this
         void Render(int field);
@@ -38,8 +38,8 @@ class TextTexture: public TextureRender {
         TextChar* charset;
         int xPos;
         int yPos;
-        int xScale;
-        int yScale;
+        float xScale;
+        float yScale;
         bool defined;
 
         //opengl shader handles
