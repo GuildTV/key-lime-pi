@@ -147,16 +147,16 @@ void OverlayRenderer::DrawTimeStamp() {
     frames = (currentRefresh/2)%25;
     secs = (currentRefresh/50)%60;
     mins = (currentRefresh/50)/60;
-    sprintf(str, "%2.2d:%2.2d.%2.2d", mins, secs, frames);
+    sprintf(str, "TCR %2.2d:%2.2d.%2.2d", mins, secs, frames);
 
     //determine x position, based upon timecodePosition
     int x;
     switch(timecodePosition){
     case RIGHT:
-        x = width-150;
+        x = width-200;
         break;
     case CENTER:
-        x = width/2-75;
+        x = width/2-100;
         break;
     case LEFT:
         x = 10;
