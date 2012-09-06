@@ -22,12 +22,6 @@
 #ifndef LIMESHARED_H
 #define LIMESHARED_H
 
-#ifdef DUMPJSON
-#ifndef JSONDIR
-#define JSONDIR "json-dump/"
-#endif
-#endif
-
 #ifndef DATAFOLDER
 #define DATAFOLDER "data/"
 #endif
@@ -45,9 +39,10 @@
 #include "logger.h"
 #include "LimeTimer.h"
 #include <jsoncpp/json/json.h>
-#include <time.h>
 #include <stdio.h>
 #include <dirent.h>
+
+#include "JsonUtil.h"
 
 #ifdef RENDERTEST
 #include "render/OverlayRenderer.h"
@@ -71,8 +66,6 @@ class LimeShared
         bool FileExists(const char * filename);
         //get list of all the files in a folder
         vector<string> ListFiles(const char * path);
-        Json::Value VectorToJSON(vector<string> vec);
-        vector<string> JSONToVector(Json::Value data);
         //get netio
         NetIO getNetUp(){return up;};
         //create server
@@ -81,9 +74,6 @@ class LimeShared
         bool FinishSetup();
 
     protected:
-        //convert msg to json
-        bool parseJSON(std::string *msg, Json::Value *root);
-
         //network connection upstream
         NetIO up;
         //is program running?

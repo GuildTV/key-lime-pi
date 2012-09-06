@@ -61,7 +61,7 @@ void LimeMaster::HandleMessageDown(NetMessage* msg){
 
     //parse json messages
     Json::Value root;
-    if(!parseJSON(&msg->message, &root))
+    if(!JsonUtil::parseJSON(&msg->message, &root))
         return;
 
     //check type exists
@@ -80,7 +80,7 @@ void LimeMaster::HandleMessageDown(NetMessage* msg){
         }
 
         vector<string> dat1 = ListFiles(DATAFOLDER);
-        vector<string> dat2 = JSONToVector(root["data"]);
+        vector<string> dat2 = JsonUtil::JSONToVector(root["data"]);
 
         vector<string> overlap;
 
@@ -98,7 +98,7 @@ void LimeMaster::HandleMessageDown(NetMessage* msg){
                 continue;
         }
 
-        Json::Value list = VectorToJSON(overlap);
+        Json::Value list = JsonUtil::VectorToJSON(overlap);
         Json::FastWriter writer;
 
         std::string json = "{\"type\":\"dataList\",\"data\":";
@@ -265,7 +265,7 @@ void LimeMaster::dataListProcess(Json::Value *root){
 
     } else {
         vector<string> vec = ListFiles(DATAFOLDER);
-        Json::Value list = VectorToJSON(vec);
+        Json::Value list = JsonUtil::VectorToJSON(vec);
 
         Json::FastWriter writer;
 

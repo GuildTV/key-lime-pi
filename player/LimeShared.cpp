@@ -173,70 +173,12 @@ vector<string> LimeShared::ListFiles(const char * path){
     return vec;
 }
 
-Json::Value LimeShared::VectorToJSON(vector<string> vec){
-    Json::Value arr(Json::arrayValue);
-    for(auto it = vec.begin(); it < vec.end(); it++){
-        arr.append(Json::Value(*it));
-    }
-    return arr;
-}
-
-vector<string> LimeShared::JSONToVector(Json::Value data){
-    vector<string> vec;
-
-    if(!data.isArray())
-        return vec;
-
-    for(int i=0;i<data.size();i++){
-        vec.push_back(data[i].asString());
-    }
-
-    return vec;
-}
-
-bool LimeShared::parseJSON(std::string *msg, Json::Value *root){
-    //parse json messages
-    Json::Reader reader;
-    bool parsedSuccess = reader.parse(*msg, *root, false);
-    if(!parsedSuccess){
-//dump json, if enabled at compile time
-#ifdef DUMPJSON
-        time_t rawtime;
-        struct tm * time;
-
-        std::time(&rawtime);
-        time = std::localtime (&rawtime);
-
-        char formatted[25];
-        sprintf(formatted, "dump-%d-%d_%d.%d.%d.dump", time->tm_mday, time->tm_mon, time->tm_hour, time->tm_min, time->tm_sec);
-
-        string path = JSONDIR;
-        path += formatted;
-
-        string body = reader.getFormattedErrorMessages();
-        body += "\n\n";
-        body += *msg;
-
-        FILE* f = fopen(path.c_str(), "w"); //TODO check file exists
-        fwrite(body.c_str(), 1, body.length(), f);
-        fclose(f);
-
-        FLog::Log(FLOG_ERROR, "LimeShared::HandleMessage - Failed to parse json. Dumped to \"%s\"", path.c_str());
-#else
-        FLog::Log(FLOG_ERROR, "LimeShared::HandleMessage - Failed to parse json.");
-#endif
-        return false;
-    }
-
-    return true;
-}
-
 void LimeShared::HandleMessage(NetMessage* msg){
     FLog::Log(FLOG_DEBUG, "LimeShared::HandleMessage - Handling message");
 
     //parse json messages
     Json::Value root;
-    if(!parseJSON(&msg->message, &root))
+    if(!JsonUtil::parseJSON(&msg->message, &root))
         return;
 
     //check type exists
