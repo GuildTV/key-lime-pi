@@ -140,7 +140,7 @@ void Freetype::CloseFreetype() {
     FT_Done_FreeType(library);
 }
 
-void Freetype::WriteString(char * text, TextChar *charSet, int x, int y, float scaleX, float scaleY) { //TODO - multiline text output?
+void Freetype::WriteString(const char * text, TextChar *charSet, int x, int y, float scaleX, float scaleY) { //TODO - multiline text output?
 #ifndef RENDERTEST
     scaleX *= 9.0f/16.0f; //skew for raspberry screen output, even though has been told aspect ratio is 16/9
 #endif

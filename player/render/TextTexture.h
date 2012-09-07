@@ -28,13 +28,13 @@ class TextTexture: public TextureRender {
     public:
         TextTexture(OverlayRenderer* render);
         //set the text to be rendered
-        void setText(char* s, TextChar* chars, int x, int y, float xs, float ys);
+        void setText(const char* s, TextChar* chars, int x, int y, float xs, float ys);
     protected:
         //render this
         void Render(int field);
     private:
         //text data values
-        char* text;
+        const char* text;
         TextChar* charset;
         int xPos;
         int yPos;

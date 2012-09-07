@@ -51,7 +51,7 @@ TextTexture::TextTexture(OverlayRenderer* render): TextureRender(render)  {
     samplerLoc = glGetUniformLocation(programObject, "s_texture");
 }
 
-void TextTexture::setText(char* s, TextChar* chars, int x, int y, float xs, float ys){
+void TextTexture::setText(const char* s, TextChar* chars, int x, int y, float xs, float ys){
     text = s;
     charset = chars;
     xPos = x;

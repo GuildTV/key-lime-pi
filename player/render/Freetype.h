@@ -63,7 +63,7 @@ class Freetype
         //load a range of characters into an array
         bool LoadFreetypeRange(string font_file, int height, int start, int end, TextChar *storage);
         //write a string to screen, using character array
-        void WriteString(char * text, TextChar *charSet, int x, int y, float scaleX, float scaleY);
+        void WriteString(const char * text, TextChar *charSet, int x, int y, float scaleX, float scaleY);
         //calculate the next power of 2 above num
         unsigned int pow2(unsigned int num);
 
