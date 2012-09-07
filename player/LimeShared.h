@@ -62,8 +62,6 @@ class LimeShared
         void VideoStop();
         //stop program
         void Stop(){run=false;};
-        //check file exists
-        bool FileExists(const char * filename);
         //get list of all the files in a folder
         vector<string> ListFiles(const char * path);
         //get netio

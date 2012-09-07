@@ -191,12 +191,12 @@ void LimeMaster::VideoPreview(std::string name, std::string script) {
     pathJson += "/script.json";
 
     //verify files exist
-    if(!FileExists(pathVid.c_str())){
+    if(!JsonUtil::FileExists(pathVid.c_str())){
         FLog::Log(FLOG_ERROR, "LimeMaster::VideoLoad - Couldnt find video file for \"%s\"", script.c_str());
         up.GetClient()->SendMessage("{\"type\":\"previewVideo\",\"status\":\"video doesnt exist\"}");
         return;
     }
-    if(!FileExists(pathJson.c_str())){
+    if(!JsonUtil::FileExists(pathJson.c_str())){
         FLog::Log(FLOG_ERROR, "LimeMaster::VideoLoad - Couldnt find script file for \"%s\"", script.c_str());
         up.GetClient()->SendMessage("{\"type\":\"previewVideo\",\"status\":\"script doesnt exist\"}");
         return;

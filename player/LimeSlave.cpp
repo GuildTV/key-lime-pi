@@ -40,7 +40,7 @@ void LimeSlave::playProcess(Json::Value *root, long *sec, long *nano){
 
 void LimeSlave::dataListProcess(Json::Value *root){
     vector<string> vec = ListFiles(DATAFOLDER);
-    Json::Value list = VectorToJSON(vec);
+    Json::Value list = JsonUtil::VectorToJSON(vec);
 
     Json::FastWriter writer;
 

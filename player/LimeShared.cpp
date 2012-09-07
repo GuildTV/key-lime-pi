@@ -49,12 +49,12 @@ void LimeShared::VideoLoad(std::string name, std::string script){
     pathJson += "/script.json";
 
     //verify files exist
-    if(!FileExists(pathVid.c_str())){
+    if(!JsonUtil::FileExists(pathVid.c_str())){
         FLog::Log(FLOG_ERROR, "LimeShared::VideoLoad - Couldnt find video file for \"%s\"", script.c_str());
         up.GetClient()->SendMessage("{\"type\":\"preloadVideo\",\"status\":\"video doesnt exist\"}");
         return;
     }
-    if(!FileExists(pathJson.c_str())){
+    if(!JsonUtil::FileExists(pathJson.c_str())){
         FLog::Log(FLOG_ERROR, "LimeShared::VideoLoad - Couldnt find script file for \"%s\"", script.c_str());
         up.GetClient()->SendMessage("{\"type\":\"preloadVideo\",\"status\":\"script doesnt exist\"}");
         return;
@@ -150,14 +150,6 @@ bool LimeShared::FinishSetup(){
     run = false;
 
     return true;
-}
-
-bool LimeShared::FileExists(const char * filename) {
-    if (FILE * file = fopen(filename, "r")) {
-        fclose(file);
-        return true;
-    }
-    return false;
 }
 
 vector<string> LimeShared::ListFiles(const char * path){

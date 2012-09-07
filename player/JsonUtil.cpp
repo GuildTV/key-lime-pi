@@ -78,3 +78,12 @@ bool JsonUtil::parseJSON(std::string *msg, Json::Value *root){
 
     return true;
 }
+
+
+bool JsonUtil::FileExists(const char * filename) {
+    if (FILE * file = fopen(filename, "r")) {
+        fclose(file);
+        return true;
+    }
+    return false;
+}

@@ -41,6 +41,8 @@ class JsonUtil
         static Json::Value VectorToJSON(std::vector<std::string> vec);
         static std::vector<std::string> JSONToVector(Json::Value data);
         static bool parseJSON(std::string *msg, Json::Value *root);
+        //check file exists
+        static bool FileExists(const char * filename);
     protected:
     private:
 };
