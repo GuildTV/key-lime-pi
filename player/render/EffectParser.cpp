@@ -159,6 +159,43 @@ TextureRender* EffectParser::ParseEffect(OverlayRenderer* renderer, Json::Value 
 
             return t;
 
+        } else if(type.compare("MaskTexture") == 0){
+            FLog::Log(FLOG_DEBUG, "EffectParser::ParseEffect (MaskTexture) - create");
+            MaskTexture *t = new MaskTexture(renderer, parent);
+            Json::Value dat = effect["data"];
+            if(dat.isMember("points")){
+                Json::Value points = dat["points"];
+                if(points.isArray() && points.size() >= 1){
+                    for(Json::ValueIterator it = points.begin(); it != points.end(); it++){
+                        Json::Value p = *it;
+                        if(p.isMember("bl") && p.isMember("br") && p.isMember("tl") && p.isMember("tr") && p.isMember("field")){
+                            Json::Value bl = p["bl"];
+                            Json::Value br = p["br"];
+                            Json::Value tl = p["tl"];
+                            Json::Value tr = p["tr"];
+                            if(bl.isMember("x") && bl.isMember("y") && br.isMember("x") && br.isMember("y") && tl.isMember("x") && tl.isMember("y") && tr.isMember("x") && tr.isMember("y")){
+                                float blX = bl["x"].asFloat();
+                                float blY = bl["y"].asFloat();
+                                float brX = br["x"].asFloat();
+                                float brY = br["y"].asFloat();
+                                float tlX = tl["x"].asFloat();
+                                float tlY = tl["y"].asFloat();
+                                float trX = tr["x"].asFloat();
+                                float trY = tr["y"].asFloat();
+                                int field = p["field"].asInt();
+
+                                t->addPoint(new MaskPoint(field, tlX, tlY, trX, trY, blX, blY, brX, brY));
+                            } else
+                                FLog::Log(FLOG_ERROR, "EffectParser::ParseEffect (MaskTexture) - data point is invalid");
+                        } else
+                            FLog::Log(FLOG_ERROR, "EffectParser::ParseEffect (MaskTexture) - data point is invalid");
+                    }
+                }
+            } else
+                FLog::Log(FLOG_ERROR, "EffectParser::ParseEffect (MaskTexture) - no data points");
+
+            return t;
+
         } else {
             FLog::Log(FLOG_DEBUG, "EffectParser::ParseEffect - unknown effect");
             return NULL;

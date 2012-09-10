@@ -41,6 +41,7 @@
 #include "render/FadeTexture.h"
 #include "render/PNGTexture.h"
 #include "render/SolidTexture.h"
+#include "render/MaskTexture.h"
 
 class OverlayRenderer;
 
