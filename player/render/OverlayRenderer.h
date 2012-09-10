@@ -44,12 +44,7 @@
 #include "render/Freetype.h"
 #include "net/NetIO.h"
 
-#include "render/TextTexture.h"
-#include "render/TextureRender.h"
-#include "render/ColourTexture.h"
-#include "render/FadeTexture.h"
-#include "render/PNGTexture.h"
-#include "render/SolidTexture.h"
+#include "render/EffectParser.h"
 
 #include "logger.h"
 
@@ -60,7 +55,7 @@ class OverlayRenderer {
 public:
     OverlayRenderer(NetIO *net);
     //setup the renderer to use specified script
-    void Create(std::string file);
+    void Create(std::string file, Json::Value data);
     //draw frame
     void Draw();
     //draw the prevideo frame

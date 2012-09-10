@@ -40,7 +40,7 @@ class LimeMaster: public LimeShared
 
     protected:
         //load video
-        void VideoPreview(std::string name, std::string script);
+        void VideoPreview(std::string name, std::string script, Json::Value *data);
 
         //process preload command beyond scope of LimeShared
         void preloadProcess(NetMessage *msg);

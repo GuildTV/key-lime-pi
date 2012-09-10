@@ -19,37 +19,37 @@
  *
  */
 
-#include "LimeTestPlay.h"
+#ifndef EFFECTPARSER_H
+#define EFFECTPARSER_H
 
-LimeTestPlay::LimeTestPlay() {
-    renderer = new OverlayRenderer(NULL);
-}
+#include <jsoncpp/json/json.h>
+#include <iostream>
+#include <fstream>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <sys/time.h>
+#include <string>
+#include <string.h>
+#include <vector>
 
-void LimeTestPlay::Run() {
-    Json::Value k("yay!");
-    Json::Value t;
-    t["test"] = k;
+#include "JsonUtil.h"
 
-    renderer->Create("data/new/script.json", t);
-    renderer->PreDraw();
-    renderer->Run();
-}
+#include "render/TextTexture.h"
+#include "render/TextureRender.h"
+#include "render/ColourTexture.h"
+#include "render/FadeTexture.h"
+#include "render/PNGTexture.h"
+#include "render/SolidTexture.h"
 
-int main(int argc, char *argv[]){
-    //open log
-    FLog::Open("TestPlay.log");
+class OverlayRenderer;
 
-    FLog::Log(FLOG_INFO, "Starting key-lime-pi test-play");
-    printf("Starting key-lime-pi test-play\n");
+class EffectParser {
+    public:
+        static bool Parse(OverlayRenderer* renderer, vector<TextureRender*> *renderElms, std::string file, Json::Value data);
+    protected:
+        static TextureRender* ParseEffect(OverlayRenderer* renderer, Json::Value effect, Json::Value *data);
+    private:
+};
 
-    //create and run program
-    LimeTestPlay lime;
-    lime.Run();
-
-    printf("Closing key-lime-pi test-play\n");
-    FLog::Log(FLOG_INFO, "Closing key-lime-pi test-play\n\n");
-
-    //close log
-    FLog::Close();
-    return 0;
-}
+#endif // EFFECTPARSER_H

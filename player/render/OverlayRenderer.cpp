@@ -50,7 +50,7 @@ OverlayRenderer::OverlayRenderer(NetIO *net){
     renderElms = vector<TextureRender*>();
 }
 
-void OverlayRenderer::Create(std::string file){
+void OverlayRenderer::Create(std::string file, Json::Value data){
     filename = file;
 
     renderElms.clear();
@@ -61,21 +61,7 @@ void OverlayRenderer::Create(std::string file){
     renderElms.push_back(p);
 #endif
 
-    TextTexture *t = new TextTexture(this);
-    t->setText("Hi you ;P",overlayText, 100,300,1,1);
-
-    FadeTexture *f = new FadeTexture(this, t);
-    f->addPoint(new FadePoint(50, 0.5f));
-    f->addPoint(new FadePoint(100, 0.0f));
-    f->addPoint(new FadePoint(300, 1.0f));
-    renderElms.push_back(f);
-
-    TextTexture *t2 = new TextTexture(this);
-    t2->setText("It Works XD",overlayText, 100,100,1,1);
-
-    ColourTexture *c = new ColourTexture(this, t2);
-    c->SetColour(1.0f, 0.0f, 1.0f, 0.8f);//purple
-    renderElms.push_back(c);
+    EffectParser::Parse(this, &renderElms, file, data);
 }
 
 bool OverlayRenderer::LoadOverlayText() {
@@ -89,7 +75,6 @@ bool OverlayRenderer::LoadOverlayText() {
     FLog::Log(FLOG_INFO, "OverlayRenderer::LoadOverlayText - loaded overlay text characters");
     return true;
 }
-
 void OverlayRenderer::RenderTexture(GLuint texture) {
     GLfloat vVertices[] = { -1.0f,  1.0f, 0.0f,  // Position 0
                                 0.0f,  1.0f,        // TexCoord 0

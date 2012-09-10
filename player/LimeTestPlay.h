@@ -29,7 +29,6 @@ class LimeTestPlay
 {
     public:
         LimeTestPlay();
-        virtual ~LimeTestPlay();
         void Run();
 
     protected:

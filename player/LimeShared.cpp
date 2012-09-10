@@ -30,7 +30,7 @@ LimeShared::LimeShared() {
 #endif
 }
 
-void LimeShared::VideoLoad(std::string name, std::string script){
+void LimeShared::VideoLoad(std::string name, std::string script, Json::Value *data){
     //complain if already playing
     if(videoPlaying){
         up.GetClient()->SendMessage("{\"type\":\"preloadVideo\",\"status\":\"already playing\"}");
@@ -67,7 +67,7 @@ void LimeShared::VideoLoad(std::string name, std::string script){
 
 #else
     //load gl stuff
-    renderer->Create(pathJson);
+    renderer->Create(pathJson, data);
 
 #ifdef LIMEMASTER
     //draw prevideo frame
@@ -217,11 +217,17 @@ void LimeShared::HandleMessagePreload(NetMessage *msg, Json::Value *root){
     }
     const string name = data["name"].asString();
 
+    if(!data.isMember("data")){
+        FLog::Log(FLOG_ERROR, "LimeShared::HandleMessage - Recieved 'preloadVideo' command without a 'data::data' field");
+        return;
+    }
+    Json::Value values = data["data"];
+
     //forward message to slave
     preloadProcess(msg);
 
     //load video
-    VideoLoad(name, script);//TODO pass data
+    VideoLoad(name, script, &values);
 }
 
 void LimeShared::HandleMessagePlay(NetMessage *msg, Json::Value *root){

@@ -64,6 +64,7 @@ void TextTexture::setText(const char* s, TextChar* chars, int x, int y, float xs
 }
 
 void TextTexture::Render(int field) {
+    //TODO - for some reason 'text' is always empty, despite it being set correctly in setText.
     if(defined)
         getRenderer()->getFT()->WriteString(text, charset, xPos, yPos, xScale, yScale);
 }

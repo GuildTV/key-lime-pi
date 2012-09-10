@@ -129,8 +129,14 @@ void LimeMaster::HandleMessageMore(NetMessage *msg, Json::Value* root){
         }
         const string name = data["name"].asString();
 
+        if(!data.isMember("data")){
+            FLog::Log(FLOG_ERROR, "LimeMaster::HandleMessage - Recieved 'previewVideo' command without a 'data::data' field");
+            return;
+        }
+        Json::Value values = data["data"];
+
         //play video at specified time
-        VideoPreview(name, script);
+        VideoPreview(name, script, &values);
     }
 }
 
@@ -172,7 +178,7 @@ bool LimeMaster::HandleMessageEarly(NetMessage *msg, Json::Value* root){
     return false;
 }
 
-void LimeMaster::VideoPreview(std::string name, std::string script) {
+void LimeMaster::VideoPreview(std::string name, std::string script, Json::Value *data) {
     //complain if already playing
     if(videoPlaying){
         up.GetClient()->SendMessage("{\"type\":\"previewVideo\",\"status\":\"already playing\"}");
@@ -209,7 +215,7 @@ void LimeMaster::VideoPreview(std::string name, std::string script) {
 
 #else
     //load gl stuff
-    renderer->Create(pathJson);
+    renderer->Create(pathJson, data);
 
     //draw prevideo frame
     renderer->PreDraw();
