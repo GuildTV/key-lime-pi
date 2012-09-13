@@ -69,10 +69,12 @@ TextureRender* EffectParser::ParseEffect(OverlayRenderer* renderer, Json::Value 
     }
 
     if(hasParent && !parent){
+        FLog::Log(FLOG_DEBUG, "EffectParser::ParseEffect - failed to load parent effect");
         return NULL;
     }
 
     if(!effect.isMember("type") || !effect.isMember("data")){
+        FLog::Log(FLOG_DEBUG, "EffectParser::ParseEffect - missing vital data for the curret effect");
         return parent;
     }
 
@@ -84,6 +86,7 @@ TextureRender* EffectParser::ParseEffect(OverlayRenderer* renderer, Json::Value 
             FLog::Log(FLOG_DEBUG, "EffectParser::ParseEffect (SolidTexture) - created");
             return new SolidTexture(renderer);
         } else if(type.compare("TextTexture") == 0){
+            FLog::Log(FLOG_DEBUG, "EffectParser::ParseEffect (TextTexture) - created");
             TextTexture *t = new TextTexture(renderer);
             Json::Value dat = effect["data"];
             if(dat.isMember("name") && dat.isMember("posX") && dat.isMember("posY")){
@@ -93,12 +96,15 @@ TextureRender* EffectParser::ParseEffect(OverlayRenderer* renderer, Json::Value 
                 string value = name;
                 if(data->isMember(name)){
                     value = data->get(name, dat["name"]).asString();
-                }
+                } else
+                    FLog::Log(FLOG_ERROR, "EffectParser::ParseEffect (TextTexture) - no text fill found for '%s'", name.c_str());
 
                 printf("hi - %s\n",value.c_str());
 
                 t->setText(value.c_str(), renderer->getDefaultCharSet(), posX, posY, 1.0f, 1.0f);//TODO dynamicify the rest of this
-            }
+            } else
+                FLog::Log(FLOG_ERROR, "EffectParser::ParseEffect (TextTexture) - incomplete data");
+
             return t;
 
         } else if(type.compare("PNGTexture") == 0){

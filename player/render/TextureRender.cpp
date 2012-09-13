@@ -28,15 +28,16 @@ TextureRender::TextureRender(OverlayRenderer* render) {
     hasParent = false;
 }
 
+TextureRender::~TextureRender() {
+    glDeleteTextures(1, &frame_texture);
+    glDeleteFramebuffers(1, &frame_buffer);
+    glDeleteProgram(programObject);
+}
+
 TextureRender::TextureRender(OverlayRenderer* render, TextureRender* rent) {
     renderer = render;
     parent = rent;
     hasParent = true;
-}
-
-TextureRender::~TextureRender() {
-    glDeleteFramebuffers(1, &frame_buffer);
-    glDeleteProgram(programObject);
 }
 
 GLuint TextureRender::Setup(const char *vShaderStr, const char *fShaderStr){
