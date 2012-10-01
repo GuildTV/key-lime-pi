@@ -210,17 +210,13 @@ void LimeMaster::VideoPreview(std::string name, std::string script, Json::Value 
 
 #ifndef RENDERTEST
     //load video
-    wrap = new OMXWrapper(&up, &videoPlaying);
+    wrap = new OMXWrapper(&up, &videoPlaying, renderer);
     wrap->Load(pathVid);//convert to bool or int?
 
-#else
+#endif
     //load gl stuff
     renderer->Create(pathJson, data);
 
-    //draw prevideo frame
-    renderer->PreDraw();
-
-#endif
     //set as loaded
     videoLoaded = true;
     videoPlaying = true;
@@ -230,9 +226,7 @@ void LimeMaster::VideoPreview(std::string name, std::string script, Json::Value 
 #ifndef RENDERTEST
     //play video
     wrap->Play();//is bool for success starting
-
 #else
-
     //play gl stuff
     renderer->Run();
     videoPlaying = false;

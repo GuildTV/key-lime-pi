@@ -19,9 +19,11 @@
  *
  */
 
+#ifndef RENDERTEST
 #include "OMX/OMXClock.h"
 #include "OMX/OMXThread.h"
 #include "OMX/OMXPlayerVideo.h"
+#endif
 
 #include "OverlayRenderer.h"
 
@@ -39,8 +41,9 @@ class MyRender
 {
 protected:
   bool                      m_open;
+#ifndef RENDERTEST
   OMXClock                  *m_av_clock;
-  bool                      m_use_thread;
+#endif
 
   pthread_attr_t      m_tattr;
   struct sched_param  m_sched_param;
@@ -53,18 +56,23 @@ protected:
   void UnLock();
 private:
   static void *Run(void *arg);
+#ifndef RENDERTEST
   OMXPlayerVideo *vid;
-  std::string filename;
+#endif
   OverlayRenderer *renderer;
   NetIO *netIO;
 
 public:
-  MyRender();
+  MyRender(NetIO *net);
   ~MyRender();
-  bool Open(NetIO *net, OMXClock *av_clock, bool use_thread, OMXPlayerVideo *m_player_video, std::string file);
+#ifndef RENDERTEST
+  bool Play(OMXClock *av_clock, OMXPlayerVideo *m_player_video);
+#else
+  bool Play();
+#endif
   void Process();
 
-  bool Create();
+  void Create(std::string file, Json::Value data);
   bool Running();
   pthread_t ThreadHandle();
   bool Close();

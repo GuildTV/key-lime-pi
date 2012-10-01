@@ -155,6 +155,8 @@ void OverlayRenderer::DrawTimeStamp() {
 }
 
 void OverlayRenderer::Run() {
+    eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext);
+
     running = true;
 #ifdef RENDERTEST
     int frameCount = 0;
@@ -207,7 +209,15 @@ void OverlayRenderer::PreDraw() {
 #endif
     //swap buffers
     eglSwapBuffers(eglDisplay, eglSurface);
+
+    eglMakeCurrent(eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
 }
+
+#ifdef LIMESLAVE
+void OverlayRenderer::unBind() {
+    eglMakeCurrent(eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+}
+#endif
 
 GLboolean OverlayRenderer::esCreateWindow (const char* title) {
     if (!WinCreate (title)) {

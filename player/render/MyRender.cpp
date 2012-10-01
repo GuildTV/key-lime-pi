@@ -25,7 +25,7 @@
 #include <unistd.h>
 #include <sys/time.h>
 
-MyRender::MyRender()
+MyRender::MyRender(NetIO *net)
 {
 pthread_mutex_init(&m_lock, NULL);
   pthread_attr_setdetachstate(&m_tattr, PTHREAD_CREATE_JOINABLE);
@@ -33,6 +33,9 @@ pthread_mutex_init(&m_lock, NULL);
   m_thread    = 0;
   m_bStop     = false;
   m_running   = false;
+
+  netIO = net;
+  renderer = new OverlayRenderer(netIO);
 }
 
 MyRender::~MyRender()
@@ -45,37 +48,36 @@ MyRender::~MyRender()
 
 void MyRender::Lock()
 {
-  if(m_use_thread)
     pthread_mutex_lock(&m_lock);
 }
 
 void MyRender::UnLock()
 {
-  if(m_use_thread)
     pthread_mutex_unlock(&m_lock);
 }
 
+#ifndef RENDERTEST
+bool MyRender::Play(OMXClock *av_clock, OMXPlayerVideo *m_player_video) {
+#else
+bool MyRender::Play() {
+#endif
 
-bool MyRender::Open(NetIO *net, OMXClock *av_clock, bool use_thread, OMXPlayerVideo *m_player_video, std::string file)
-{
+#ifndef RENDERTEST
   if (!av_clock)
     return false;
+#endif
 
   if(ThreadHandle())
     Close();
 
+#ifndef RENDERTEST
   m_av_clock    = av_clock;
-  m_use_thread  = use_thread;
   vid = m_player_video;
-  filename = file;
-  netIO = net;
-
-  //m_FlipTimeStamp = m_av_clock->GetAbsoluteClock();
-  printf("start?");
+#endif
 
   if(m_running)
   {
-    CLog::Log(LOGERROR, "MyRender::%s - Thread already running\n", __func__);
+    FLog::Log(FLOG_ERROR, "MyRender::%s - Thread already running\n", __func__);
     return false;
   }
 
@@ -84,7 +86,7 @@ bool MyRender::Open(NetIO *net, OMXClock *av_clock, bool use_thread, OMXPlayerVi
 
   pthread_create(&m_thread, &m_tattr, &MyRender::Run, this);
 
-  CLog::Log(LOGDEBUG, "MyRender::%s - Thread with id %d started\n", __func__, (int)m_thread);
+  FLog::Log(FLOG_DEBUG, "MyRender::%s - Thread with id %d started\n", __func__, (int)m_thread);
   return true;
 }
 
@@ -92,7 +94,7 @@ bool MyRender::Close()
 {
   if(!m_running)
   {
-    CLog::Log(LOGDEBUG, "MyRender::%s - No thread running\n", __func__);
+    FLog::Log(FLOG_DEBUG, "MyRender::%s - No thread running\n", __func__);
     return false;
   }
 
@@ -106,7 +108,7 @@ bool MyRender::Close()
 
   m_thread = 0;
 
-  CLog::Log(LOGDEBUG, "MyRender::%s - Thread stopped\n", __func__);
+  FLog::Log(FLOG_DEBUG, "MyRender::%s - Thread stopped\n", __func__);
   return true;
 }
 
@@ -125,17 +127,25 @@ void *MyRender::Run(void *arg)
   MyRender *thread = static_cast<MyRender *>(arg);
   thread->Process();
 
-  CLog::Log(LOGDEBUG, "MyRender::%s - Exited thread with  id %d\n", __func__, (int)thread->ThreadHandle());
+  FLog::Log(FLOG_DEBUG, "MyRender::%s - Exited thread with  id %d\n", __func__, (int)thread->ThreadHandle());
   pthread_exit(NULL);
 }
 
+void MyRender::Create(std::string file, Json::Value data){
+  //create the renderer
+  renderer->Create(file, data);
+
+#ifdef LIMEMASTER
+    //draw prevideo frame
+    renderer->PreDraw();
+#else
+    //unbind context
+    renderer->unBind();
+#endif
+}
 
 void MyRender::Process() {
-  //create the renderer
-  renderer = new OverlayRenderer(netIO);
-  renderer->Create(filename);
-  //predraw on the video
-  renderer->PreDraw();
+#ifndef RENDERTEST
   //define the start time of the video
   double startTime = 2840000.0; // currently vid->GetCurrentPTS*1.75??
 
@@ -146,8 +156,12 @@ void MyRender::Process() {
 	      //start rendering
 		  renderer->Run();
 		  break;
-
 	  }
-
   }
+#else
+    //start rendering
+    renderer->Run();
+#endif
+
+  m_running = false;
 }

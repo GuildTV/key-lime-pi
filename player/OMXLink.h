@@ -68,8 +68,7 @@ extern "C" {
 class OMXLink
 {
     public:
-        OMXLink(NetIO *net);
-        ~OMXLink();
+        OMXLink(NetIO *net, MyRender *render);
         //load the video
         bool Load(std::string m_filename);
         //play the video
@@ -97,7 +96,7 @@ class OMXLink
         DllBcmHost        m_BcmHost;
         OMXPlayerVideo    m_player_video;
         bool              m_has_video;
-        MyRender    m_my_render;
+        MyRender*    m_my_render;
 
         CRBP                  *g_RBP;
         COMXCore              *g_OMX;

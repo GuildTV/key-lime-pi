@@ -22,7 +22,7 @@
 #include "LimeTestPlay.h"
 
 LimeTestPlay::LimeTestPlay() {
-    renderer = new OverlayRenderer(NULL);
+    renderer = new MyRender(NULL);
 }
 
 void LimeTestPlay::Run() {
@@ -31,8 +31,8 @@ void LimeTestPlay::Run() {
     t["test"] = k;
 
     renderer->Create("data/new/script.json", t);
-    renderer->PreDraw();
-    renderer->Run();
+    renderer->Play();
+    while(renderer->Running()){}
 }
 
 int main(int argc, char *argv[]){

@@ -23,7 +23,7 @@
 #define LIMETESTPLAY_H
 
 #include "logger.h"
-#include "render/OverlayRenderer.h"
+#include "render/MyRender.h"
 
 class LimeTestPlay
 {
@@ -34,7 +34,7 @@ class LimeTestPlay
     protected:
 
     private:
-        OverlayRenderer* renderer;
+        MyRender* renderer;
 };
 
 #endif // LIMETESTPLAY_H

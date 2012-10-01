@@ -25,9 +25,7 @@ LimeShared::LimeShared() {
     run = false;
     videoLoaded = false;
     videoPlaying = false;
-#ifdef RENDERTEST
-    renderer = new OverlayRenderer(&up);
-#endif
+    renderer = new MyRender(&up);
 }
 
 void LimeShared::VideoLoad(std::string name, std::string script, Json::Value *data){
@@ -62,19 +60,12 @@ void LimeShared::VideoLoad(std::string name, std::string script, Json::Value *da
 
 #ifndef RENDERTEST
     //load video
-    wrap = new OMXWrapper(&up, &videoPlaying);
+    wrap = new OMXWrapper(&up, &videoPlaying, renderer);
     wrap->Load(pathVid);//convert to bool or int?
 
-#else
+#endif
     //load gl stuff
     renderer->Create(pathJson, data);
-
-#ifdef LIMEMASTER
-    //draw prevideo frame
-    renderer->PreDraw();
-#endif
-
-#endif
 
     std::string msg = "{\"type\":\"preloadVideo\",\"name\":\"";
     msg += name;
@@ -106,11 +97,9 @@ void LimeShared::VideoPlay() {
 #ifndef RENDERTEST
     //play video
     wrap->Play();//is bool for success starting
-
 #else
-
     //play gl stuff
-    renderer->Run();
+    renderer->Play();
     videoPlaying = false;
 #endif
 }

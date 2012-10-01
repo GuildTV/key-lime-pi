@@ -45,9 +45,10 @@ private:
   static void *Run(void *arg);
   OMXLink* omx;
   void Process();
+  MyRender* renderer;
 
 public:
-  OMXWrapper(NetIO *net, bool *playing);
+  OMXWrapper(NetIO *net, bool *playing, MyRender *render);
 
   ~OMXWrapper();
   //play video in new thread

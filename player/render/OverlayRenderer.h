@@ -89,6 +89,10 @@ public:
     //create a new program object
     GLuint CreateProgram(const char *vShaderStr, const char *fShaderStr, GLuint *programObject);
 
+#ifdef LIMESLAVE
+    void unBind();
+#endif
+
 protected:
     //create opengl window
     GLboolean esCreateWindow (const char* title);

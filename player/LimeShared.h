@@ -96,9 +96,8 @@ class LimeShared
         void HandleMessagePlay(NetMessage *msg, Json::Value* root);
 
         //pointer to video player/overlayrenderer
-#ifdef RENDERTEST
-        OverlayRenderer* renderer;
-#else
+        MyRender* renderer;
+#ifndef RENDERTEST
         OMXWrapper* wrap;
 #endif
 

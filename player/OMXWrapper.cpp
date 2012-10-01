@@ -25,10 +25,11 @@
 #include <unistd.h>
 #include <sys/time.h>
 
-OMXWrapper::OMXWrapper(NetIO *net, bool *playing)
+OMXWrapper::OMXWrapper(NetIO *net, bool *playing, MyRender *render)
 {
   netIO = net;
   videoPlaying = playing;
+  renderer = render;
 
 pthread_mutex_init(&m_lock, NULL);
   pthread_attr_setdetachstate(&m_tattr, PTHREAD_CREATE_JOINABLE);
@@ -104,7 +105,7 @@ void *OMXWrapper::Run(void *arg)
 
 void OMXWrapper::Load(string file) {
     //create new omxlink
-    omx = new OMXLink(netIO);
+    omx = new OMXLink(netIO, renderer);
     //load video file
     omx->Load(file);
 }
