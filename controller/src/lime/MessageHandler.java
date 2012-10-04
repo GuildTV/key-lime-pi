@@ -20,6 +20,8 @@ package lime;
  *
  */
 
+import gui.control.TitleElement;
+import JSON.JSONArray;
 import JSON.JSONException;
 import JSON.JSONObject;
 
@@ -96,7 +98,6 @@ public class MessageHandler implements Runnable {
 	 *            Message to handle
 	 */
 	private void handle(NetMessage msg) {
-		System.out.println(msg.getMessage());
 		// try to parse json
 		try {
 			// parse json message
@@ -128,6 +129,26 @@ public class MessageHandler implements Runnable {
 				return;
 
 				// check if response about slave connection status
+			} else if (type.equals("dataList")) {
+				control.getFrame().getControlPanel().getTitlePanel().reset();
+				
+				JSONArray arr = json.getJSONArray("data");
+				
+				for(int i=0; i < arr.length(); i++){
+					TitleElement t = control.getFrame().getControlPanel().getTitlePanel().create();
+					t.setNameValue(arr.getString(i));
+				}
+				
+				control.getFrame().getControlPanel().getTitlePanel().revalidate();
+				control.getFrame().getControlPanel().getTitlePanel().repaint();
+				
+				// log error
+				control.log("Refreshed Burn list");
+				
+				return;
+				
+			} else {
+				control.log("Received message of unknown type '"+type+"'");
 			}
 
 		} catch (JSONException e) {

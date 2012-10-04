@@ -20,8 +20,6 @@ package gui;
  *
  */
 
-import gui.control.Connect;
-
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -45,8 +43,6 @@ public class ConnectDialog extends JDialog implements ActionListener {
 
 	// frame owner
 	private MainFrame owner;
-	// destination of conenct
-	private Connect destination;
 
 	// form title
 	private JLabel title;
@@ -69,8 +65,8 @@ public class ConnectDialog extends JDialog implements ActionListener {
 	 * @param dest
 	 *            Destination
 	 */
-	public ConnectDialog(MainFrame owner, Connect dest) {
-		this(owner, dest, "");
+	public ConnectDialog(MainFrame owner) {
+		this(owner, "");
 	}
 
 	/**
@@ -83,21 +79,13 @@ public class ConnectDialog extends JDialog implements ActionListener {
 	 * @param msg
 	 *            Error message
 	 */
-	public ConnectDialog(MainFrame owner, Connect dest, String msg) {
+	public ConnectDialog(MainFrame owner, String msg) {
 		super(owner);
 
 		this.owner = owner;
-		destination = dest;
-
-		// determine name from destination
-		String name = "";
-		if (destination == Connect.SLAVE)
-			name = "slave-pi";
-		else if (destination == Connect.MASTER)
-			name = "master-pi";
 
 		// set title
-		setTitle("Connect to " + name);
+		setTitle("Connect to master-pi");
 
 		// setup dialog frame
 		setSize(500, 200);
@@ -110,7 +98,7 @@ public class ConnectDialog extends JDialog implements ActionListener {
 		c.ipady = 5;
 
 		// create title
-		title = new JLabel("Connect to " + name);
+		title = new JLabel("Connect to master-pi");
 		title.setFont(new Font("Dialog", 1, 20));
 		c.fill = GridBagConstraints.VERTICAL;
 		c.gridx = 0;
@@ -134,7 +122,6 @@ public class ConnectDialog extends JDialog implements ActionListener {
 		c.gridx = 1;
 		c.gridy = 1;
 		add(address, c);
-		address.setText("127.0.0.1");// TODO remove later
 
 		JPanel bPan = new JPanel();
 		c = new GridBagConstraints();
@@ -172,19 +159,14 @@ public class ConnectDialog extends JDialog implements ActionListener {
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		if (e.getActionCommand().equals("submit")) {
-			// handle connect to master
-			if (destination == Connect.MASTER) {
-				// connect to address
-				String ret = owner.getControl().connect(address.getText());
-				if (ret == null)
-					// close on success
-					dispose();
-				else
-					// set error on failure
-					error.setText(ret);
-			} else {
-				// TODO - handle slave connection
-			}
+			// connect to address
+			String ret = owner.getControl().connect(address.getText());
+			if (ret == null)
+				// close on success
+				dispose();
+			else
+				// set error on failure
+				error.setText(ret);
 		} else if (e.getActionCommand().equals("cancel")) {
 			// close on cancel button
 			dispose();

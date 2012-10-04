@@ -79,11 +79,12 @@ public class TitleElement extends JPanel implements ActionListener {
 		c.fill = GridBagConstraints.HORIZONTAL;
 		c.gridx = 0;
 		c.gridy = 0;
+		c.weightx = 1.0;
 		c.insets = new Insets(5, 5, 5, 5);
 		add(nameLabel, c);
 
 		// load/play button
-		playButton = new JButton("Load");
+		playButton = new JButton("Play");
 		playButton.setActionCommand("play");
 		playButton.addActionListener(this);
 		c = new GridBagConstraints();

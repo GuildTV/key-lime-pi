@@ -26,7 +26,6 @@ import javax.swing.JDialog;
 import net.NetIO;
 import gui.ConnectDialog;
 import gui.MainFrame;
-import gui.control.Connect;
 
 /**
  * Controller for key-lime-pi
@@ -109,7 +108,7 @@ public class LimeController implements Logger, NetHandler {
 			return;
 
 		// create window and show it
-		ConnectDialog dialog = new ConnectDialog(frame, Connect.MASTER);
+		ConnectDialog dialog = new ConnectDialog(frame);
 		dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 		dialog.setVisible(true);
 	}

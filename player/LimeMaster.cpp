@@ -79,9 +79,7 @@ void LimeMaster::HandleMessageDown(NetMessage* msg){
 
         for(int o = 0; o < dat1.size(); o++){
             for(int i = 0; i < dat2.size(); i++){
-                printf("%s %s ok\n", dat1[o].c_str(), dat2[i].c_str());
                 if(dat1[o] == dat2[i]){
-                    printf("push\n");
                     overlap.push_back(dat2[i]);
                     goto cont;
                 }
@@ -99,6 +97,7 @@ void LimeMaster::HandleMessageDown(NetMessage* msg){
         json.resize(json.size()-1);
         json += "}";
         up.GetClient()->SendMessage(json);
+        printf(json.c_str());
     }
 }
 

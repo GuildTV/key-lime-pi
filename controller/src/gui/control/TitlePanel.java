@@ -39,24 +39,13 @@ import javax.swing.JScrollPane;
 public class TitlePanel extends JPanel {
 	private static final long serialVersionUID = 8021157860217699741L;
 
-	// amount to increase storage array by
-	private static final int ARRAY_INCREMENT = 10;
-
 	// frame owner
 	private MainFrame owner;
-
-	// lock for array
-	private Object arrayLock = new Object();
 
 	// scroll pane
 	private JScrollPane pane;
 	// panel inside scroll pane
 	private JPanel panel;
-
-	// array of elements
-	private TitleElement elements[];
-	// element count
-	private int elmCount = 0;
 
 	/**
 	 * Create the TitlePanel
@@ -76,9 +65,6 @@ public class TitlePanel extends JPanel {
 		pane = new JScrollPane(panel, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 		pane.setBorder(BorderFactory.createEmptyBorder());
 		add(pane, BorderLayout.CENTER);
-
-		// create new element storages
-		elements = new TitleElement[ARRAY_INCREMENT];
 	}
 
 	/**
@@ -102,26 +88,6 @@ public class TitlePanel extends JPanel {
 	 *            Element to add
 	 */
 	public void addElm(TitleElement elm) {
-		// get lock
-		synchronized (arrayLock) {
-			try {
-				// try adding and increase count
-				elements[elmCount] = elm;
-				elmCount++;
-			} catch (ArrayIndexOutOfBoundsException aoe) {
-				// create a bigger array
-				TitleElement elms[] = new TitleElement[elements.length + ARRAY_INCREMENT];
-				// copy data into it
-				System.arraycopy(elements, 0, elms, 0, elmCount);
-				// add new item
-				elms[elmCount] = elm;
-				// increate count
-				elmCount++;
-				// overwrite old array
-				elements = elms;
-			}
-		}
-
 		// add element to panel
 		panel.add(elm);
 	}
@@ -139,8 +105,6 @@ public class TitlePanel extends JPanel {
 	 * Reset the panel
 	 */
 	public void reset() {
-		// create new array
-		elements = new TitleElement[ARRAY_INCREMENT];
 		// remove all the elements
 		panel.removeAll();
 	}
