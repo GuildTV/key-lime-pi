@@ -51,7 +51,7 @@ void LimeTimer::UnLock(){
     pthread_mutex_unlock(&m_lock);
 }
 
-bool LimeTimer::VideoPlay(long sec, long nano)
+bool LimeTimer::VideoPlay(string scr, long sec, long nano)
 {
   lime->getNetUp().GetClient()->SendMessage("{\"type\":\"playVideo\",\"status\":\"waiting for playback\"}");
 
@@ -61,6 +61,7 @@ bool LimeTimer::VideoPlay(long sec, long nano)
   running = true;
   playNano = nano;
   playSec = sec;
+  script = scr;
 
   FLog::Log(FLOG_INFO, "LimeTimer::%s - Thread with id %d started", __func__, (int)m_thread);
   return true;
@@ -94,7 +95,7 @@ void LimeTimer::ThreadProcess() {
         clock_gettime(CLOCK_REALTIME, &ts);
     }
     //call back out to play video
-    lime->VideoPlay();
+    lime->VideoPlay(script);
     running = false;
     FLog::Log(FLOG_INFO, "LimeTimer::ThreadProcess - Watcher stopped");
 }

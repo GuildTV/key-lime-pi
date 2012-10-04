@@ -27,7 +27,7 @@ LimeShared::LimeShared() {
     videoPlaying = false;
 }
 
-void LimeShared::VideoLoad(std::string script){
+void LimeShared::VideoPlay(std::string script){
     //complain if already playing
     if(videoPlaying){
         up.GetClient()->SendMessage("{\"type\":\"preloadVideo\",\"status\":\"already playing\"}");
@@ -57,37 +57,14 @@ void LimeShared::VideoLoad(std::string script){
         return;
     }
 
+    videoPlaying = true;
+
 #ifndef RENDERTEST
     //load video
     wrap = new OMXWrapper(&up, &videoPlaying);
     wrap->Load(pathVid);//convert to bool or int?
 
 #endif
-
-    std::string msg = "{\"type\":\"preloadVideo\",\"script\":\"";
-    msg += script;
-    msg += "\",\"status\":\"video loaded\"}";
-    up.GetClient()->SendMessage(msg);
-
-    //set as loaded
-    videoLoaded = true;
-}
-
-void LimeShared::VideoPlay() {
-    //complain if video isnt loaded
-    if(!videoLoaded){
-        up.GetClient()->SendMessage("{\"type\":\"playVideo\",\"status\":\"nothing loaded\"}");
-        return;
-    }
-
-    //complain if already playing
-    if(videoPlaying){
-        up.GetClient()->SendMessage("{\"type\":\"playVideo\",\"status\":\"already playing\"}");
-        return;
-    }
-
-    videoLoaded = false;
-    videoPlaying = true;
 
     up.GetClient()->SendMessage("{\"type\":\"playVideo\",\"status\":\"starting playback\"}");
 
@@ -167,11 +144,7 @@ void LimeShared::HandleMessage(NetMessage* msg){
 
     const string type = root["type"].asString();
 
-    //preload a video to be played
-    if(type.compare("preloadVideo") == 0){
-        HandleMessagePreload(msg, &root);
-
-    } else if (type.compare("playVideo") == 0){
+    if (type.compare("playVideo") == 0){
         HandleMessagePlay(msg, &root);
 
     } else if (type.compare("dataList") == 0){
@@ -182,32 +155,19 @@ void LimeShared::HandleMessage(NetMessage* msg){
     HandleMessageMore(msg, &root);
 }
 
-void LimeShared::HandleMessagePreload(NetMessage *msg, Json::Value *root){
-    //check name exists
-    if(!root->isMember("script")){
-        FLog::Log(FLOG_ERROR, "LimeShared::HandleMessage - Recieved 'preloadVideo' command without a 'script' field");
+void LimeShared::HandleMessagePlay(NetMessage *msg, Json::Value *root){
+
+    if(!(*root).isMember("script")){
+        FLog::Log(FLOG_ERROR, "LimeShared::HandleMessage - Recieved 'playVideo' command without a 'script' field");
         return;
     }
     const string script = (*root)["script"].asString();
-
-    //forward message to slave
-    preloadProcess(msg);
-
-    //load video
-    VideoLoad(script);
-}
-
-void LimeShared::HandleMessagePlay(NetMessage *msg, Json::Value *root){
-    if(!videoLoaded){
-        up.GetClient()->SendMessage("{\"type\":\"playVideo\",\"status\":\"nothing loaded\"}");
-        return;
-    }
 
     long nano, sec;
 
     playProcess(root, &sec, &nano);
 
     //play video at specified time
-    limeTimer->VideoPlay(sec, nano);
+    limeTimer->VideoPlay(script, sec, nano);
 }
 

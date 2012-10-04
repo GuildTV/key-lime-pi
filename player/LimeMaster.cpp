@@ -105,10 +105,6 @@ bool LimeMaster::HandleMessageEarly(NetMessage *msg, Json::Value* root){
     return false;
 }
 
-void LimeMaster::preloadProcess(NetMessage *msg){
-    pi.GetClient()->SendMessage(msg->message);
-}
-
 void LimeMaster::playProcess(Json::Value *root, long *sec, long *nano){
     //get time
     timespec time;

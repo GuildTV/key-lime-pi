@@ -52,10 +52,8 @@ class LimeShared
 {
     public:
         LimeShared();
-        //load video
-        void VideoLoad(std::string script);
-        //start videoplayback
-        void VideoPlay();
+        //load videoplayback
+        void VideoPlay(std::string script);
         //stop video playback
         void VideoStop();
         //stop program
@@ -86,11 +84,9 @@ class LimeShared
         virtual void HandleMessageMore(NetMessage *msg, Json::Value* root){};
         virtual bool HandleMessageEarly(NetMessage *msg, Json::Value* root){return false;};
 
-        virtual void preloadProcess(NetMessage *msg){};
         virtual void playProcess(Json::Value *root, long *sec, long *nano) = 0;
         virtual void dataListProcess(Json::Value *root) = 0;
 
-        void HandleMessagePreload(NetMessage *msg, Json::Value* root);
         void HandleMessagePlay(NetMessage *msg, Json::Value* root);
 
         //pointer to video player/overlayrenderer

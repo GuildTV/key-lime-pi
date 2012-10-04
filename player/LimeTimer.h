@@ -51,7 +51,7 @@ public:
     bool ThreadRunning() {return running;};
 
     //play video, at specified time
-    bool VideoPlay(long sec, long nano);
+    bool VideoPlay(string scr, long sec, long nano);
 
     void Lock();
     void UnLock();
@@ -68,6 +68,7 @@ private:
     pthread_mutex_t m_lock;
     long playSec;
     long playNano;
+    string script;
 
     LimeShared  *lime;
 };
