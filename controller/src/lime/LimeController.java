@@ -44,9 +44,6 @@ public class LimeController implements Logger, NetHandler {
 	// message handler
 	MessageHandler handler;
 
-	// is controller in live mode
-	private boolean liveMode = false;
-
 	/**
 	 * Create this controller
 	 */
@@ -128,25 +125,6 @@ public class LimeController implements Logger, NetHandler {
 	}
 
 	/**
-	 * Check if in live mode
-	 * 
-	 * @return Is it in live mode
-	 */
-	public boolean isLive() {
-		return liveMode;
-	}
-
-	/**
-	 * Set live mode
-	 * 
-	 * @param live
-	 *            Boolean state
-	 */
-	public void setLive(boolean live) {
-		liveMode = live;
-	}
-
-	/**
 	 * Check if we are connected to master-pi
 	 * 
 	 * @return Connection status
@@ -193,12 +171,6 @@ public class LimeController implements Logger, NetHandler {
 		// toggle menu buttons
 		frame.getMyMenu().setVisDisconnect(false);
 		frame.getMyMenu().setVisConnect(true);
-
-		// clear currently loaded element
-		frame.getControlPanel().getTitlePanel().setLoaded(null);
-
-		// force title panel repaint
-		frame.getControlPanel().getTitlePanel().repaint();
 	}
 
 	/**

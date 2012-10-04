@@ -34,7 +34,7 @@ class LimeMaster: public LimeShared
     public:
         LimeMaster();
         //run program
-        void Run();
+        void Run(char *addr);
         //handle a recieved message
         void HandleMessageDown(NetMessage* msg);
 
@@ -54,9 +54,6 @@ class LimeMaster: public LimeShared
 
         //handle commands before LimeShared
         bool HandleMessageEarly(NetMessage *msg, Json::Value* root);
-
-        //is slave pi connected
-        bool piConnected;
 };
 
 #endif // LIMEMASTER_H

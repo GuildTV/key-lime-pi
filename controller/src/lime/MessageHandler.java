@@ -103,26 +103,8 @@ public class MessageHandler implements Runnable {
 			JSONObject json = new JSONObject(msg.getMessage());
 			String type = json.getString("type");
 
-			// check if response about preloading
-			if (type.equals("preloadVideo")) {
-				String status = json.getString("status");
-				// check status response
-				if (status.equals("video loaded")) {
-					// change load/play button
-					control.getFrame().getControlPanel().getTitlePanel().setLoadedByName(json.getString("name"));
-					// set text in action window
-					control.getFrame().getControlPanel().getConnectionPanel().setAction("video ready");
-					return;
-				}
-
-				// log error
-				control.log("Failed to load video with error '" + json.getString("status") + "'");
-				// set text in action window
-				control.getFrame().getControlPanel().getConnectionPanel().setAction("waiting");
-				return;
-
-				// check if response about playing video
-			} else if (type.equals("playVideo")) {
+			// check if response about playing
+			if (type.equals("playVideo")) {
 				String status = json.getString("status");
 				// check status response
 				if (status.equals("starting playback")) {
@@ -146,10 +128,6 @@ public class MessageHandler implements Runnable {
 				return;
 
 				// check if response about slave connection status
-			} else if (type.equals("slaveConnected")) {
-				// act on response from slave poll
-				control.getFrame().getControlPanel().getConnectionPanel().pollSlaveResponse(json.getString("status"));
-				return;
 			}
 
 		} catch (JSONException e) {

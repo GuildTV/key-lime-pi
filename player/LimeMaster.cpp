@@ -28,25 +28,18 @@ LimeMaster::LimeMaster() {
     videoPlaying = false;
 }
 
-void LimeMaster::Run() {
+void LimeMaster::Run(char *addr) {
     run = true;
 
     if(!CreateServer(CONTROLPORT))
         return;
 
     //connection to slave
-    string addr = "192.168.1.99";
     if(pi.CreateClient(addr, PIPORT) != 0) {
-        FLog::Log(FLOG_ERROR, "LimeMaster::Run - failed to connect to slave '%s'", addr.c_str());
-        //try to connect with addresses sent from control
-        while(!piConnected){
-            NetMessage* msg = up.GetMessageQueue()->Pop(true);
-            HandleMessage(msg);
-        }
+        FLog::Log(FLOG_ERROR, "LimeMaster::Run - failed to connect to slave '%s'", addr);
+        printf("Could not connect to pi at '%s'\n", addr);
+        return;
     }
-
-    //set as slave connected
-    piConnected = true;
 
     //start listening to whatever pi is saying to us
     downstream = new LimeMasterDownStream(this, &pi);
@@ -110,40 +103,6 @@ void LimeMaster::HandleMessageDown(NetMessage* msg){
 }
 
 bool LimeMaster::HandleMessageEarly(NetMessage *msg, Json::Value* root){
-    const string type = (*root)["type"].asString();
-
-    if(type.compare("slaveConnected") == 0){
-        if(piConnected)
-            up.GetClient()->SendMessage("{\"type\":\"slaveConnected\",\"status\":\"true\"}");
-        else
-            up.GetClient()->SendMessage("{\"type\":\"slaveConnected\",\"status\":\"false\"}");
-        return true;
-    }
-
-    //if slave is not connected
-    if(!piConnected) {
-        if(type.compare("slaveAddress") == 0){
-            //check address exists
-            if(!root->isMember("address")){
-                FLog::Log(FLOG_ERROR, "LimeMaster::HandleMessage - Recieved 'slaveAddress' command without a 'address' field");
-                return true;//TODO inform control
-            }
-            string addr = (*root)["address"].asString();
-
-            //try to connect to new address
-            if(pi.CreateClient(addr, PIPORT) == 0){
-                piConnected = true;
-            } else {
-                FLog::Log(FLOG_ERROR, "LimeMaster::HandleMessage - failed to connect to slave '%s'", addr.c_str());
-            }
-        } else {
-            //unexpected message recieved
-            FLog::Log(FLOG_ERROR, "LimeMaster::HandleMessage - Recieved unexpected message, when not connected to slave");
-            //TODO inform control
-        }
-        return true;
-    }
-
     return false;
 }
 
@@ -174,24 +133,16 @@ void LimeMaster::playProcess(Json::Value *root, long *sec, long *nano){
 }
 
 void LimeMaster::dataListProcess(Json::Value *root){
-    if(piConnected){
-        pi.GetClient()->SendMessage("{\"type\":\"dataList\"}");
-
-    } else {
-        vector<string> vec = ListFiles(DATAFOLDER);
-        Json::Value list = JsonUtil::VectorToJSON(vec);
-
-        Json::FastWriter writer;
-
-        std::string json = "{\"type\":\"dataList\",\"data\":";
-        json += writer.write(list);
-        json.resize(json.size()-1);
-        json += "}";
-        up.GetClient()->SendMessage(json);
-    }
+    pi.GetClient()->SendMessage("{\"type\":\"dataList\"}");
 }
 
 int main(int argc, char *argv[]){
+
+    if(argc != 2) {
+        printf("USAGE: master.bin <slave ip>\n\n");
+        return 0;
+    }
+
     //open log
     FLog::Open("Master.log");
 
@@ -200,7 +151,7 @@ int main(int argc, char *argv[]){
 
     //create and run program
     LimeMaster lime;
-    lime.Run();
+    lime.Run(argv[1]);
 
     printf("Closing key-lime-pi master\n");
     FLog::Log(FLOG_INFO, "Closing key-lime-pi master\n\n");

@@ -27,6 +27,7 @@ import javax.swing.JFrame;
 
 import common.StringUtil;
 
+import lime.CommandBuilder;
 import lime.LimeController;
 
 /**
@@ -115,26 +116,6 @@ public class MainFrame extends JFrame {
 	}
 
 	/**
-	 * Save titles
-	 * 
-	 * @param path
-	 *            Filename to save to
-	 */
-	public void saveTitles(String path) {
-		controlPanel.saveTitles(path);
-	}
-
-	/**
-	 * Load titles
-	 * 
-	 * @param path
-	 *            Filename to load from
-	 */
-	public void loadTitles(String path) {
-		controlPanel.loadTitles(path);
-	}
-
-	/**
 	 * Check if script name is valid
 	 * 
 	 * @param script
@@ -161,5 +142,10 @@ public class MainFrame extends JFrame {
 	 */
 	public MenuBar getMyMenu() {
 		return menuBar;
+	}
+	
+	public void refreshBurns() {
+		String str = CommandBuilder.refreshBurns();
+		getControl().sendMessage(str);
 	}
 }

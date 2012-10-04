@@ -38,8 +38,6 @@ public class ControlPanel extends JPanel {
 
 	// connection status panel
 	private ConnectionPanel connection;
-	// rss panel
-	private RSSPanel rss;
 	// title panel
 	private TitlePanel title;
 	// log panel
@@ -62,15 +60,6 @@ public class ControlPanel extends JPanel {
 		c.weightx = 1.0;
 		c.gridy = 0;
 		add(connection, c);
-
-		// create rss panel
-		c = new GridBagConstraints();
-		rss = new RSSPanel();
-		c.fill = GridBagConstraints.HORIZONTAL;
-		c.gridx = 0;
-		c.weightx = 1.0;
-		c.gridy = 1;
-		add(rss, c);
 
 		// create log panel
 		c = new GridBagConstraints();
@@ -104,33 +93,11 @@ public class ControlPanel extends JPanel {
 	}
 
 	/**
-	 * Save titles to file
-	 * 
-	 * @param path
-	 *            filename
-	 */
-	public void saveTitles(String path) {
-		title.saveTitles(path);
-	}
-
-	/**
-	 * Load titles from file
-	 * 
-	 * @param path
-	 *            filename
-	 */
-	public void loadTitles(String path) {
-		title.loadTitles(path);
-	}
-
-	/**
 	 * Reset this control pane
 	 */
 	public void reset() {
 		// reset connect
 		connection.reset();
-		// reset rss
-		rss.reset();
 		// reset log
 		log.reset();
 		// reset title
