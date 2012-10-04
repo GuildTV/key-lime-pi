@@ -60,7 +60,6 @@ extern "C" {
 #include "OMX/OMXPlayerVideo.h"
 #include "OMX/DllOMX.h"
 
-#include "render/MyRender.h"
 #include "net/NetIO.h"
 
 #include <string>
@@ -97,7 +96,6 @@ class OMXLink
         DllBcmHost        m_BcmHost;
         OMXPlayerVideo    m_player_video;
         bool              m_has_video;
-        MyRender    m_my_render;
 
         CRBP                  *g_RBP;
         COMXCore              *g_OMX;

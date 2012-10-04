@@ -2,15 +2,13 @@ include Makefile.include
 
 CFLAGS+=-std=c++0x -DDEBUGLOG -DSTANDALONE -D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS -DTARGET_POSIX -D_LINUX -fPIC -DPIC -D_REENTRANT -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -DHAVE_CMAKE_CONFIG -D__VIDEOCORE4__ -U_FORTIFY_SOURCE -Wall -DHAVE_OMXLIB -DUSE_EXTERNAL_FFMPEG  -DHAVE_LIBAVCODEC_AVCODEC_H -DHAVE_LIBAVUTIL_OPT_H -DHAVE_LIBAVUTIL_MEM_H -DHAVE_LIBAVUTIL_AVUTIL_H -DHAVE_LIBAVFORMAT_AVFORMAT_H -DHAVE_LIBAVFILTER_AVFILTER_H -DOMX -DOMX_SKIP64BIT -ftree-vectorize -DUSE_EXTERNAL_OMX -DTARGET_RASPBERRY_PI -DUSE_EXTERNAL_LIBBCM_HOST
 
-LDFLAGS+=-L./ -lc -lWFC -lGLESv2 -lEGL -lbcm_host -lopenmaxil -ljsoncpp -lz -lfreetype -l bcm2835
-INCLUDES+=-I./ -Ilinux -Iffmpeg_compiled/include/ -I/opt/vc/include. -I/usr/include/freetype2
+LDFLAGS+=-L./ -lc -lWFC -lbcm_host -lopenmaxil -ljsoncpp -lz -l bcm2835
+INCLUDES+=-I./ -Ilinux -Iffmpeg_compiled/include/ -I/opt/vc/include.
 
 SRC=linux/XMemUtils.cpp \
 		utils/log.cpp \
 		OMX/DynamicDll.cpp \
 		OMX/BitstreamConverter.cpp \
-		render/Freetype.cpp \
-		render/OverlayRenderer.cpp \
 		linux/RBP.cpp \
 		OMX/OMXThread.cpp \
 		OMX/OMXReader.cpp \
@@ -18,14 +16,11 @@ SRC=linux/XMemUtils.cpp \
 		OMX/OMXCore.cpp \
 		OMX/OMXVideo.cpp \
 		OMX/OMXClock.cpp \
-		render/MyRender.cpp \
-		render/TextTexture.cpp \
-		render/TextureRender.cpp \
-		render/ColourTexture.cpp \
 		OMX/File.cpp \
 		OMX/OMXPlayerVideo.cpp \
 		OMXLink.cpp \
 		logger.cpp \
+		JsonUtil.cpp \
 		net/NetIO.cpp \
 		net/NetMessageQueue.cpp \
 		net/NetUser.cpp \

@@ -129,9 +129,6 @@ bool OMXLink::Load(std::string m_filename) {
     return false;
   }
 
-  //open renderer
-  m_my_render.Open(netIO, m_av_clock, m_thread_player, &m_player_video, m_filename);
-
   //set speed
   m_av_clock->SetSpeed(DVD_PLAYSPEED_NORMAL);
   m_av_clock->OMXStateExecute();
@@ -213,7 +210,6 @@ bool OMXLink::Exit() {
 
   //close video and renderer
   m_player_video.Close();
-  m_my_render.Close();
 
   //free remaining packet
   if(m_omx_pkt)

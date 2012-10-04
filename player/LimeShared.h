@@ -44,9 +44,7 @@
 
 #include "JsonUtil.h"
 
-#ifdef RENDERTEST
-#include "render/OverlayRenderer.h"
-#else
+#ifndef RENDERTEST
 #include "OMXWrapper.h"
 #endif
 
@@ -96,9 +94,7 @@ class LimeShared
         void HandleMessagePlay(NetMessage *msg, Json::Value* root);
 
         //pointer to video player/overlayrenderer
-#ifdef RENDERTEST
-        OverlayRenderer* renderer;
-#else
+#ifndef RENDERTEST
         OMXWrapper* wrap;
 #endif
 
