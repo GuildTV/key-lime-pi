@@ -109,37 +109,6 @@ void LimeMaster::HandleMessageDown(NetMessage* msg){
     }
 }
 
-void LimeMaster::HandleMessageMore(NetMessage *msg, Json::Value* root){
-    const string type = (*root)["type"].asString();
-    if (type.compare("previewVideo") == 0){
-        //check name exists
-        if(!root->isMember("data")){
-            FLog::Log(FLOG_ERROR, "LimeMaster::HandleMessage - Recieved 'previewVideo' command without a 'data' field");
-            return;
-        }
-        Json::Value data = (*root)["data"];
-        if(!data.isMember("script")){
-            FLog::Log(FLOG_ERROR, "LimeMaster::HandleMessage - Recieved 'previewVideo' command without a 'data::script' field");
-            return;
-        }
-        const string script = data["script"].asString();
-        if(!data.isMember("name")){
-            FLog::Log(FLOG_ERROR, "LimeMaster::HandleMessage - Recieved 'previewVideo' command without a 'data::name' field");
-            return;
-        }
-        const string name = data["name"].asString();
-
-        if(!data.isMember("data")){
-            FLog::Log(FLOG_ERROR, "LimeMaster::HandleMessage - Recieved 'previewVideo' command without a 'data::data' field");
-            return;
-        }
-        Json::Value values = data["data"];
-
-        //play video at specified time
-        VideoPreview(name, script, &values);
-    }
-}
-
 bool LimeMaster::HandleMessageEarly(NetMessage *msg, Json::Value* root){
     const string type = (*root)["type"].asString();
 
@@ -176,55 +145,6 @@ bool LimeMaster::HandleMessageEarly(NetMessage *msg, Json::Value* root){
     }
 
     return false;
-}
-
-void LimeMaster::VideoPreview(std::string name, std::string script, Json::Value *data) {
-    //complain if already playing
-    if(videoPlaying){
-        up.GetClient()->SendMessage("{\"type\":\"previewVideo\",\"status\":\"already playing\"}");
-        return;
-    }
-
-    //set as not loaded
-    videoLoaded = false;
-    FLog::Log(FLOG_INFO, "LimeMaster::VideoLoad - Starting preview of \"%s\"", script.c_str());
-    //generate paths to video and script
-    std::string pathVid = DATAFOLDER;
-    pathVid += script;
-    pathVid += "/video.mp4";
-    std::string pathJson = DATAFOLDER;
-    pathJson += script;
-    pathJson += "/script.json";
-
-    //verify files exist
-    if(!JsonUtil::FileExists(pathVid.c_str())){
-        FLog::Log(FLOG_ERROR, "LimeMaster::VideoLoad - Couldnt find video file for \"%s\"", script.c_str());
-        up.GetClient()->SendMessage("{\"type\":\"previewVideo\",\"status\":\"video doesnt exist\"}");
-        return;
-    }
-    if(!JsonUtil::FileExists(pathJson.c_str())){
-        FLog::Log(FLOG_ERROR, "LimeMaster::VideoLoad - Couldnt find script file for \"%s\"", script.c_str());
-        up.GetClient()->SendMessage("{\"type\":\"previewVideo\",\"status\":\"script doesnt exist\"}");
-        return;
-    }
-
-#ifndef RENDERTEST
-    //load video
-    wrap = new OMXWrapper(&up, &videoPlaying);
-    wrap->Load(pathVid);//convert to bool or int?
-
-#endif
-    //set as loaded
-    videoLoaded = true;
-    videoPlaying = true;
-
-    up.GetClient()->SendMessage("{\"type\":\"previewVideo\",\"status\":\"starting playback\"}");
-
-#ifndef RENDERTEST
-    //play video
-    wrap->Play();//is bool for success starting
-
-#endif
 }
 
 void LimeMaster::preloadProcess(NetMessage *msg){

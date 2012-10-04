@@ -19,8 +19,8 @@ SRC=linux/XMemUtils.cpp \
 		OMX/File.cpp \
 		OMX/OMXPlayerVideo.cpp \
 		OMXLink.cpp \
-		logger.cpp \
 		JsonUtil.cpp \
+		logger.cpp \
 		net/NetIO.cpp \
 		net/NetMessageQueue.cpp \
 		net/NetUser.cpp \

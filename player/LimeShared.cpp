@@ -27,7 +27,7 @@ LimeShared::LimeShared() {
     videoPlaying = false;
 }
 
-void LimeShared::VideoLoad(std::string name, std::string script, Json::Value *data){
+void LimeShared::VideoLoad(std::string script){
     //complain if already playing
     if(videoPlaying){
         up.GetClient()->SendMessage("{\"type\":\"preloadVideo\",\"status\":\"already playing\"}");
@@ -64,8 +64,8 @@ void LimeShared::VideoLoad(std::string name, std::string script, Json::Value *da
 
 #endif
 
-    std::string msg = "{\"type\":\"preloadVideo\",\"name\":\"";
-    msg += name;
+    std::string msg = "{\"type\":\"preloadVideo\",\"script\":\"";
+    msg += script;
     msg += "\",\"status\":\"video loaded\"}";
     up.GetClient()->SendMessage(msg);
 
@@ -184,33 +184,17 @@ void LimeShared::HandleMessage(NetMessage* msg){
 
 void LimeShared::HandleMessagePreload(NetMessage *msg, Json::Value *root){
     //check name exists
-    if(!root->isMember("data")){
-        FLog::Log(FLOG_ERROR, "LimeShared::HandleMessage - Recieved 'preloadVideo' command without a 'data' field");
+    if(!root->isMember("script")){
+        FLog::Log(FLOG_ERROR, "LimeShared::HandleMessage - Recieved 'preloadVideo' command without a 'script' field");
         return;
     }
-    Json::Value data = (*root)["data"];
-    if(!data.isMember("script")){
-        FLog::Log(FLOG_ERROR, "LimeShared::HandleMessage - Recieved 'preloadVideo' command without a 'data::script' field");
-        return;
-    }
-    const string script = data["script"].asString();
-    if(!data.isMember("name")){
-        FLog::Log(FLOG_ERROR, "LimeShared::HandleMessage - Recieved 'preloadVideo' command without a 'data::name' field");
-        return;
-    }
-    const string name = data["name"].asString();
-
-    if(!data.isMember("data")){
-        FLog::Log(FLOG_ERROR, "LimeShared::HandleMessage - Recieved 'preloadVideo' command without a 'data::data' field");
-        return;
-    }
-    Json::Value values = data["data"];
+    const string script = (*root)["script"].asString();
 
     //forward message to slave
     preloadProcess(msg);
 
     //load video
-    VideoLoad(name, script, &values);
+    VideoLoad(script);
 }
 
 void LimeShared::HandleMessagePlay(NetMessage *msg, Json::Value *root){

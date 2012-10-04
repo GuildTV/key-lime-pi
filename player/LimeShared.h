@@ -53,7 +53,7 @@ class LimeShared
     public:
         LimeShared();
         //load video
-        void VideoLoad(std::string name, std::string script, Json::Value *data);
+        void VideoLoad(std::string script);
         //start videoplayback
         void VideoPlay();
         //stop video playback

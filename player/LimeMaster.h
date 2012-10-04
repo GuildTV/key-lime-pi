@@ -39,9 +39,6 @@ class LimeMaster: public LimeShared
         void HandleMessageDown(NetMessage* msg);
 
     protected:
-        //load video
-        void VideoPreview(std::string name, std::string script, Json::Value *data);
-
         //process preload command beyond scope of LimeShared
         void preloadProcess(NetMessage *msg);
         //determine play start time
@@ -55,8 +52,6 @@ class LimeMaster: public LimeShared
         //message handler for slave pi connection
         LimeMasterDownStream *downstream;
 
-        //handle more commands
-        void HandleMessageMore(NetMessage *msg, Json::Value* root);
         //handle commands before LimeShared
         bool HandleMessageEarly(NetMessage *msg, Json::Value* root);
 
