@@ -53,7 +53,10 @@ void LimeTimer::UnLock(){
 
 bool LimeTimer::VideoPlay(string scr, long sec, long nano)
 {
-  lime->getNetUp().GetClient()->SendMessage("{\"type\":\"playVideo\",\"status\":\"waiting for playback\"}");
+  if(running)
+    return false;
+
+  lime->getNetUp()->GetClient()->SendMessage("{\"type\":\"playVideo\",\"status\":\"waiting for playback\"}");
 
   pthread_attr_init(&m_tattr);
   pthread_create(&m_thread, &m_tattr, &LimeTimer::ThreadRun, this);
