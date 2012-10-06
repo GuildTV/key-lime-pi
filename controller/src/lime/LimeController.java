@@ -97,6 +97,9 @@ public class LimeController implements Logger, NetHandler {
 
 		// force title panel repaint
 		frame.getControlPanel().getTitlePanel().repaint();
+		
+		//refresh burns list
+		getFrame().refreshBurns();
 	}
 
 	/**

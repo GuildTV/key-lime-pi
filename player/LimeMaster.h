@@ -46,14 +46,13 @@ class LimeMaster: public LimeShared
         //process data list request
         void dataListProcess(Json::Value *root);
 
+        void HandleMessageMore(NetMessage *msg, Json::Value* root);
+
     private:
         //network connection to slave pi
         NetIO pi;
         //message handler for slave pi connection
         LimeMasterDownStream *downstream;
-
-        //handle commands before LimeShared
-        bool HandleMessageEarly(NetMessage *msg, Json::Value* root);
 };
 
 #endif // LIMEMASTER_H

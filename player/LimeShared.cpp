@@ -25,12 +25,13 @@ LimeShared::LimeShared() {
     run = false;
     videoLoaded = false;
     videoPlaying = false;
+    activeScript = "NULL";
 }
 
 void LimeShared::VideoPlay(std::string script){
     //complain if already playing
     if(videoPlaying){
-        up.GetClient()->SendMessage("{\"type\":\"preloadVideo\",\"status\":\"already playing\"}");
+        up.GetClient()->SendMessage("{\"type\":\"playVideo\",\"status\":\"already playing\"}");
         return;
     }
 
@@ -48,12 +49,12 @@ void LimeShared::VideoPlay(std::string script){
     //verify files exist
     if(!JsonUtil::FileExists(pathVid.c_str())){
         FLog::Log(FLOG_ERROR, "LimeShared::VideoLoad - Couldnt find video file for \"%s\"", script.c_str());
-        up.GetClient()->SendMessage("{\"type\":\"preloadVideo\",\"status\":\"video doesnt exist\"}");
+        up.GetClient()->SendMessage("{\"type\":\"playVideo\",\"status\":\"video doesnt exist\"}");
         return;
     }
     if(!JsonUtil::FileExists(pathJson.c_str())){
         FLog::Log(FLOG_ERROR, "LimeShared::VideoLoad - Couldnt find script file for \"%s\"", script.c_str());
-        up.GetClient()->SendMessage("{\"type\":\"preloadVideo\",\"status\":\"script doesnt exist\"}");
+        up.GetClient()->SendMessage("{\"type\":\"playVideo\",\"status\":\"script doesnt exist\"}");
         return;
     }
 
@@ -144,7 +145,10 @@ void LimeShared::HandleMessage(NetMessage* msg){
 
     const string type = root["type"].asString();
 
-    if (type.compare("playVideo") == 0){
+    if (type.compare("selectVideo") == 0){
+        HandleMessageSelect(msg, &root);
+
+    } else if (type.compare("playVideo") == 0){
         HandleMessagePlay(msg, &root);
 
     } else if (type.compare("dataList") == 0){
@@ -155,19 +159,26 @@ void LimeShared::HandleMessage(NetMessage* msg){
     HandleMessageMore(msg, &root);
 }
 
-void LimeShared::HandleMessagePlay(NetMessage *msg, Json::Value *root){
-
+void LimeShared::HandleMessageSelect(NetMessage *msg, Json::Value *root){
     if(!(*root).isMember("script")){
-        FLog::Log(FLOG_ERROR, "LimeShared::HandleMessage - Recieved 'playVideo' command without a 'script' field");
+        FLog::Log(FLOG_ERROR, "LimeShared::HandleMessage - Recieved 'selectVideo' command without a 'script' field");
         return;
     }
     const string script = (*root)["script"].asString();
+
+    activeScript = script;
+}
+
+void LimeShared::HandleMessagePlay(NetMessage *msg, Json::Value *root){
+    if(activeScript == "NULL"){
+        FLog::Log(FLOG_ERROR, "LimeShared::HandleMessage - Recieved 'playVideo' command without a script activated field");
+        return;
+    }
 
     long nano, sec;
 
     playProcess(root, &sec, &nano);
 
     //play video at specified time
-    limeTimer->VideoPlay(script, sec, nano);
+    limeTimer->VideoPlay(activeScript, sec, nano);
 }
-

@@ -97,12 +97,16 @@ void LimeMaster::HandleMessageDown(NetMessage* msg){
         json.resize(json.size()-1);
         json += "}";
         up.GetClient()->SendMessage(json);
-        printf(json.c_str());
     }
 }
 
-bool LimeMaster::HandleMessageEarly(NetMessage *msg, Json::Value* root){
-    return false;
+void LimeMaster::HandleMessageMore(NetMessage *msg, Json::Value* root){
+
+    const string type = (*root)["type"].asString();
+
+    if (type.compare("selectVideo") == 0){
+         pi.GetClient()->SendMessage(msg->message);
+    }
 }
 
 void LimeMaster::playProcess(Json::Value *root, long *sec, long *nano){

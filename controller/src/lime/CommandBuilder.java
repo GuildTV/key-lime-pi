@@ -67,14 +67,33 @@ public class CommandBuilder {
 	 * @param elm
 	 *            TitleElement to be played
 	 */
-	public static String createPlay(TitleElement elm) {
+	public static String createSelect(TitleElement elm) {
 		// create json stringer
 		JSONStringer stringer = new JSONStringer();
 		try {
 			// create play command
 			stringer.object();
-			stringer.key("type").value("playVideo");
+			stringer.key("type").value("selectVideo");
 			stringer.key("script").value(elm.getNameValue());
+			stringer.endObject();
+
+			// return it
+			return stringer.toString();
+
+		} catch (JSONException e) {
+			// log command
+			log("Failed to generate play command");
+		}
+
+		return null;
+	}
+	
+	public static String createPlay() {
+		JSONStringer stringer = new JSONStringer();
+		try {
+			// create play command
+			stringer.object();
+			stringer.key("type").value("playVideo");
 			stringer.endObject();
 
 			// return it

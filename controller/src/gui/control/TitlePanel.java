@@ -24,11 +24,18 @@ package gui.control;
 import gui.MainFrame;
 
 import java.awt.BorderLayout;
+import java.awt.Font;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
+import javax.swing.JButton;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+
+import lime.CommandBuilder;
 
 /**
  * Panel containing the all of the TitleElement
@@ -36,7 +43,7 @@ import javax.swing.JScrollPane;
  * @author julus
  * 
  */
-public class TitlePanel extends JPanel {
+public class TitlePanel extends JPanel implements ActionListener {
 	private static final long serialVersionUID = 8021157860217699741L;
 
 	// frame owner
@@ -46,6 +53,10 @@ public class TitlePanel extends JPanel {
 	private JScrollPane pane;
 	// panel inside scroll pane
 	private JPanel panel;
+	
+	private JPanel top;
+	private JButton playButton;
+	private JLabel title;
 
 	/**
 	 * Create the TitlePanel
@@ -58,6 +69,18 @@ public class TitlePanel extends JPanel {
 		setBorder(BorderFactory.createTitledBorder("Burn Control"));
 
 		this.owner = owner;
+		
+		top = new JPanel();
+		top.setLayout(new BoxLayout(top, BoxLayout.PAGE_AXIS));
+		top.setBorder(BorderFactory.createTitledBorder("Current Burn"));
+		title = new JLabel("Nothing Loaded");
+		title.setFont(new Font("Dialog", 1, 20));
+		// load/play button
+		playButton = new JButton("Play");
+		playButton.addActionListener(this);
+		top.add(title, BorderLayout.NORTH);
+		top.add(playButton, BorderLayout.SOUTH);	
+		add(top, BorderLayout.NORTH);
 
 		// create and add the scroll pane
 		panel = new JPanel();
@@ -65,6 +88,10 @@ public class TitlePanel extends JPanel {
 		pane = new JScrollPane(panel, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 		pane.setBorder(BorderFactory.createEmptyBorder());
 		add(pane, BorderLayout.CENTER);
+	}
+	
+	public void setCurrent(String t) {
+		title.setText(t);
 	}
 
 	/**
@@ -107,5 +134,11 @@ public class TitlePanel extends JPanel {
 	public void reset() {
 		// remove all the elements
 		panel.removeAll();
+	}
+
+	@Override
+	public void actionPerformed(ActionEvent e) {
+		String str = CommandBuilder.createPlay();
+		getOwner().getControl().sendMessage(str);
 	}
 }

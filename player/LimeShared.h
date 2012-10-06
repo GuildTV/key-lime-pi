@@ -61,7 +61,7 @@ class LimeShared
         //get list of all the files in a folder
         vector<string> ListFiles(const char * path);
         //get netio
-        NetIO getNetUp(){return up;};
+        NetIO* getNetUp(){return &up;};
         //create server
         bool CreateServer(const char * port);
         //finish setting up program
@@ -88,6 +88,7 @@ class LimeShared
         virtual void dataListProcess(Json::Value *root) = 0;
 
         void HandleMessagePlay(NetMessage *msg, Json::Value* root);
+        void HandleMessageSelect(NetMessage *msg, Json::Value* root);
 
         //pointer to video player/overlayrenderer
 #ifndef RENDERTEST
@@ -95,6 +96,7 @@ class LimeShared
 #endif
 
     private:
+        string activeScript;
 
 };
 

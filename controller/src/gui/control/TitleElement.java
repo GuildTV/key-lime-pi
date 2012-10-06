@@ -84,8 +84,8 @@ public class TitleElement extends JPanel implements ActionListener {
 		add(nameLabel, c);
 
 		// load/play button
-		playButton = new JButton("Play");
-		playButton.setActionCommand("play");
+		playButton = new JButton("Select");
+		playButton.setActionCommand("activate");
 		playButton.addActionListener(this);
 		c = new GridBagConstraints();
 		c.fill = GridBagConstraints.NONE;
@@ -150,9 +150,10 @@ public class TitleElement extends JPanel implements ActionListener {
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
-		if (e.getActionCommand().equals("play")) {
+		if (e.getActionCommand().equals("activate")) {
 			// play
-			String str = CommandBuilder.createPlay(this);
+			String str = CommandBuilder.createSelect(this);
+			parent.setCurrent(nameValue);
 			parent.getOwner().getControl().sendMessage(str);
 		}
 	}
